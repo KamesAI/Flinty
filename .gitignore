@@ -15,6 +15,7 @@ Thumbs.db
 02-Implementation/interface/lead-qualifier-dashboard/.vercel/
 02-Implementation/interface/lead-qualifier-dashboard/out/
 02-Implementation/interface/lead-qualifier-dashboard/dist/
+02-Implementation/interface/lead-qualifier-dashboard/*.tsbuildinfo
 
 # Editor / OS
 .idea/
