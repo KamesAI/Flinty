@@ -1,0 +1,234 @@
+{
+  "metadata": {
+    "nom_fichier": "context_stacktechnique.json",
+    "description": "Stack technique complet de Kames AI - Agence d'automatisation par IA",
+    "derniere_mise_a_jour": "2026-03-06",
+    "owner": "Thomas Callendreau",
+    "co_fondateur": "Clément (profil marketing)",
+    "localisation": "Bordeaux, France",
+    "statut_projet": "Phase build & acquisition clients - Infrastructure migrée sur Hetzner",
+    "confiance_donnees": "100% - Validé par Thomas"
+  },
+
+  "projet": {
+    "nom": "Kames AI",
+    "type": "Agence d'automatisation par intelligence artificielle",
+    "cible_marche": "TPE/PME françaises et européennes (90% sans connaissance IA)",
+    "objectif_business": {
+      "mrr_cible": "10 000€/mois",
+      "seuil_quitter_audit": "~5 000€/mois récurrents",
+      "modele_pricing": "Setup 800-1500€ + Abonnement 200-400€/mois",
+      "services": [
+        "Répondeur IA 24/7",
+        "Scoring de leads",
+        "Résumés d'appels + intégration CRM",
+        "Follow-ups email/SMS automatisés via n8n"
+      ]
+    }
+  },
+
+  "infrastructure_serveur": {
+    "provider": "Hetzner",
+    "statut": "ACTIF - Migration depuis AWS EC2 complétée (réduction des coûts)",
+    "vps": {
+      "modele": "CX33",
+      "os": "Ubuntu 24.04",
+      "user_ssh": "kames",
+      "acces_ssh": {
+        "outil": "PuTTY (Windows)",
+        "port": 22,
+        "methode": "Clé privée .ppk"
+      },
+      "remarque_importante": "La console web Hetzner corrompt les caractères spéciaux (notamment // dans les URLs) — toujours utiliser PuTTY pour les commandes SSH. Utiliser des one-liners Python pour écrire des strings contenant // si l'environnement shell est peu fiable."
+    },
+    "ancien_provider_decommissionne": {
+      "provider": "AWS",
+      "services_supprimes": ["EC2 t3.micro", "RDS PostgreSQL (db-n8n-restore)", "Supabase Pro"],
+      "raison": "Réduction des coûts d'infrastructure",
+      "date_migration": "Début 2026"
+    }
+  },
+
+  "base_de_donnees": {
+    "type": "PostgreSQL",
+    "hebergement": "Local sur Hetzner VPS (plus de RDS AWS)",
+    "acces": "Via Docker ou connexion locale sur le VPS",
+    "retention_donnees": {
+      "executions_n8n": "7 jours (pruning automatique)",
+      "donnees_utilisateurs": "90 jours après fin de contrat (script purge SQL)"
+    }
+  },
+
+  "n8n": {
+    "type": "Auto-hébergé",
+    "orchestration": "Docker + Docker Compose V2 (commande: docker compose, sans tiret)",
+    "mode_execution": "Queue avec workers Redis",
+    "environnements": {
+      "production": {
+        "path": "/home/kames/n8n-prod",
+        "domaine": "agent.kamesai.com",
+        "port": 5678,
+        "protocol": "HTTPS"
+      },
+      "staging": {
+        "path": "/home/kames/n8n-staging",
+        "domaine": "staging-n8n.kamesai.com",
+        "port": 5680,
+        "protocol": "HTTPS"
+      }
+    },
+    "version_actuelle": "2.7.5",
+    "action_en_attente": {
+      "description": "Mise à jour sécurité CRITIQUE — CVEs signalés par Hetzner/BSI sur n8n v2.7.5",
+      "commandes": [
+        "cd /home/kames/n8n-prod && docker compose pull && docker compose down && docker compose up -d",
+        "cd /home/kames/n8n-staging && docker compose pull && docker compose down && docker compose up -d"
+      ],
+      "statut": "NON EXÉCUTÉ — À faire en priorité"
+    },
+    "reverse_proxy": "Nginx",
+    "ssl": "Let's Encrypt (Certbot)",
+    "containers_par_env": ["n8n", "n8n-worker", "redis"],
+    "monitoring": "Netdata (actif)"
+  },
+
+  "domaines_et_dns": {
+    "registrar": "Hostinger",
+    "domaine_principal": "kamesai.com",
+    "derniere_mise_a_jour_dns": "2025-12-21",
+    "architecture": "Hybride — Vercel (frontend) + Hetzner (backend IA)",
+    "ip_mapping": {
+      "vercel_frontend": {
+        "ip": "216.198.79.1",
+        "cname": "cname.vercel-dns.com",
+        "usage": "Site web (prod + staging)"
+      },
+      "hetzner_backend": {
+        "usage": "n8n, agents IA, Nginx, API backend"
+      }
+    },
+    "sous_domaines": {
+      "kamesai.com": { "provider": "Vercel", "usage": "Site web production (Next.js)" },
+      "www.kamesai.com": { "provider": "Vercel", "usage": "Alias domaine racine" },
+      "staging.kamesai.com": { "provider": "Vercel", "usage": "Site web staging (branche GitHub staging)" },
+      "agent.kamesai.com": { "provider": "Hetzner", "usage": "n8n production" },
+      "staging-n8n.kamesai.com": { "provider": "Hetzner", "usage": "n8n staging" },
+      "mcp.kamesai.com": { "provider": "Hetzner", "usage": "Endpoint MCP server (si utilisé)" }
+    }
+  },
+
+  "site_web": {
+    "framework": "Next.js + TypeScript + Tailwind CSS",
+    "hebergement": "Vercel",
+    "historique": "Migré depuis Firebase App Hosting (dec 2025)",
+    "repo_github": {
+      "branches": {
+        "main": "Production → deploy auto sur Vercel",
+        "staging": "Tests → deploy auto sur staging.kamesai.com"
+      }
+    },
+    "design": {
+      "background": "Noir",
+      "gradient_couleurs": "#FFB300 → #FF6D00 → #F538A0 (orange vers magenta)"
+    },
+    "lead_capture": {
+      "formulaire": "Submit vers webhook n8n",
+      "destination": "Google Sheets",
+      "redirection": "Calendly"
+    },
+    "rgpd": {
+      "page_rgpd": "/rgpd publiée",
+      "dpa_signes": ["Anthropic", "Azure/OpenAI", "Google Cloud"],
+      "registre_conformite": "Créé"
+    }
+  },
+
+  "outils_dev": {
+    "ide": "Cursor (Windows) + VS Code",
+    "terminal_ssh": "PuTTY",
+    "versioning": "GitHub",
+    "deploiement_frontend": "Vercel (CI/CD auto depuis GitHub)",
+    "workflow_dev": "Staging → validation → merge main → prod"
+  },
+
+  "mcp_cursor": {
+    "description": "Serveurs MCP configurés dans Cursor IDE pour piloter l'agence depuis l'éditeur",
+    "config_file": "%USERPROFILE%\\.cursor\\mcp.json",
+    "serveurs_actifs": {
+      "n8n": {
+        "package": "@kernel.salacoste/n8n-workflow-builder",
+        "target": "https://agent.kamesai.com",
+        "statut": "Opérationnel"
+      },
+      "supabase": {
+        "package": "@supabase/mcp-server-supabase",
+        "auth": "Personal Access Token (PAT)",
+        "statut": "Opérationnel"
+      },
+      "stripe": {
+        "package": "@stripe/mcp",
+        "mode": "Test",
+        "statut": "Opérationnel"
+      },
+      "github": {
+        "package": "@modelcontextprotocol/server-github",
+        "statut": "Opérationnel"
+      }
+    },
+    "remarque": "Redémarrage complet de Cursor requis après chaque modification de mcp.json"
+  },
+
+  "automatisation": {
+    "outil_principal": "n8n (auto-hébergé)",
+    "email": "Resend",
+    "email_api": "Gmail API (configurée dans n8n)",
+    "calendrier": "Calendly",
+    "data_layer": "Google Sheets (via API)",
+    "lead_enrichment": ["Firecrawl", "Google Places API", "Claude API"],
+    "crm_dashboard": {
+      "statut": "En cours de développement",
+      "architecture": "Google Sheets (4 onglets) + Next.js frontend + n8n workflows + Resend",
+      "plan_fichier": "dashboard-planv2.md"
+    }
+  },
+
+  "outils_ia": {
+    "api_principales": ["Claude (Anthropic)", "GPT (Azure OpenAI)", "Gemini (Google Vertex)"],
+    "copilotes_dev": ["Claude", "Cursor AI"],
+    "note_securite": "OpenClaw — ~12% des skills sur ClawHub contiennent des malwares. Toujours vérifier le code source avant installation."
+  },
+
+  "monitoring": {
+    "netdata": {
+      "statut": "Actif sur Hetzner VPS",
+      "port": 19999,
+      "acces": "Via reverse proxy Nginx"
+    }
+  },
+
+  "bonnes_pratiques_et_lecons_apprises": [
+    "Console web Hetzner corrompt les caractères spéciaux — toujours SSH via PuTTY",
+    "Docker Compose V2 : utiliser 'docker compose' (sans tiret), 'docker-compose' n'est pas installé",
+    "OneDrive crée des conflits avec Git — stocker les projets hors OneDrive (ex: D:\\dev\\)",
+    "Ne jamais suivre une recommandation IA sur l'infra sans vérifier — une suppression accidentelle de BDD a déjà eu lieu (ChatGPT)",
+    "Google Sheets préféré à Airtable (plan gratuit Airtable trop limité : 1000 enregistrements/mois)",
+    "90% des prospects TPE/PME n'ont aucune connaissance IA — tout contenu client doit parler résultats business, pas technique",
+    "Les fichiers de contexte JSON/Markdown doivent être mis à jour après chaque changement d'infrastructure majeur"
+  ],
+
+  "plan_apprentissage_technique": {
+    "phase_actuelle": "Jusqu'à septembre 2026 — vidéos conceptuelles (Python, LLM, prompt engineering)",
+    "ressources": [
+      "YouTube: Docstring, Graven, Programming with Mosh, freeCodeCamp, Andrej Karpathy, Krish Naik, AssemblyAI, Matt Wolfe",
+      "DeepLearning.AI (cours courts gratuits)",
+      "Livre payant accepté: 'AI Engineering' — Chip Huyen"
+    ],
+    "phase_suivante": "Septembre 2026 — début coding hands-on"
+  },
+
+  "objectifs_immediats": [
+    "URGENT: Exécuter la mise à jour sécurité n8n v2.7.5 sur prod ET staging",
+    "Continuer le développement du CRM dashboard (Google Sheets + Next.js + n8n)",
+    "Atteindre ~5 000€/mois récurrents pour quitter le poste d'auditeur"
+  ]
+}

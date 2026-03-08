@@ -1,0 +1,21 @@
+.DS_Store
+Thumbs.db
+*.log
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+!.env.local.example
+00-Discovery/lead-qualifier-mvp-454381f7b3cb.json
+
+# Next.js app build artifacts
+02-Implementation/interface/lead-qualifier-dashboard/node_modules/
+02-Implementation/interface/lead-qualifier-dashboard/.next/
+02-Implementation/interface/lead-qualifier-dashboard/.vercel/
+02-Implementation/interface/lead-qualifier-dashboard/out/
+02-Implementation/interface/lead-qualifier-dashboard/dist/
+
+# Editor / OS
+.idea/
+.vscode/
