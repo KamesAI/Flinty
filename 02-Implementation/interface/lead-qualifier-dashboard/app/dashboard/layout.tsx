@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getSheetData, parseCampaigns, parseLeads } from "@/lib/sheets";
-import { SidebarSection } from "./SidebarSection";
+import { SidebarCampaignsGroup } from "./SidebarCampaignsGroup";
 
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -69,22 +69,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
         {/* Campaign list */}
         {campaigns.length > 0 && (
-          <div className="flex-1 overflow-y-auto p-3">
-            {activeCampaigns.length > 0 && (
-              <SidebarSection
-                title="Campagnes Actives"
-                campaigns={activeCampaigns}
-                defaultOpen={true}
-              />
-            )}
-            {otherCampaigns.length > 0 && (
-              <SidebarSection
-                title="Campagnes archivées"
-                campaigns={otherCampaigns}
-                defaultOpen={false}
-              />
-            )}
-          </div>
+          <SidebarCampaignsGroup
+            activeCampaigns={activeCampaigns}
+            otherCampaigns={otherCampaigns}
+          />
         )}
 
         {/* Footer */}

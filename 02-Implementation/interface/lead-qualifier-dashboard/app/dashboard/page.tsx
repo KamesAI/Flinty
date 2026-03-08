@@ -66,10 +66,8 @@ export default async function DashboardPage() {
     <div className="p-8">
       {/* Eyebrow + Title */}
       <div className="mb-6">
-        <p className="text-xs font-semibold tracking-widest uppercase text-orange-500 mb-1">Dashboards</p>
-        <h1 className="text-3xl font-bold text-white">
-          Campagnes <span className="bg-gradient-to-r from-orange-500 to-pink-500 bg-clip-text text-transparent">Cold Email</span>
-        </h1>
+        <p className="text-xs font-semibold tracking-widest uppercase text-orange-500 mb-1">Accueil</p>
+        <h1 className="text-3xl font-bold text-white">Dashboard principal</h1>
         <p className="text-zinc-500 text-sm mt-1">Pipeline de prospection automatisé Kames AI</p>
       </div>
 
@@ -118,9 +116,14 @@ export default async function DashboardPage() {
         <div />
         <Link
           href="/dashboard/campaigns/new"
-          className="px-4 py-2 rounded-lg bg-gradient-to-r from-orange-500 to-pink-500 text-white font-medium text-sm hover:opacity-90 transition-opacity"
+          className="group relative inline-flex items-center justify-center"
         >
-          + Nouvelle campagne
+          <span className="pointer-events-none absolute inset-x-5 inset-y-1.5 rounded-full bg-orange-500/30 blur-xl transition-opacity duration-300 group-hover:opacity-90" />
+          <span className="relative inline-flex rounded-full bg-gradient-to-r from-orange-500 via-orange-400 to-white p-[1px]">
+            <span className="inline-flex min-w-[170px] items-center justify-center rounded-full bg-black px-5 py-2.5 text-sm font-medium text-white transition-colors duration-300 group-hover:text-zinc-100">
+              Nouvelle campagne
+            </span>
+          </span>
         </Link>
       </div>
 
@@ -146,9 +149,14 @@ export default async function DashboardPage() {
           <p className="text-base mb-4">Aucune campagne créée</p>
           <Link
             href="/dashboard/campaigns/new"
-            className="px-4 py-2 rounded-lg bg-gradient-to-r from-orange-500 to-pink-500 text-white font-medium text-sm"
+            className="group relative inline-flex items-center justify-center"
           >
-            Créer votre première campagne
+            <span className="pointer-events-none absolute inset-x-5 inset-y-1.5 rounded-full bg-orange-500/30 blur-xl transition-opacity duration-300 group-hover:opacity-90" />
+            <span className="relative inline-flex rounded-full bg-gradient-to-r from-orange-500 via-orange-400 to-white p-[1px]">
+              <span className="inline-flex min-w-[220px] items-center justify-center rounded-full bg-black px-5 py-2.5 text-sm font-medium text-white transition-colors duration-300 group-hover:text-zinc-100">
+                Créer votre première campagne
+              </span>
+            </span>
           </Link>
         </div>
       ) : (
@@ -204,16 +212,6 @@ export default async function DashboardPage() {
             );
           })}
         </div>
-        {campaigns.length > 3 && (
-          <div className="mt-4 text-center">
-            <Link
-              href="/dashboard/campaigns"
-              className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
-            >
-              Voir toutes les campagnes ({campaigns.length}) →
-            </Link>
-          </div>
-        )}
         </>
       )}
     </div>
