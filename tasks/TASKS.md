@@ -66,6 +66,20 @@ Ordre d'implémentation par ROI décroissant.
 
 ---
 
+## Phase 4 — CRM Upgrade (Vision cible)
+
+Objectif : faire evoluer le dashboard lead-gen vers un vrai CRM commercial Kames, email-first, avec calendrier, data, timeline conversations et inbox centralisee.
+
+| # | Tâche | Priorité | Statut | Fichier |
+|---|---|---|---|---|
+| 026 | Templates v2 avec support video + preview enrichie | 🔴 P1 | ⏳ | [TASK-026.md](./TASK-026.md) |
+| 027 | Calendar / Meetings en lecture seule via Calendly | 🔴 P1 | ⏳ | [TASK-027.md](./TASK-027.md) |
+| 028 | Onglet Data business + marketing + commercial | 🔴 P1 | ⏳ | [TASK-028.md](./TASK-028.md) |
+| 029 | Timeline conversations unifiee sur fiche lead | 🟠 P2 | ⏳ | [TASK-029.md](./TASK-029.md) |
+| 030 | Unified Inbox en lecture centralisee | 🟡 P3 | ⏳ | [TASK-030.md](./TASK-030.md) |
+
+---
+
 ## Contexte technique
 
 **Fichiers clés à connaître avant de modifier quoi que ce soit :**
@@ -74,12 +88,16 @@ Ordre d'implémentation par ROI décroissant.
 lib/sheets.ts                               ← Types + parsers (Campaign, Lead)
 app/dashboard/layout.tsx                    ← Sidebar (Server Component, lit les campagnes)
 app/dashboard/page.tsx                      ← Dashboard home (KPIs + liste campagnes)
+app/dashboard/templates/page.tsx            ← Vue Templates par campagne
+app/dashboard/templates/TemplatesEditor.tsx ← Editeur templates V1 deja en place
 app/dashboard/campaigns/[campaign_id]/page.tsx     ← Détail campagne + tableau leads
 app/dashboard/campaigns/[campaign_id]/leads/[lead_id]/page.tsx  ← Fiche lead
 app/api/campaigns/route.ts                  ← GET liste + POST création
 app/api/campaigns/[id]/route.ts             ← GET détail avec leads filtrés
 app/api/leads/route.ts                      ← GET leads (filtrable ?campaign_id=)
 app/api/stats/route.ts                      ← KPIs agrégés
+app/api/templates/route.ts                  ← Sauvegarde templates V1
+lib/email-templates.ts                      ← Modèle de templates email
 ```
 
 **Design system à respecter :**
