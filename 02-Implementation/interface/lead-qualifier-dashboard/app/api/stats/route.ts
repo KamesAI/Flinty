@@ -1,23 +1,31 @@
 import { NextResponse } from "next/server";
-import { getSheetData, parseCampaigns, parseLeads } from "@/lib/sheets";
+import { buildDataDashboardModel, type AnalyticsPeriod, type AnalyticsStatusGroup } from "@/lib/analytics";
+import { getAnalyticsDailySnapshots, getMeetings, getSheetData, parseCampaigns, parseLeads } from "@/lib/sheets";
 
-export async function GET() {
-  const [campRows, leadRows] = await Promise.all([
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url);
+  const period = (searchParams.get("period") as AnalyticsPeriod | null) ?? "30d";
+  const statusGroup =
+    (searchParams.get("status_group") as AnalyticsStatusGroup | null) ?? "all";
+  const campaignId = searchParams.get("campaign_id") ?? undefined;
+
+  const [campRows, leadRows, meetings, snapshots] = await Promise.all([
     getSheetData("Campagnes!A:L"),
-    getSheetData("Leads_Qualified!A:O"),
+    getSheetData("Leads_Qualified!A:P"),
+    getMeetings(),
+    getAnalyticsDailySnapshots(),
   ]);
   const campaigns = parseCampaigns(campRows);
   const leads = parseLeads(leadRows);
+  const model = buildDataDashboardModel({
+    campaigns,
+    leads,
+    meetings,
+    snapshots,
+    selectedCampaignId: campaignId,
+    statusGroup,
+    period,
+  });
 
-  const stats = {
-    total_campaigns: campaigns.length,
-    total_leads_qualified: leads.length,
-    total_emails: campaigns.reduce((s, c) => s + parseInt(c.emails_envoyés || "0"), 0),
-    avg_open_rate: campaigns.length
-      ? Math.round(campaigns.reduce((s, c) => s + parseFloat(c.taux_ouverture || "0"), 0) / campaigns.length)
-      : 0,
-    replied: leads.filter((l) => l.statut_email === "replied").length,
-    bounced: leads.filter((l) => l.statut_email === "bounced").length,
-  };
-  return NextResponse.json(stats);
+  return NextResponse.json(model);
 }

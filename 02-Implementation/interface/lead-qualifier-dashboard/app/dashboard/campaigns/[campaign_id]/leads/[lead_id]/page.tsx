@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { getSheetData, parseCampaigns, parseLeads } from "@/lib/sheets";
+import { getSheetData, parseCampaigns, parseLeads, getLeadEmailEvents, getLeadMeetings } from "@/lib/sheets";
+import { buildTimeline, getTimelineIcon, getTimelineChannelBadge } from "@/lib/timeline";
 import { notFound } from "next/navigation";
 
 export default async function LeadDetailPage({
@@ -18,11 +19,18 @@ export default async function LeadDetailPage({
   const lead = parseLeads(leadRows).find((l) => l.lead_id === lead_id);
   if (!lead || !campaign) notFound();
 
+  const [emailEvents, meetings] = await Promise.all([
+    getLeadEmailEvents(lead_id),
+    getLeadMeetings(lead_id),
+  ]);
+
+  const timeline = buildTimeline(emailEvents, meetings);
+
   const score = parseInt(lead.score);
   const scoreColor = score >= 70 ? "text-green-400" : score >= 50 ? "text-yellow-400" : "text-zinc-400";
 
   return (
-    <div className="p-8 max-w-3xl">
+    <div className="p-4 sm:p-8 max-w-3xl">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-zinc-500 mb-6">
         <Link href="/dashboard" className="hover:text-white">Campagnes</Link>
@@ -46,7 +54,7 @@ export default async function LeadDetailPage({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {[
             { label: "Contact", value: lead.prénom },
             { label: "Poste", value: lead.poste },
@@ -72,25 +80,57 @@ export default async function LeadDetailPage({
         </div>
       </div>
 
-      {/* Analyse Claude */}
-      {lead.raison_score && (
-        <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-6 mb-6">
-          <p className="text-xs font-semibold tracking-widest uppercase text-zinc-500 mb-3">Analyse Claude</p>
-          <p className="text-white text-sm leading-relaxed">{lead.raison_score}</p>
-          <p className="text-zinc-600 text-xs mt-3">
-            Score : <span className={`font-bold ${scoreColor}`}>{lead.score}/100</span>
-          </p>
-        </div>
-      )}
 
-      {/* Email history */}
+      {/* Timeline unifiée */}
       <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-6">
-        <p className="text-xs font-semibold tracking-widest uppercase text-zinc-500 mb-4">Historique emails</p>
-        <p className="text-zinc-600 text-sm">Statut actuel : <span className="text-white">{lead.statut_email}</span></p>
-        {lead.last_email_sent_at && (
-          <p className="text-zinc-600 text-sm mt-1">Dernier email : <span className="text-white">{lead.last_email_sent_at}</span></p>
+        <div className="flex items-center justify-between mb-4">
+          <p className="text-xs font-semibold tracking-widest uppercase text-zinc-500">
+            Timeline interactions
+          </p>
+          <span className="text-xs text-zinc-600">
+            {timeline.length} événement{timeline.length !== 1 ? "s" : ""}
+          </span>
+        </div>
+        {timeline.length === 0 ? (
+          <p className="text-zinc-600 text-sm">Aucune interaction enregistrée.</p>
+        ) : (
+          <ol className="relative border-l border-zinc-800 ml-2 space-y-5">
+            {timeline.map((item) => {
+              const date = new Date(item.timestamp);
+              const formattedDate = date.toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" });
+              const formattedTime = date.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+              const icon = getTimelineIcon(item);
+              const badge = getTimelineChannelBadge(item);
+              return (
+                <li key={item.id} className="ml-4">
+                  <div className="absolute -left-1.5 w-3 h-3 rounded-full bg-zinc-700 border border-zinc-600" />
+                  <div className="flex items-start gap-3">
+                    <span className="text-base leading-none mt-0.5">{icon}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-white text-sm font-medium">{item.title}</p>
+                        <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${badge.classes}`}>
+                          {badge.label}
+                        </span>
+                        {item.subtitle && (
+                          <span className="text-xs bg-zinc-800 text-zinc-400 px-1.5 py-0.5 rounded">
+                            {item.subtitle}
+                          </span>
+                        )}
+                        {item.status && (
+                          <span className="text-xs bg-zinc-800 text-zinc-500 px-1.5 py-0.5 rounded">
+                            {item.status}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-zinc-500 text-xs mt-0.5">{formattedDate} à {formattedTime}</p>
+                    </div>
+                  </div>
+                </li>
+              );
+            })}
+          </ol>
         )}
-        <p className="text-zinc-700 text-xs mt-4">Timeline complète disponible après intégration de l&apos;onglet Email_Events.</p>
       </div>
     </div>
   );

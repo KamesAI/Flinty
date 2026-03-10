@@ -1,7 +1,7 @@
 # TASK-026 — Templates v2 avec support video + preview enrichie
 
 **Priorité** : 🔴 P1 — Levier direct sur les performances de prospection
-**Statut** : ⏳ À faire
+**Statut** : ✅ Complété
 **Nécessite** : Base templates V1 deja existante (`/dashboard/templates`, `Email_Templates`, `api/templates`)
 **Référence** : `clients/lead-gen/CRMupgrade.md` sections `3.B`, `4.6`, `11`, `13`
 
@@ -105,17 +105,17 @@ Sans implementer toute l'analytics ici, il faut prevoir les champs qui permettro
 
 ## Must Have
 
-- [ ] Stockage Google Sheets compatible V2 pour les templates enrichis
-- [ ] Support `preview_text`, `CTA` et `media`
-- [ ] Bloc video base sur miniature cliquable
-- [ ] Preview visuelle dans `/dashboard/templates`
-- [ ] Compatibilite avec les templates V1 deja saisis
+- [x] Stockage Google Sheets compatible V2 pour les templates enrichis
+- [x] Support `preview_text`, `CTA` et `media`
+- [x] Bloc video base sur miniature cliquable
+- [x] Preview visuelle dans `/dashboard/templates`
+- [x] Compatibilite avec les templates V1 deja saisis
 
 ## Should Have
 
-- [ ] Indicateur visuel `template simple` vs `template enrichi`
-- [ ] Aide inline pour expliquer la bonne pratique email-safe video
-- [ ] Notes internes par template
+- [x] Indicateur visuel `template simple` vs `template enrichi`
+- [x] Aide inline pour expliquer la bonne pratique email-safe video
+- [x] Notes internes par template
 
 ## Must NOT
 
@@ -143,12 +143,12 @@ Optionnel selon approche retenue :
 
 ## Critères de validation
 
-- [ ] Une campagne peut enregistrer un template enrichi sans erreur
-- [ ] La page `Templates` affiche un preview texte + visuel plus fidele
-- [ ] Un bloc video peut etre configure avec miniature + URL cible
-- [ ] Les templates V1 existants restent visibles et modifiables
-- [ ] L'API `/api/templates` refuse les payloads incomplets ou invalides
-- [ ] Aucun email template n'essaie de lire un player video embarque
+- [x] Une campagne peut enregistrer un template enrichi sans erreur
+- [x] La page `Templates` affiche un preview texte + visuel plus fidele
+- [x] Un bloc video peut etre configure avec miniature + URL cible
+- [x] Les templates V1 existants restent visibles et modifiables
+- [x] L'API `/api/templates` refuse les payloads incomplets ou invalides
+- [x] Aucun email template n'essaie de lire un player video embarque
 
 ---
 

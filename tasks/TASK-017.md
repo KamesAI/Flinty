@@ -1,7 +1,7 @@
 # TASK-017 — Timeline email (onglet Email_Events)
 
 **Priorité** : 🟠 Impact fort long terme
-**Statut** : ⏳ À faire
+**Statut** : ✅ Complété
 **Nécessite** : Ajout onglet `Email_Events` dans le GSheet + MAJ WF3/WF4/WF5
 
 ---

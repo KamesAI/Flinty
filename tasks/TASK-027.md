@@ -1,7 +1,7 @@
 # TASK-027 — Calendar / Meetings en lecture seule via Calendly
 
 **Priorité** : 🔴 P1 — Vision immediate des rendez-vous issus des campagnes
-**Statut** : ⏳ À faire
+**Statut** : ✅ Complété
 **Nécessite** : Google Sheets comme source de verite + synchro Calendly via n8n ou route d'ingestion
 **Référence** : `clients/lead-gen/CRMupgrade.md` sections `3.D`, `4.5`, `11`, `13`
 
@@ -78,18 +78,18 @@ Mettre a jour la sidebar et, si possible, le dashboard home avec :
 
 ## Must Have
 
-- [ ] Onglet `Meetings` cree dans Google Sheets
-- [ ] Flux de synchro Calendly defini et documente
-- [ ] API `/api/meetings` ou equivalent de lecture
-- [ ] Page `/dashboard/meetings` fonctionnelle
-- [ ] Vue concentree sur les RDV a venir de la semaine
-- [ ] Lien lead/campagne visible quand la donnee existe
+- [x] Onglet `Meetings` cree dans Google Sheets
+- [x] Flux de synchro Calendly defini et documente
+- [x] API `/api/meetings` ou equivalent de lecture
+- [x] Page `/dashboard/meetings` fonctionnelle
+- [x] Vue concentree sur les RDV a venir de la semaine
+- [x] Lien lead/campagne visible quand la donnee existe
 
 ## Should Have
 
-- [ ] Filtres simples par statut et campagne
-- [ ] Badge source `Calendly`
-- [ ] Widget `Upcoming meetings` sur le dashboard
+- [x] Filtres simples par statut et campagne
+- [x] Badge source `Calendly`
+- [x] Widget `Upcoming meetings` sur le dashboard
 
 ## Must NOT
 
@@ -117,12 +117,12 @@ Optionnel selon implementation :
 
 ## Critères de validation
 
-- [ ] Les rendez-vous Calendly sont lisibles dans l'app via Google Sheets
-- [ ] La page `Meetings` affiche les RDV de la semaine sans erreur
-- [ ] Chaque meeting affiche au moins date, heure, prospect, statut et campagne
-- [ ] Un clic permet d'ouvrir la fiche lead si `lead_id` est connu
-- [ ] La sidebar donne acces au module
-- [ ] Aucun bouton de creation / edition / replanification n'est propose
+- [x] Les rendez-vous Calendly sont lisibles dans l'app via Google Sheets
+- [x] La page `Meetings` affiche les RDV de la semaine sans erreur
+- [x] Chaque meeting affiche au moins date, heure, prospect, statut et campagne
+- [x] Un clic permet d'ouvrir la fiche lead si `lead_id` est connu
+- [x] La sidebar donne acces au module
+- [x] Aucun bouton de creation / edition / replanification n'est propose
 
 ---
 

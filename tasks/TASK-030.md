@@ -1,7 +1,7 @@
 # TASK-030 — Unified Inbox en lecture centralisee
 
 **Priorité** : 🟡 P3 — Centraliser les reponses et priorites d'action
-**Statut** : ⏳ À faire
+**Statut** : ✅ Complété
 **Nécessite** : `TASK-029` pour la timeline unifiee + donnees de conversations/messages exploitables
 **Référence** : `clients/lead-gen/CRMupgrade.md` sections `4.4`, `8.1`, `11`, `13`
 

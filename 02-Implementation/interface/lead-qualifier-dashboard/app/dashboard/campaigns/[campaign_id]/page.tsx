@@ -49,7 +49,7 @@ export default async function CampaignDetailPage({
   const bounced = leads.filter((l) => l.statut_email === "bounced").length;
 
   return (
-    <div className="p-8">
+    <div className="p-4 sm:p-8">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-zinc-500 mb-6">
         <Link href="/dashboard" className="hover:text-white transition-colors">Campagnes</Link>
@@ -96,7 +96,7 @@ export default async function CampaignDetailPage({
       })()}
 
       {/* KPIs */}
-      <div className="grid grid-cols-6 gap-3 mb-8">
+      <div className="grid grid-cols-3 sm:grid-cols-6 gap-3 mb-8">
         {[
           { label: "LEADS RAW",     value: campaign.total_leads_raw },
           { label: "QUALIFIÉS",     value: campaign.total_leads_qualified },
@@ -156,8 +156,37 @@ export default async function CampaignDetailPage({
         </span>
       </div>
 
-      {/* Leads table */}
-      <div className="bg-zinc-950 border border-zinc-800 rounded-xl overflow-hidden">
+      {/* Leads — mobile cards */}
+      <div className="sm:hidden space-y-2">
+        {filtered.length === 0 ? (
+          <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-8 text-center text-zinc-600 text-sm">
+            Aucun lead pour ces filtres
+          </div>
+        ) : (
+          filtered.map((lead) => {
+            const badge = STATUS_BADGE[lead.statut_email] ?? STATUS_BADGE.new;
+            const score = parseInt(lead.score);
+            const scoreColor = score >= 70 ? "text-green-400" : score >= 50 ? "text-yellow-400" : "text-zinc-400";
+            return (
+              <Link
+                key={lead.lead_id}
+                href={`/dashboard/campaigns/${campaign_id}/leads/${lead.lead_id}`}
+                className="block bg-zinc-950 border border-zinc-800 rounded-xl p-4 hover:border-zinc-600 transition-colors"
+              >
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <p className="text-white font-medium text-sm">{lead.nom}</p>
+                  <span className={`font-bold text-sm shrink-0 ${scoreColor}`}>{lead.score}/100</span>
+                </div>
+                <p className="text-zinc-500 text-xs mb-2">{lead.poste} · {lead.ville}</p>
+                <span className={`text-xs px-2 py-0.5 rounded font-medium ${badge.className}`}>{badge.label}</span>
+              </Link>
+            );
+          })
+        )}
+      </div>
+
+      {/* Leads — desktop table */}
+      <div className="hidden sm:block bg-zinc-950 border border-zinc-800 rounded-xl overflow-hidden">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-zinc-800">

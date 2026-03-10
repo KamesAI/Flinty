@@ -13,7 +13,7 @@ export async function POST(
     return NextResponse.json({ success: false, message: "N8N_WF3_WEBHOOK non configuré" }, { status: 500 });
   }
 
-  const rows = await getSheetData("Leads_Qualified!A:O");
+  const rows = await getSheetData("Leads_Qualified!A:P");
   const leads = parseLeads(rows).filter(
     (l) => l.campaign_id === campaign_id && l.statut_email === "new"
   );

@@ -60,9 +60,9 @@ Ordre d'implémentation par ROI décroissant.
 | # | Tâche | Priorité | Statut | Fichier |
 |---|---|---|---|---|
 | 016 | Déploiement Vercel (CI/CD + env vars) | 🔴 | ⏳ | [TASK-016.md](./TASK-016.md) |
-| 017 | Timeline email (onglet Email_Events GSheet) | 🟠 | ⏳ | [TASK-017.md](./TASK-017.md) |
+| 017 | Timeline email (onglet Email_Events GSheet) | 🟠 | ✅ | [TASK-017.md](./TASK-017.md) |
 | 018 | Actions manuelles sur leads (changer statut, forcer relance) | 🟠 | ⏳ | [TASK-018.md](./TASK-018.md) |
-| 019 | Mode mobile responsive | 🟡 | ⏳ | [TASK-019.md](./TASK-019.md) |
+| 019 | Mode mobile responsive | 🟡 | ✅ | [TASK-019.md](./TASK-019.md) |
 
 ---
 
@@ -72,11 +72,11 @@ Objectif : faire evoluer le dashboard lead-gen vers un vrai CRM commercial Kames
 
 | # | Tâche | Priorité | Statut | Fichier |
 |---|---|---|---|---|
-| 026 | Templates v2 avec support video + preview enrichie | 🔴 P1 | ⏳ | [TASK-026.md](./TASK-026.md) |
-| 027 | Calendar / Meetings en lecture seule via Calendly | 🔴 P1 | ⏳ | [TASK-027.md](./TASK-027.md) |
-| 028 | Onglet Data business + marketing + commercial | 🔴 P1 | ⏳ | [TASK-028.md](./TASK-028.md) |
-| 029 | Timeline conversations unifiee sur fiche lead | 🟠 P2 | ⏳ | [TASK-029.md](./TASK-029.md) |
-| 030 | Unified Inbox en lecture centralisee | 🟡 P3 | ⏳ | [TASK-030.md](./TASK-030.md) |
+| 026 | Templates v2 avec support video + preview enrichie | 🔴 P1 | ✅ | [TASK-026.md](./TASK-026.md) |
+| 027 | Calendar / Meetings en lecture seule via Calendly | 🔴 P1 | ✅ | [TASK-027.md](./TASK-027.md) |
+| 028 | Onglet Data business + marketing + commercial | 🔴 P1 | ✅ | [TASK-028.md](./TASK-028.md) |
+| 029 | Timeline conversations unifiee sur fiche lead | 🟠 P2 | ✅ | [TASK-029.md](./TASK-029.md) |
+| 030 | Unified Inbox en lecture centralisee | 🟡 P3 | ✅ | [TASK-030.md](./TASK-030.md) |
 
 ---
 

@@ -1,7 +1,7 @@
 # TASK-028 — Onglet Data business + marketing + commercial
 
 **Priorité** : 🔴 P1 — Tour de controle du CRM Kames
-**Statut** : ⏳ À faire
+**Statut** : ✅ Complété
 **Nécessite** : Donnees campagnes/leads existantes +, idealement, `TASK-026` et `TASK-027` pour enrichir les analyses
 **Référence** : `clients/lead-gen/CRMupgrade.md` sections `3.E`, `5`, `11`, `13`
 
@@ -86,17 +86,17 @@ La page doit afficher, quand la donnee existe :
 
 ## Must Have
 
-- [ ] Nouvelle page `/dashboard/data`
-- [ ] Vue active + archivee
-- [ ] 3 axes lisibles : business / marketing / commercial
-- [ ] KPIs globaux fiables a partir des donnees disponibles
-- [ ] Filtres minimum par campagne, statut et periode
-- [ ] UI homogène avec le design system noir/orange existant
+- [x] Nouvelle page `/dashboard/data`
+- [x] Vue active + archivee
+- [x] 3 axes lisibles : business / marketing / commercial
+- [x] KPIs globaux fiables a partir des donnees disponibles
+- [x] Filtres minimum par campagne, statut et periode
+- [x] UI homogène avec le design system noir/orange existant
 
 ## Should Have
 
 - [ ] Comparaison periode courante vs periode precedente
-- [ ] Tableau des meilleurs templates
+- [x] Tableau des meilleurs templates
 - [ ] Mini-funnel global
 - [ ] Export CSV des donnees filtrees
 
@@ -127,12 +127,12 @@ Optionnel selon implementation :
 
 ## Critères de validation
 
-- [ ] La sidebar permet d'ouvrir `/dashboard/data`
-- [ ] Les campagnes archivees sont visibles dans l'analyse
-- [ ] Les sections `Business`, `Marketing`, `Commercial` sont clairement distinctes
-- [ ] Les KPIs se chargent sans erreur a partir de Google Sheets
-- [ ] Les filtres changent bien les tableaux et cards affiches
-- [ ] La page reste lisible meme avec peu de donnees
+- [x] La sidebar permet d'ouvrir `/dashboard/data`
+- [x] Les campagnes archivees sont visibles dans l'analyse
+- [x] Les sections `Business`, `Marketing`, `Commercial` sont clairement distinctes
+- [x] Les KPIs se chargent sans erreur a partir de Google Sheets
+- [x] Les filtres changent bien les tableaux et cards affiches
+- [x] La page reste lisible meme avec peu de donnees
 
 ---
 

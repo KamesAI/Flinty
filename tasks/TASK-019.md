@@ -1,7 +1,7 @@
 # TASK-019 — Mode mobile responsive
 
 **Priorité** : 🟡 Backlog
-**Statut** : ⏳ À faire
+**Statut** : ✅ Complété
 
 ---
 

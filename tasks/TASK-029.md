@@ -1,7 +1,7 @@
 # TASK-029 — Timeline conversations unifiee sur fiche lead
 
 **Priorité** : 🟠 P2 — Vue contextuelle lead par lead
-**Statut** : ⏳ À faire
+**Statut** : ✅ Complété
 **Nécessite** : `TASK-017` pour la timeline email + `TASK-027` si les meetings doivent remonter dans la meme chronologie
 **Référence** : `clients/lead-gen/CRMupgrade.md` sections `3.C`, `4.4`, `11`, `13`
 

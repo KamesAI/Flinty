@@ -1,23 +1,14 @@
 import { NextResponse } from "next/server";
 import { saveCampaignEmailTemplates } from "@/lib/sheets";
-import { EMAIL_TEMPLATE_SECTIONS, type EmailTemplateEntry } from "@/lib/email-templates";
+import {
+  normalizeTemplateEntryInput,
+  validateTemplateEntryInput,
+  type EmailTemplateEntryInput,
+} from "@/lib/email-templates";
 
-function isValidTemplateEntry(entry: unknown): entry is Omit<EmailTemplateEntry, "campaign_id" | "updated_at"> {
+function isValidTemplateEntry(entry: unknown): entry is EmailTemplateEntryInput {
   if (!entry || typeof entry !== "object") return false;
-
-  const candidate = entry as Record<string, unknown>;
-  const allowedPairs = EMAIL_TEMPLATE_SECTIONS.flatMap((section) =>
-    section.variants.map((variant) => `${section.key}:${variant.key}`)
-  );
-
-  return (
-    typeof candidate.sequence_key === "string" &&
-    typeof candidate.variant_key === "string" &&
-    typeof candidate.label === "string" &&
-    typeof candidate.subject === "string" &&
-    typeof candidate.body === "string" &&
-    allowedPairs.includes(`${candidate.sequence_key}:${candidate.variant_key}`)
-  );
+  return validateTemplateEntryInput(entry as Partial<EmailTemplateEntryInput>).valid;
 }
 
 export async function POST(req: Request) {
@@ -39,6 +30,7 @@ export async function POST(req: Request) {
     );
   }
 
-  const templates = await saveCampaignEmailTemplates(campaignId, entries);
+  const normalizedEntries = entries.map((entry) => normalizeTemplateEntryInput(entry));
+  const templates = await saveCampaignEmailTemplates(campaignId, normalizedEntries);
   return NextResponse.json({ success: true, templates });
 }

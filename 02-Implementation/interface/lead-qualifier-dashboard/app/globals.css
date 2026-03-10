@@ -12,3 +12,85 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+.dashboard-theme-root {
+  --dashboard-app-bg: #050506;
+  --dashboard-card-bg: #09090b;
+  --dashboard-card-bg-muted: #111113;
+  --dashboard-input-bg: #050506;
+  --dashboard-border: rgba(255, 255, 255, 0.08);
+  --dashboard-border-strong: rgba(255, 255, 255, 0.16);
+  --dashboard-text-primary: #ffffff;
+  --dashboard-text-secondary: #a1a1aa;
+  --dashboard-text-muted: #71717a;
+}
+
+.dashboard-theme-root[data-dashboard-theme="light"] {
+  --dashboard-app-bg: #f3f3f0;
+  --dashboard-card-bg: #ffffff;
+  --dashboard-card-bg-muted: #f7f7f5;
+  --dashboard-input-bg: #ffffff;
+  --dashboard-border: rgba(15, 23, 42, 0.08);
+  --dashboard-border-strong: rgba(15, 23, 42, 0.14);
+  --dashboard-text-primary: #141414;
+  --dashboard-text-secondary: #5f5f66;
+  --dashboard-text-muted: #8a8a93;
+}
+
+.dashboard-theme-root [class*="bg-zinc-950"] {
+  background-color: var(--dashboard-card-bg) !important;
+}
+
+.dashboard-theme-root [class*="bg-zinc-900"] {
+  background-color: var(--dashboard-card-bg-muted) !important;
+}
+
+.dashboard-theme-root [class*="bg-zinc-800"] {
+  background-color: color-mix(in srgb, var(--dashboard-card-bg-muted) 82%, black 18%) !important;
+}
+
+.dashboard-theme-root [class*="bg-black"] {
+  background-color: var(--dashboard-input-bg) !important;
+}
+
+.dashboard-theme-root [class*="border-zinc-800"],
+.dashboard-theme-root [class*="border-zinc-700"] {
+  border-color: var(--dashboard-border) !important;
+}
+
+.dashboard-theme-root [class*="text-zinc-600"],
+.dashboard-theme-root [class*="text-zinc-500"] {
+  color: var(--dashboard-text-muted) !important;
+}
+
+.dashboard-theme-root [class*="text-zinc-400"],
+.dashboard-theme-root [class*="text-zinc-300"] {
+  color: var(--dashboard-text-secondary) !important;
+}
+
+.dashboard-theme-root [class*="text-white"] {
+  color: var(--dashboard-text-primary) !important;
+}
+
+.dashboard-theme-root [class*="hover:border-zinc-600"]:hover,
+.dashboard-theme-root [class*="hover:border-zinc-500"]:hover,
+.dashboard-theme-root [class*="hover:border-zinc-700"]:hover {
+  border-color: var(--dashboard-border-strong) !important;
+}
+
+.dashboard-theme-root [class*="hover:text-white"]:hover {
+  color: var(--dashboard-text-primary) !important;
+}
+
+.dashboard-theme-root [class*="hover:bg-zinc-900"]:hover {
+  background-color: var(--dashboard-card-bg-muted) !important;
+}
+
+.dashboard-theme-root .dashboard-keep-white {
+  color: #ffffff !important;
+}
+
+.dashboard-theme-root [class*="bg-gradient-to-r"][class*="from-orange-500"][class*="to-pink-500"],
+.dashboard-theme-root [class*="bg-gradient-to-r"][class*="from-orange-500"][class*="to-pink-500"] * {
+  color: #ffffff !important;
+}
