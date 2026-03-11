@@ -7,7 +7,7 @@
 
 ## Ce que c'est
 
-Un CRM interne de prospection cold email, utilisé par Thomas (Kames AI) pour piloter ses campagnes B2B de génération de leads.
+Un CRM interne de prospection cold email, utilisé par Thomas (Kames AI) pour piloter ses campagnes B2B de prospection commerciale.
 
 **Principe :** Google Sheets comme base de données, n8n comme moteur d'automatisation, Next.js comme interface. Pas de SQL, pas de backend custom.
 

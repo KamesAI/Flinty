@@ -43,7 +43,7 @@ const iconMap: Record<DashboardSidebarIcon, typeof Home> = {
 
 const themeStyles = {
   light: {
-    shell: "bg-[#f1f1ef] text-[#111111]",
+    shell: "bg-[#fafafa] text-[#111111]",
     rail: "bg-white text-[#6b6b69] border-black/5 shadow-[0_18px_45px_rgba(15,23,42,0.06)]",
     panel: "bg-white text-[#111111] border-black/5 shadow-[0_18px_45px_rgba(15,23,42,0.06)]",
     logo: "bg-black text-white",
@@ -52,10 +52,10 @@ const themeStyles = {
     divider: "border-black/6",
     search: "bg-[#fbfbfa] border-black/8 text-[#111111] placeholder:text-[#aaaaa7]",
     railButton: "text-[#666663] hover:bg-[#f4f4f2] hover:text-black",
-    railButtonActive: "bg-[#f5f5f3] text-black shadow-[inset_0_0_0_1px_rgba(0,0,0,0.05)]",
+    railButtonActive: "bg-[#f5f5f3] text-[#FFA318] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.05)]",
     item: "text-[#6d6d69] hover:bg-[#f4f4f2] hover:text-black",
-    itemActive: "bg-[#f5f5f3] text-black shadow-[inset_0_0_0_1px_rgba(0,0,0,0.04)]",
-    main: "bg-[#f1f1ef] text-[#111111]",
+    itemActive: "bg-[#f5f5f3] text-[#FFA318] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.04)]",
+    main: "bg-[#fafafa] text-[#111111]",
     overlay: "bg-black/40",
   },
   dark: {
@@ -67,10 +67,10 @@ const themeStyles = {
     mutedText: "text-[#737379]",
     divider: "border-white/10",
     search: "bg-[#141416] border-white/10 text-white placeholder:text-[#66666b]",
-    railButton: "text-[#76767a] hover:bg-[#101012] hover:text-white",
-    railButtonActive: "bg-[#121214] text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]",
-    item: "text-[#8d8d92] hover:bg-[#101012] hover:text-white",
-    itemActive: "bg-[#121214] text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]",
+    railButton: "text-white hover:bg-[#101012]",
+    railButtonActive: "bg-[#121214] text-[#FFA318] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]",
+    item: "text-white hover:bg-[#101012]",
+    itemActive: "bg-[#121214] text-[#FFA318] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]",
     main: "bg-[#050506] text-white",
     overlay: "bg-black/70",
   },
@@ -81,8 +81,9 @@ function getInitialTheme(): DashboardTheme {
 }
 
 function isItemActive(item: DashboardSidebarItem, pathname: string): boolean {
-  if (item.href === "/dashboard") {
-    return pathname === "/dashboard";
+  // Sur /dashboard exact, seul l'item Dashboard (sans matchPrefixes) est actif
+  if (pathname === "/dashboard") {
+    return item.href === "/dashboard" && !item.matchPrefixes?.length;
   }
 
   if (item.matchPrefixes?.some((prefix) => pathname.startsWith(prefix))) {
@@ -282,7 +283,7 @@ function CompactSidebar({
 
       <button
         type="button"
-        className={`mt-5 flex h-10 w-10 items-center justify-center rounded-2xl transition-colors ${styles.railButtonActive}`}
+        className={`mt-5 flex h-10 w-10 items-center justify-center rounded-2xl transition-colors ${styles.railButton}`}
         aria-label="Search"
       >
         <Search className="h-[18px] w-[18px]" strokeWidth={1.8} />

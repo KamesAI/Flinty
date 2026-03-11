@@ -8,8 +8,10 @@ import {
   getWeekWindow,
   isMeetingWithinWindow,
 } from "@/lib/meetings";
-import { PremiumStatsCards } from "./PremiumStatsCards";
-import { TopCampaignsOverview } from "./TopCampaignsOverview";
+import type { CampaignRowProps } from "./CampaignRow";
+import { CampaignList } from "./CampaignList";
+import { PulseStats } from "./PulseStats";
+import { buildPulseStats } from "./pulse-stats";
 import { UpcomingMeetingsCarousel } from "./UpcomingMeetingsCarousel";
 
 export default async function DashboardPage() {
@@ -54,6 +56,32 @@ export default async function DashboardPage() {
   const topCampaigns = [...campaigns]
     .sort((a, b) => parseInt(b.total_leads_qualified || "0") - parseInt(a.total_leads_qualified || "0"))
     .slice(0, 3);
+  const campaignRows: CampaignRowProps[] = topCampaigns.map((campaign) => ({
+    name: campaign.nom,
+    subtitle: `${campaign.secteur} · ${campaign.offre_kames || "Prospection"} · ${campaign.localisation}`,
+    status:
+      campaign.statut === "active"
+        ? "active"
+        : campaign.statut === "completed"
+          ? "completed"
+          : campaign.statut === "paused"
+            ? "paused"
+            : "inactive",
+    stats: {
+      raw: parseInt(campaign.total_leads_raw || "0", 10) || 0,
+      qualified: parseInt(campaign.total_leads_qualified || "0", 10) || 0,
+      contacted: parseInt(campaign.emails_envoyés || "0", 10) || 0,
+      replies:
+        Math.round(
+          ((parseFloat(campaign.taux_réponse || "0") || 0) *
+            (parseInt(campaign.emails_envoyés || "0", 10) || 0)) /
+            100
+        ) || 0,
+    },
+    openRate: parseFloat(campaign.taux_ouverture || "0") || 0,
+    replyRate: parseFloat(campaign.taux_réponse || "0") || 0,
+    isGenerating: campaign.statut === "generating",
+  }));
   const carouselDays = buildMeetingCarouselDays(upcomingMeetings, new Date(), 10);
   const leadsById = new Map(leads.map((lead) => [lead.lead_id, lead]));
   const campaignsById = new Map(campaigns.map((campaign) => [campaign.campaign_id, campaign]));
@@ -89,7 +117,7 @@ export default async function DashboardPage() {
     <div className="p-4 sm:p-8">
       {/* Eyebrow + Title */}
       <div className="mb-6">
-        <p className="text-xs font-semibold tracking-widest uppercase text-orange-500 mb-1">Accueil</p>
+        <p className="text-xs font-semibold tracking-widest uppercase text-[#FFA318] mb-1">Accueil</p>
         <h1 className="text-3xl font-bold text-white">Dashboard principal</h1>
         <p className="text-zinc-500 text-sm mt-1">Pipeline de prospection automatisé Kames AI</p>
       </div>
@@ -150,18 +178,20 @@ export default async function DashboardPage() {
         </Link>
       </div>
 
-      <PremiumStatsCards
-        campaignsCount={campaigns.length}
-        repliedCount={repliedCount}
-        avgOpenRate={avgOpen}
-        meetingsCount={meetingsThisWeekCount}
+      <PulseStats
+        stats={buildPulseStats({
+          campaignsCount: campaigns.length,
+          repliedCount,
+          avgOpenRate: avgOpen,
+          meetingsCount: meetingsThisWeekCount,
+        })}
       />
 
       <div className="mb-8">
         <div className="flex items-center justify-between gap-4 mb-4 flex-wrap">
           <div>
-            <p className="text-xs font-semibold tracking-widest uppercase text-orange-500 mb-1">
-              Upcoming meetings
+<p className="text-xs font-semibold tracking-widest uppercase text-[#FFA318] mb-1">
+            Upcoming meetings
             </p>
             <p className="text-sm text-zinc-500">
               Vue rapide des prochains rendez-vous Calendly reliés au CRM.
@@ -169,9 +199,14 @@ export default async function DashboardPage() {
           </div>
           <Link
             href="/dashboard/meetings"
-            className="px-4 py-2 rounded-lg border border-zinc-700 text-zinc-300 text-sm hover:text-white hover:border-zinc-500 transition-colors"
+            className="group relative inline-flex items-center justify-center"
           >
-            Voir tous les meetings
+            <span className="pointer-events-none absolute inset-x-5 inset-y-1.5 rounded-full bg-orange-500/30 blur-xl transition-opacity duration-300 group-hover:opacity-90" />
+            <span className="relative inline-flex rounded-full bg-gradient-to-r from-orange-500 via-orange-400 to-white p-[1px]">
+              <span className="inline-flex min-w-[170px] items-center justify-center rounded-full bg-black px-5 py-2.5 text-sm font-medium text-white transition-colors duration-300 group-hover:text-zinc-100">
+                Voir tous les meetings
+              </span>
+            </span>
           </Link>
         </div>
 
@@ -195,9 +230,19 @@ export default async function DashboardPage() {
           </Link>
         </div>
       ) : (
-        <>
-        <TopCampaignsOverview campaigns={topCampaigns} />
-        </>
+        <div className="mb-8">
+          <div className="mb-4 flex items-center justify-between gap-4 flex-wrap">
+            <div>
+              <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-[#FFA318]">
+                Main campagnes
+              </p>
+              <p className="text-sm text-zinc-500">
+                Vue rapide du pipeline de prospection et des campagnes actives du CRM.
+              </p>
+            </div>
+          </div>
+          <CampaignList campaigns={campaignRows} />
+        </div>
       )}
     </div>
   );

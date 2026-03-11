@@ -1,0 +1,30 @@
+export function getCampaignRowThemeTokens() {
+  return {
+    surface: "var(--dashboard-card-bg)",
+    surfaceHover: "var(--dashboard-card-bg-muted)",
+    border: "var(--dashboard-border)",
+    borderStrong: "var(--dashboard-border-strong)",
+    textPrimary: "var(--dashboard-text-primary)",
+    textSecondary: "var(--dashboard-text-secondary)",
+    textMuted: "var(--dashboard-text-muted)",
+    stageTrack: "color-mix(in srgb, var(--dashboard-border) 72%, transparent)",
+    connectorTrack: "color-mix(in srgb, var(--dashboard-border) 88%, transparent)",
+    stageFills: {
+      raw: "color-mix(in srgb, var(--dashboard-text-secondary) 24%, transparent)",
+      qualified: "color-mix(in srgb, #60A5FA 28%, transparent)",
+      contacted: "color-mix(in srgb, #FFA318 22%, transparent)",
+      replies: "color-mix(in srgb, #FFA318 38%, transparent)",
+    },
+    carouselSurface: "color-mix(in srgb, var(--dashboard-card-bg) 96%, black 4%)",
+    pillBackground: "color-mix(in srgb, var(--dashboard-card-bg) 88%, transparent)",
+    ratePillBackground: "color-mix(in srgb, var(--dashboard-card-bg) 94%, transparent)",
+    mutedPillBackground: "color-mix(in srgb, var(--dashboard-card-bg-muted) 92%, transparent)",
+    generatingBackground: "color-mix(in srgb, #FFA318 10%, var(--dashboard-card-bg))",
+    generatingBorder: "color-mix(in srgb, #FFA318 18%, var(--dashboard-border))",
+    generatingText: "color-mix(in srgb, #FFA318 72%, var(--dashboard-text-primary))",
+    generatingDot: "#FFA318",
+    activeDot: "#10B981",
+    completedDot: "#7DD3FC",
+    inactiveDot: "color-mix(in srgb, var(--dashboard-text-secondary) 38%, transparent)",
+  };
+}
