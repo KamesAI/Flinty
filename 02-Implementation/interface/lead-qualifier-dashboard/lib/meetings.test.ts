@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   buildMeetingCarouselDays,
+  buildMeetingWeekDays,
   formatMeetingWeekLabel,
+  getIsoWeekNumber,
   getWeekWindow,
   isMeetingWithinWindow,
   parseMeetingRows,
@@ -90,6 +92,34 @@ describe("meeting week helpers", () => {
     const window = getWeekWindow(new Date("2026-03-09T12:00:00.000Z"));
 
     expect(formatMeetingWeekLabel(window.start, window.end)).toContain("mars");
+  });
+
+  it("calcule le numero ISO de la semaine courante", () => {
+    expect(getIsoWeekNumber(new Date("2026-03-12T12:00:00.000Z"))).toBe(11);
+  });
+
+  it("genere les 7 jours de la semaine courante avec le jour actif", () => {
+    const days = buildMeetingWeekDays(new Date("2026-03-12T12:00:00.000Z"));
+
+    expect(days).toHaveLength(7);
+    expect(days[0]).toMatchObject({
+      isoDate: "2026-03-09",
+      dayNumber: "09",
+      weekdayInitial: "L",
+      isCurrentDay: false,
+    });
+    expect(days[3]).toMatchObject({
+      isoDate: "2026-03-12",
+      dayNumber: "12",
+      weekdayInitial: "J",
+      isCurrentDay: true,
+    });
+    expect(days[6]).toMatchObject({
+      isoDate: "2026-03-15",
+      dayNumber: "15",
+      weekdayInitial: "D",
+      isCurrentDay: false,
+    });
   });
 
   it("genere un carrousel de jours consecutifs avec les compteurs de meetings", () => {

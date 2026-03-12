@@ -57,6 +57,7 @@ export default async function DashboardPage() {
     .sort((a, b) => parseInt(b.total_leads_qualified || "0") - parseInt(a.total_leads_qualified || "0"))
     .slice(0, 3);
   const campaignRows: CampaignRowProps[] = topCampaigns.map((campaign) => ({
+    href: `/dashboard/campaigns/${campaign.campaign_id}`,
     name: campaign.nom,
     subtitle: `${campaign.secteur} · ${campaign.offre_kames || "Prospection"} · ${campaign.localisation}`,
     status:

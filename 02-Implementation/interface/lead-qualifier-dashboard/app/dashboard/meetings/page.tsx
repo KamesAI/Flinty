@@ -1,6 +1,7 @@
 import Link from "next/link";
 import {
-  formatMeetingWeekLabel,
+  buildMeetingWeekDays,
+  getIsoWeekNumber,
   getMeetingSourceLabel,
   getMeetingStatusClasses,
   getMeetingStatusLabel,
@@ -53,6 +54,8 @@ export default async function MeetingsPage({
   }
 
   const weekWindow = getWeekWindow(week_start ? new Date(week_start) : new Date());
+  const weekNumber = getIsoWeekNumber(week_start ? new Date(week_start) : new Date());
+  const weekDays = buildMeetingWeekDays(week_start ? new Date(week_start) : new Date());
   const filteredMeetings = meetings
     .filter((meeting) => isMeetingWithinWindow(meeting, weekWindow))
     .filter((meeting) => (campaign_id ? meeting.campaign_id === campaign_id : true))
@@ -79,43 +82,47 @@ export default async function MeetingsPage({
             Vue commerciale en lecture seule des rendez-vous Calendly reliés aux leads et campagnes.
           </p>
         </div>
-        <div className="rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3">
-          <p className="text-[11px] uppercase tracking-widest text-zinc-500 mb-1">Fenêtre active</p>
-          <p className="text-sm font-medium text-white">
-            {formatMeetingWeekLabel(weekWindow.start, weekWindow.end)}
-          </p>
+        <div className="rounded-2xl border border-zinc-800 bg-zinc-950 px-4 py-3">
+          <div className="mb-3">
+            <span className="inline-flex h-8 items-center gap-2 rounded-full border border-amber-200/55 bg-[linear-gradient(180deg,#f9ca55_0%,#f0aa1f_60%,#da8200_100%)] px-3.5 text-[11px] font-medium text-amber-950 shadow-[inset_0_2px_0_rgba(255,246,202,0.65),inset_0_-2px_0_rgba(156,84,0,0.18),0_8px_18px_rgba(218,130,0,0.18)]">
+              <span>Semaine {weekNumber}</span>
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            {weekDays.map((day) => (
+              <div key={day.isoDate} className="flex flex-col items-center gap-1">
+                <span
+                  className={`flex h-11 w-11 flex-col items-center justify-center rounded-full border text-white transition-colors ${
+                    day.isCurrentDay
+                      ? "border-orange-400/70 bg-gradient-to-b from-orange-400/25 to-orange-500/10 shadow-[0_0_0_4px_rgba(251,146,60,0.08)]"
+                      : "border-zinc-800 bg-black"
+                  }`}
+                >
+                  <span
+                    className={`text-[9px] font-semibold uppercase leading-none ${
+                      day.isCurrentDay ? "text-orange-300" : "text-zinc-500"
+                    }`}
+                  >
+                    {day.weekdayInitial}
+                  </span>
+                  <span className="text-sm font-semibold leading-none mt-0.5">{day.dayNumber}</span>
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
-      <section className="bg-zinc-950 border border-zinc-800 rounded-2xl p-5">
-        <div className="flex items-center justify-between gap-4 flex-wrap">
-          <div>
-            <p className="text-sm font-medium text-white">Source de vérité Google Sheets</p>
-            <p className="text-sm text-zinc-500 mt-1">
-              Ingestion prévue : webhook Calendly → n8n → onglet `Meetings` → lecture Next.js.
-            </p>
-          </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="rounded-full bg-orange-500/15 px-3 py-1.5 text-xs text-orange-300">
-              Lecture seule
-            </span>
-            <span className="rounded-full bg-zinc-900 border border-zinc-800 px-3 py-1.5 text-xs text-zinc-300">
-              Source: Calendly
-            </span>
-          </div>
-        </div>
-      </section>
-
-      <section className="grid gap-4 md:grid-cols-3">
+<section className="grid gap-4 md:grid-cols-3">
         <div className="bg-zinc-950 border border-zinc-800 rounded-2xl p-5">
-          <p className="text-xs font-semibold tracking-widest uppercase text-zinc-500 mb-3">
+          <p className="text-xs font-semibold tracking-widest uppercase text-orange-400 mb-3">
             Cette semaine
           </p>
           <p className="text-3xl font-bold text-white">{filteredMeetings.length}</p>
           <p className="text-sm text-zinc-500 mt-1">rendez-vous visibles dans la vue</p>
         </div>
         <div className="bg-zinc-950 border border-zinc-800 rounded-2xl p-5">
-          <p className="text-xs font-semibold tracking-widest uppercase text-zinc-500 mb-3">
+          <p className="text-xs font-semibold tracking-widest uppercase text-orange-400 mb-3">
             Planifiés
           </p>
           <p className="text-3xl font-bold text-white">
@@ -124,7 +131,7 @@ export default async function MeetingsPage({
           <p className="text-sm text-zinc-500 mt-1">source prioritaire pour le suivi commercial</p>
         </div>
         <div className="bg-zinc-950 border border-zinc-800 rounded-2xl p-5">
-          <p className="text-xs font-semibold tracking-widest uppercase text-zinc-500 mb-3">
+          <p className="text-xs font-semibold tracking-widest uppercase text-orange-400 mb-3">
             Campagnes reliées
           </p>
           <p className="text-3xl font-bold text-white">
@@ -146,7 +153,7 @@ export default async function MeetingsPage({
           <section className="bg-zinc-950 border border-zinc-800 rounded-2xl p-6">
             <div className="flex items-center justify-between gap-4 flex-wrap mb-4">
               <div>
-                <p className="text-sm font-medium text-white">Agenda hebdo</p>
+                <p className="text-xs font-semibold tracking-widest uppercase text-orange-400">Agenda hebdo</p>
                 <p className="text-sm text-zinc-500 mt-1">
                   Pseudo-calendrier simple pour visualiser les rendez-vous de la semaine.
                 </p>
@@ -210,7 +217,7 @@ export default async function MeetingsPage({
 
           <section className="bg-zinc-950 border border-zinc-800 rounded-2xl p-6">
             <div className="mb-5">
-              <p className="text-sm font-medium text-white">Liste des rendez-vous</p>
+              <p className="text-xs font-semibold tracking-widest uppercase text-orange-400">Liste des rendez-vous</p>
               <p className="text-sm text-zinc-500 mt-1">
                 Vue détaillée avec contexte lead, campagne, statut et lien rapide.
               </p>

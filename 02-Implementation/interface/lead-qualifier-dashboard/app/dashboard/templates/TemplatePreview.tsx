@@ -46,15 +46,6 @@ export function TemplatePreview({ entry }: { entry: EmailTemplateEntry }) {
             Rendu email-safe avec CTA et media cliquable.
           </p>
         </div>
-        <span
-          className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-medium ${
-            entry.is_rich_template
-              ? "bg-orange-500/15 text-orange-300"
-              : "bg-zinc-800 text-zinc-300"
-          }`}
-        >
-          {entry.is_rich_template ? "Template enrichi" : "Template simple"}
-        </span>
       </div>
 
       <div className="bg-black border border-orange-400/20 rounded-2xl overflow-hidden">

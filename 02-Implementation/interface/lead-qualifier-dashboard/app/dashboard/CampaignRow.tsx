@@ -1,8 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { motion } from "framer-motion";
 import type { CSSProperties } from "react";
-import { ArrowUpRight, ChevronRight } from "lucide-react";
+import { ArrowRight, ArrowUpRight } from "lucide-react";
 import { buildCampaignCarouselItems } from "./campaign-row-carousel";
 import { buildCampaignRowModel, type CampaignRowProps } from "./campaign-row-model";
 import { getCampaignRowThemeTokens } from "./campaign-row-theme";
@@ -65,6 +66,7 @@ export function CampaignRow(props: CampaignRowProps) {
   const carouselItems = buildCampaignCarouselItems(model.stages);
 
   return (
+    <Link href={props.href} className="block">
     <motion.article
       initial="rest"
       animate="rest"
@@ -223,15 +225,15 @@ export function CampaignRow(props: CampaignRowProps) {
               rest: { opacity: 0, x: 4 },
               hover: { opacity: 1, x: 0, transition: { duration: 0.12, ease: "easeOut" } },
             }}
-            className="hidden items-center gap-1.5 text-sm font-medium md:inline-flex"
-            style={{ color: tokens.textPrimary }}
+            className="hidden h-8 w-8 items-center justify-center rounded-full md:inline-flex"
+            style={{ backgroundColor: tokens.border, color: "#FFA318" }}
           >
-            Ouvrir
-            <ChevronRight className="h-4 w-4" strokeWidth={1.9} />
+            <ArrowRight className="h-4 w-4" strokeWidth={1.9} />
           </motion.span>
         </div>
       </div>
     </motion.article>
+    </Link>
   );
 }
 

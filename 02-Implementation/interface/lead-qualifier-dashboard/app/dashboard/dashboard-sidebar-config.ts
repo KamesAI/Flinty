@@ -30,7 +30,7 @@ export const dashboardSidebarGroups: DashboardSidebarGroup[] = [
       {
         label: "Campagnes",
         icon: "campaigns",
-        href: "/dashboard",
+        href: "/dashboard/campaigns",
         matchPrefixes: ["/dashboard/campaigns"],
       },
       {

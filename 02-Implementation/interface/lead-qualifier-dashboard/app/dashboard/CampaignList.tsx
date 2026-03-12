@@ -3,6 +3,7 @@ import { getCampaignRowThemeTokens } from "./campaign-row-theme";
 
 const demoCampaigns: CampaignRowProps[] = [
   {
+    href: "/dashboard/campaigns/demo-1",
     name: "Outbound SaaS Bordeaux",
     subtitle: "SaaS B2B · Fondateur · Bordeaux",
     status: "active",
@@ -17,6 +18,7 @@ const demoCampaigns: CampaignRowProps[] = [
     isGenerating: true,
   },
   {
+    href: "/dashboard/campaigns/demo-2",
     name: "Cabinets RH Paris",
     subtitle: "Ressources humaines · Dirigeant · Paris",
     status: "active",
@@ -31,6 +33,7 @@ const demoCampaigns: CampaignRowProps[] = [
     isGenerating: false,
   },
   {
+    href: "/dashboard/campaigns/demo-3",
     name: "Studios créa Lille",
     subtitle: "Agences créatives · Founder · Lille",
     status: "inactive",
@@ -59,7 +62,7 @@ export function CampaignList({ campaigns = demoCampaigns }: { campaigns?: Campai
     >
       <div>
         {campaigns.map((campaign) => (
-          <CampaignRow key={`${campaign.name}-${campaign.subtitle}`} {...campaign} />
+          <CampaignRow key={campaign.href} {...campaign} />
         ))}
       </div>
     </section>

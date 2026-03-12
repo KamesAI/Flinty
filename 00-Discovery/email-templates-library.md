@@ -19,11 +19,12 @@ Je vois que tu travailles en solo dans {{secteur}}.
 
 La prospection prend du temps — messages LinkedIn, relances, appels… souvent pour peu de résultats concrets.
 
-J'ai créé Kames CRM pour automatiser ça : il identifie et qualifie les prospects pendant que tu travailles. Tu parles uniquement aux personnes prêtes à acheter.
+J'ai créé Kames CRM pour automatiser ça : il identifie et qualifie les prospects pendant que tu travailles. Tu parles uniquement aux personnes vraiment prêtes à acheter.
 
 Premiers retours : plusieurs clients signés en quelques semaines, sans y passer des heures.
+L'outil améliore drastiquement la qualité des leads, et le taux de closing de mes clients s'est nettement amélioré.
 
-Tu veux voir comment ça fonctionne pour {{secteur}} ?
+Est-ce que ça t'intéresse ?
 
 Thomas, Kames AI
 
@@ -39,6 +40,8 @@ Je reviens avec une précision : Kames CRM ne génère pas juste des contacts.
 Il qualifie automatiquement qui est prêt à signer maintenant dans {{secteur}}.
 
 Tu passes moins de temps à prospecter, plus de temps à signer.
+
+Tu peux également suivre et piloter tes propres campagnes de cold emailing depuis l'application.
 
 15 minutes cette semaine pour en discuter ?
 

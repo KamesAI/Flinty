@@ -1,4 +1,4 @@
-import { getSheetData, parseLeads } from "@/lib/sheets";
+import { getSheetData, parseLeads, type Lead } from "@/lib/sheets";
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
@@ -8,10 +8,25 @@ export async function GET(req: Request) {
   let leads = parseLeads(rows);
   if (campaign_id) leads = leads.filter((l) => l.campaign_id === campaign_id);
 
-  const headers = ["lead_id", "campaign_id", "nom", "site", "ville", "score", "email", "téléphone", "prénom", "poste", "secteur", "taille_equipe", "has_ia_services", "statut_email"];
+  const headers: Array<keyof Lead> = [
+    "lead_id",
+    "campaign_id",
+    "nom",
+    "site",
+    "ville",
+    "score",
+    "email",
+    "téléphone",
+    "prénom",
+    "poste",
+    "secteur",
+    "taille_equipe",
+    "has_ia_services",
+    "statut_email",
+  ];
   const csv = [
     headers.join(","),
-    ...leads.map((l) => headers.map((h) => `"${(l as Record<string, string>)[h] ?? ""}"`).join(",")),
+    ...leads.map((lead) => headers.map((header) => `"${lead[header] ?? ""}"`).join(",")),
   ].join("\n");
 
   return new Response(csv, {

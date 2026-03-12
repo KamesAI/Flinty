@@ -275,7 +275,9 @@ function CompactSidebar({
       <button
         type="button"
         onClick={onToggleExpanded}
-        className={`dashboard-keep-white flex h-10 w-10 items-center justify-center rounded-2xl transition-all duration-300 ${expanded ? styles.logo : styles.railButtonActive}`}
+        className={`dashboard-keep-white flex h-10 w-10 items-center justify-center rounded-2xl transition-all duration-300 ${
+          expanded ? styles.logo : theme === "light" ? "bg-black text-white hover:bg-zinc-800" : styles.railButtonActive
+        }`}
         aria-label={expanded ? "Masquer le menu" : "Afficher le menu"}
       >
         <div className="h-4 w-4 rounded-[5px] border-2 border-current" />

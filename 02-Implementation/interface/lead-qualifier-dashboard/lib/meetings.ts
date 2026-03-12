@@ -32,6 +32,13 @@ export interface MeetingCarouselDay {
   isToday: boolean;
 }
 
+export interface MeetingWeekDayChip {
+  isoDate: string;
+  weekdayInitial: string;
+  dayNumber: string;
+  isCurrentDay: boolean;
+}
+
 export const MEETINGS_SHEET_NAME = "Meetings";
 export const MEETINGS_HEADER = [
   "meeting_id",
@@ -107,6 +114,43 @@ export function getWeekWindow(referenceDate = new Date()): MeetingWeekWindow {
   end.setUTCHours(23, 59, 59, 999);
 
   return { start, end };
+}
+
+export function getIsoWeekNumber(referenceDate = new Date()) {
+  const date = new Date(
+    Date.UTC(
+      referenceDate.getUTCFullYear(),
+      referenceDate.getUTCMonth(),
+      referenceDate.getUTCDate()
+    )
+  );
+  const day = date.getUTCDay() || 7;
+
+  date.setUTCDate(date.getUTCDate() + 4 - day);
+
+  const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+  return Math.ceil((((date.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+}
+
+export function buildMeetingWeekDays(
+  referenceDate = new Date(),
+  timeZone = "Europe/Paris"
+): MeetingWeekDayChip[] {
+  const weekWindow = getWeekWindow(referenceDate);
+  const todayKey = getMeetingDayKey(referenceDate, timeZone);
+
+  return Array.from({ length: 7 }, (_, index) => {
+    const date = new Date(weekWindow.start);
+    date.setUTCDate(weekWindow.start.getUTCDate() + index);
+    const isoDate = getMeetingDayKey(date, timeZone);
+
+    return {
+      isoDate,
+      weekdayInitial: formatDatePart(date, "fr-FR", timeZone, { weekday: "narrow" }).toUpperCase(),
+      dayNumber: formatDatePart(date, "fr-FR", timeZone, { day: "2-digit" }),
+      isCurrentDay: isoDate === todayKey,
+    };
+  });
 }
 
 export function buildMeetingCarouselDays(

@@ -9,6 +9,7 @@ import {
   EMAIL_TEMPLATE_SECTIONS,
   type CampaignEmailTemplates,
   type EmailTemplateEntry,
+  type EmailSequenceKey,
 } from "@/lib/email-templates";
 import { TemplatePreview } from "./TemplatePreview";
 
@@ -52,6 +53,8 @@ export function TemplatesEditor({
   const [pendingCampaignId, setPendingCampaignId] = useState(selectedCampaignId);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [activeSection, setActiveSection] = useState<EmailSequenceKey>("j0");
+  const [contentVisible, setContentVisible] = useState(true);
 
   const selectedCampaign = useMemo(
     () => campaigns.find((campaign) => campaign.campaign_id === selectedCampaignId) ?? null,
@@ -60,6 +63,15 @@ export function TemplatesEditor({
 
   function handleCampaignValidate() {
     router.push(`/dashboard/templates?campaign_id=${pendingCampaignId}`);
+  }
+
+  function switchSection(key: EmailSequenceKey) {
+    if (key === activeSection) return;
+    setContentVisible(false);
+    setTimeout(() => {
+      setActiveSection(key);
+      setContentVisible(true);
+    }, 150);
   }
 
   function updateEntry(
@@ -139,6 +151,8 @@ export function TemplatesEditor({
     }
   }
 
+  const currentSection = EMAIL_TEMPLATE_SECTIONS.find((s) => s.key === activeSection)!;
+
   return (
     <div className="space-y-8">
       <div>
@@ -180,9 +194,14 @@ export function TemplatesEditor({
               type="button"
               onClick={handleCampaignValidate}
               disabled={pendingCampaignId === selectedCampaignId}
-              className="px-4 py-2.5 rounded-lg bg-gradient-to-r from-orange-500 to-pink-500 text-white font-medium text-sm hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+              className="group relative inline-flex items-center justify-center disabled:opacity-50"
             >
-              Valider
+              <span className="pointer-events-none absolute inset-x-5 inset-y-1.5 rounded-full bg-orange-500/30 blur-xl transition-opacity duration-300 group-hover:opacity-90" />
+              <span className="relative inline-flex rounded-full bg-gradient-to-r from-orange-500 via-orange-400 to-white p-[1px]">
+                <span className="inline-flex items-center justify-center rounded-full bg-black px-5 py-2.5 text-sm font-medium text-white transition-colors duration-300 group-hover:text-zinc-100">
+                  Valider
+                </span>
+              </span>
             </button>
             <Link
               href={`/dashboard/campaigns/${selectedCampaignId}`}
@@ -194,57 +213,75 @@ export function TemplatesEditor({
         </div>
       </section>
 
-      <section className="bg-zinc-950 border border-orange-400/30 bg-orange-400/[0.025] rounded-2xl p-5">
-        <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div>
-            <p className="text-xs font-semibold tracking-widest uppercase text-orange-400 mb-2">
-              Studio templates V2
-            </p>
-            <h2 className="text-xl font-semibold text-white">Edition enrichie et preview fidele</h2>
-            <p className="text-sm text-zinc-500 mt-1 max-w-3xl">
-              Utilise les blocs CTA et media pour enrichir l&apos;email sans tenter
-              d&apos;embarquer une video native. Une miniature cliquable vers Loom ou une page
-              demo reste le format recommande.
-            </p>
-          </div>
-          <div className="flex items-center gap-2 flex-wrap text-xs">
-            <span className="rounded-full bg-zinc-900 border border-zinc-800 px-3 py-1.5 text-zinc-300">
-              Clé analytics: campagne + sequence + variante
-            </span>
-            <span className="rounded-full bg-orange-500/15 px-3 py-1.5 text-orange-300">
-              Video = thumbnail cliquable uniquement
-            </span>
-          </div>
-        </div>
-      </section>
+      <div className="flex gap-6 items-start">
+        {/* Sidebar verticale */}
+        <aside className="w-52 shrink-0 sticky top-6 self-start flex flex-col gap-1">
+          <p className="text-xs font-semibold tracking-widest uppercase text-orange-400 mb-2 px-1">
+            Séquences
+          </p>
+          {EMAIL_TEMPLATE_SECTIONS.map((section) => {
+            const isActive = section.key === activeSection;
+            const sectionEntries = entries.filter((e) => e.sequence_key === section.key);
+            const hasContent = sectionEntries.some((e) => e.subject.trim().length > 0);
+            return (
+              <button
+                key={section.key}
+                type="button"
+                onClick={() => switchSection(section.key)}
+                className={`w-full text-left rounded-xl px-3 py-3 transition-all duration-150 ${
+                  isActive
+                    ? "bg-orange-500/15 border border-orange-500/40 text-orange-300"
+                    : "border border-transparent text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900"
+                }`}
+              >
+                <span
+                  className={`block text-sm font-semibold mb-0.5 ${isActive ? "text-orange-400" : "text-zinc-300"}`}
+                >
+                  {section.key === "j0" ? "J0" : section.title.replace("Relance ", "")}
+                </span>
+                <span className="block text-xs leading-tight text-zinc-500">
+                  {section.key === "j0" ? "Prise de contact" : section.description.split(" ").slice(0, 3).join(" ") + "…"}
+                </span>
+                {hasContent && (
+                  <span
+                    className={`mt-1.5 inline-block w-1.5 h-1.5 rounded-full ${isActive ? "bg-orange-400" : "bg-zinc-600"}`}
+                  />
+                )}
+              </button>
+            );
+          })}
+        </aside>
 
-      <div className="space-y-6">
-        {EMAIL_TEMPLATE_SECTIONS.map((section) => (
-          <section
-            key={section.key}
-            className={`bg-zinc-950 border rounded-2xl p-6 ${SECTION_TONE_CLASS}`}
-          >
+        {/* Contenu animé */}
+        <div
+          className="flex-1 min-w-0 transition-all duration-150"
+          style={{
+            opacity: contentVisible ? 1 : 0,
+            transform: contentVisible ? "translateY(0)" : "translateY(6px)",
+          }}
+        >
+          <section className={`bg-zinc-950 border rounded-2xl p-6 ${SECTION_TONE_CLASS}`}>
             <div className="mb-5">
               <p className="text-xs font-semibold tracking-widest uppercase text-orange-400 mb-2">
-                {section.key === "j0" ? "Sequence J0" : `Sequence ${section.title}`}
+                {currentSection.key === "j0" ? "Sequence J0" : `Sequence ${currentSection.title}`}
               </p>
               <h2 className="text-xl font-semibold text-white">
-                {section.key === "j0"
+                {currentSection.key === "j0"
                   ? selectedCampaign?.nom ?? "Campagne introuvable"
-                  : section.title}
+                  : currentSection.title}
               </h2>
               <p className="text-sm text-zinc-500 mt-1">
-                {section.key === "j0"
-                  ? `${section.title}${selectedCampaign ? ` · ${selectedCampaign.secteur} · ${selectedCampaign.localisation}` : ""}`
-                  : section.description}
+                {currentSection.key === "j0"
+                  ? `${currentSection.title}${selectedCampaign ? ` · ${selectedCampaign.secteur} · ${selectedCampaign.localisation}` : ""}`
+                  : currentSection.description}
               </p>
             </div>
 
             <div className="space-y-5">
-              {section.variants.map((variant) => {
+              {currentSection.variants.map((variant) => {
                 const entry = entries.find(
                   (candidate) =>
-                    candidate.sequence_key === section.key &&
+                    candidate.sequence_key === currentSection.key &&
                     candidate.variant_key === variant.key
                 );
 
@@ -252,28 +289,19 @@ export function TemplatesEditor({
 
                 return (
                   <div
-                    key={`${section.key}:${variant.key}`}
+                    key={`${currentSection.key}:${variant.key}`}
                     className={`bg-black border rounded-2xl p-4 lg:p-5 ${VARIANT_TONE_CLASS}`}
                   >
                     <div className="flex items-center justify-between gap-3 mb-5 flex-wrap">
                       <div>
                         <p className="text-sm font-medium text-white">{variant.label}</p>
                         <p className="text-xs text-zinc-500 mt-1">
-                          Cle template: {selectedCampaignId} / {section.key} / {variant.key}
+                          Cle template: {selectedCampaignId} / {currentSection.key} / {variant.key}
                         </p>
                       </div>
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span
-                          className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-medium ${
-                            entry.is_rich_template
-                              ? "bg-orange-500/15 text-orange-300"
-                              : "bg-zinc-900 text-zinc-300"
-                          }`}
-                        >
-                          {entry.is_rich_template ? "Template enrichi" : "Template simple"}
-                        </span>
                         <span className="text-[11px] text-zinc-600 uppercase tracking-widest">
-                          {section.key.toUpperCase()}
+                          {currentSection.key.toUpperCase()}
                         </span>
                       </div>
                     </div>
@@ -318,7 +346,7 @@ export function TemplatesEditor({
                             value={entry.body}
                             onChange={(event) => updateEntry(entry, "body", event.target.value)}
                             placeholder="Contenu de l'email..."
-                            rows={section.key === "j0" ? 11 : 9}
+                            rows={currentSection.key === "j0" ? 11 : 9}
                             className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-3 text-sm text-white focus:outline-none focus:border-orange-500 transition-colors resize-y"
                           />
                         </div>
@@ -447,14 +475,10 @@ export function TemplatesEditor({
               })}
             </div>
           </section>
-        ))}
+        </div>
       </div>
 
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        <p className="text-sm text-zinc-500 max-w-2xl">
-          Les identifiants `campaign_id + sequence_key + variant_key` preparent deja le futur
-          tracking des clics CTA et media sans ajouter encore toute la couche analytics.
-        </p>
+      <div className="flex items-center justify-end gap-4 flex-wrap">
         <div className="flex items-center gap-3">
           {message && <span className="text-sm text-zinc-400">{message}</span>}
           <button

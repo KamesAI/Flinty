@@ -8,6 +8,7 @@ export interface CampaignRowStats {
 }
 
 export interface CampaignRowProps {
+  href: string;
   name: string;
   subtitle: string;
   status: CampaignRowStatus;

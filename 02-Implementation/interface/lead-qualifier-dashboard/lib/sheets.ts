@@ -29,6 +29,74 @@ import {
 } from "@/lib/meetings";
 
 const SPREADSHEET_ID = process.env.GOOGLE_SHEETS_SPREADSHEET_ID!;
+const SHEET_READ_CACHE_TTL_MS = 15_000;
+const SHEET_ENSURE_CACHE_TTL_MS = 5 * 60_000;
+
+type SheetRows = string[][];
+type CacheEntry<T> = {
+  value: T;
+  expiresAt: number;
+};
+
+const sheetDataCache = new Map<string, CacheEntry<SheetRows>>();
+const inFlightSheetReads = new Map<string, Promise<SheetRows>>();
+const ensuredSheetsCache = new Map<string, number>();
+let spreadsheetTitlesCache: CacheEntry<Set<string>> | null = null;
+let inFlightSpreadsheetTitles: Promise<Set<string>> | null = null;
+
+function isCacheFresh(expiresAt: number) {
+  return expiresAt > Date.now();
+}
+
+function cloneSheetRows(rows: SheetRows): SheetRows {
+  return rows.map((row) => [...row]);
+}
+
+function invalidateSheetReadCaches() {
+  sheetDataCache.clear();
+  inFlightSheetReads.clear();
+  spreadsheetTitlesCache = null;
+  inFlightSpreadsheetTitles = null;
+}
+
+async function getSpreadsheetTitles() {
+  if (spreadsheetTitlesCache && isCacheFresh(spreadsheetTitlesCache.expiresAt)) {
+    return new Set(spreadsheetTitlesCache.value);
+  }
+
+  if (inFlightSpreadsheetTitles) {
+    return new Set(await inFlightSpreadsheetTitles);
+  }
+
+  const request = (async () => {
+    const sheets = await getSheets();
+    const spreadsheet = await sheets.spreadsheets.get({
+      spreadsheetId: SPREADSHEET_ID,
+      fields: "sheets.properties.title",
+    });
+
+    const titles = new Set(
+      (spreadsheet.data.sheets ?? [])
+        .map((sheet) => sheet.properties?.title)
+        .filter((title): title is string => Boolean(title))
+    );
+
+    spreadsheetTitlesCache = {
+      value: titles,
+      expiresAt: Date.now() + SHEET_ENSURE_CACHE_TTL_MS,
+    };
+
+    return titles;
+  })();
+
+  inFlightSpreadsheetTitles = request;
+
+  try {
+    return new Set(await request);
+  } finally {
+    inFlightSpreadsheetTitles = null;
+  }
+}
 
 function getAuth() {
   return new google.auth.GoogleAuth({
@@ -46,12 +114,39 @@ export async function getSheets() {
 }
 
 export async function getSheetData(range: string) {
+  const cachedRows = sheetDataCache.get(range);
+  if (cachedRows && isCacheFresh(cachedRows.expiresAt)) {
+    return cloneSheetRows(cachedRows.value);
+  }
+
+  const inFlightRequest = inFlightSheetReads.get(range);
+  if (inFlightRequest) {
+    return cloneSheetRows(await inFlightRequest);
+  }
+
+  const request = (async () => {
   const sheets = await getSheets();
   const response = await sheets.spreadsheets.values.get({
     spreadsheetId: SPREADSHEET_ID,
     range,
   });
-  return response.data.values ?? [];
+    const rows = (response.data.values ?? []) as SheetRows;
+
+    sheetDataCache.set(range, {
+      value: cloneSheetRows(rows),
+      expiresAt: Date.now() + SHEET_READ_CACHE_TTL_MS,
+    });
+
+    return rows;
+  })();
+
+  inFlightSheetReads.set(range, request);
+
+  try {
+    return cloneSheetRows(await request);
+  } finally {
+    inFlightSheetReads.delete(range);
+  }
 }
 
 export async function appendRow(range: string, values: string[]) {
@@ -62,6 +157,7 @@ export async function appendRow(range: string, values: string[]) {
     valueInputOption: "USER_ENTERED",
     requestBody: { values: [values] },
   });
+  invalidateSheetReadCaches();
 }
 
 export async function updateRow(range: string, values: string[]) {
@@ -72,6 +168,7 @@ export async function updateRow(range: string, values: string[]) {
     valueInputOption: "USER_ENTERED",
     requestBody: { values: [values] },
   });
+  invalidateSheetReadCaches();
 }
 
 function getColumnLetter(columnNumber: number) {
@@ -88,23 +185,23 @@ function getColumnLetter(columnNumber: number) {
 }
 
 async function ensureSheetExists(title: string, header: readonly string[]) {
-  const sheets = await getSheets();
-  const spreadsheet = await sheets.spreadsheets.get({
-    spreadsheetId: SPREADSHEET_ID,
-    fields: "sheets.properties.title",
-  });
+  const ensuredUntil = ensuredSheetsCache.get(title);
+  if (ensuredUntil && isCacheFresh(ensuredUntil)) {
+    return;
+  }
 
-  const sheetExists = spreadsheet.data.sheets?.some(
-    (sheet) => sheet.properties?.title === title
-  );
+  const sheetTitles = await getSpreadsheetTitles();
+  const sheetExists = sheetTitles.has(title);
 
   if (!sheetExists) {
+    const sheets = await getSheets();
     await sheets.spreadsheets.batchUpdate({
       spreadsheetId: SPREADSHEET_ID,
       requestBody: {
         requests: [{ addSheet: { properties: { title } } }],
       },
     });
+    invalidateSheetReadCaches();
   }
 
   const lastColumn = getColumnLetter(header.length);
@@ -118,6 +215,8 @@ async function ensureSheetExists(title: string, header: readonly string[]) {
   if (needsHeader) {
     await updateRow(headerRange, [...header]);
   }
+
+  ensuredSheetsCache.set(title, Date.now() + SHEET_ENSURE_CACHE_TTL_MS);
 }
 
 export async function ensureEmailTemplatesSheet() {
