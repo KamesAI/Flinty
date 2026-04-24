@@ -1,6 +1,7 @@
 import React from "react";
 import Link from "next/link";
 import { Archive, Plus } from "lucide-react";
+import { CampaignsSubNav } from "../CampaignsSubNav";
 import {
   readIndex,
   parseIndexCampaigns,
@@ -40,6 +41,7 @@ export default async function CampaignsOverviewPage() {
 
   return (
     <div className="px-1 py-2 sm:px-2 sm:py-3">
+      <CampaignsSubNav />
       <div className="mb-6">
         <div className="max-w-2xl">
           <p className="mb-2 text-xs font-semibold uppercase tracking-[0.22em] text-[#006596]">
@@ -59,14 +61,14 @@ export default async function CampaignsOverviewPage() {
           <div data-testid="campaigns-actions" className="flex items-center gap-2">
             <button
               type="button"
-              className="inline-flex h-9 items-center justify-center gap-1.5 rounded-[14px] border border-[#E5EAF3] bg-white px-[16px] text-[13px] font-medium text-slate-900 shadow-[0_2px_8px_rgba(15,23,42,0.05)] transition-colors hover:bg-white"
+              className="inline-flex h-[40px] items-center justify-center gap-1.5 rounded-[14px] border border-[#E5EAF3] bg-white px-[16px] text-[14px] font-medium text-slate-900 shadow-[0_2px_8px_rgba(15,23,42,0.05)] transition-colors hover:bg-white"
             >
               <Archive className="size-[14px] text-slate-800" strokeWidth={2.1} />
               Archiver
             </button>
             <Link
               href="/dashboard/campaigns/new"
-              className="inline-flex h-9 items-center justify-center gap-1.5 rounded-[14px] bg-primary px-[18px] text-[13px] font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+              className="inline-flex h-[40px] items-center justify-center gap-1.5 rounded-[14px] bg-[#2F6DF6] px-[18px] text-[14px] font-medium text-white transition-colors hover:bg-[#2F6DF6]/90"
             >
               <Plus className="size-[15px]" strokeWidth={2.2} />
               Nouvelle campagne

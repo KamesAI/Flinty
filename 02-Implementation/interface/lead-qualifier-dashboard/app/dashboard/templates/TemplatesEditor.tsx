@@ -66,6 +66,7 @@ export function TemplatesEditor({
 }) {
   const router = useRouter();
   const [entries, setEntries] = useState(initialTemplates.entries);
+  const [pendingCampaignId, setPendingCampaignId] = useState(selectedCampaignId);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [activeSection, setActiveSection] = useState<EmailSequenceKey>(initialActiveSection);
@@ -77,6 +78,10 @@ export function TemplatesEditor({
     () => campaigns.find((campaign) => campaign.campaign_id === selectedCampaignId) ?? null,
     [campaigns, selectedCampaignId]
   );
+
+  function handleCampaignValidate() {
+    router.push(`/dashboard/templates?campaign_id=${pendingCampaignId}`);
+  }
 
   function switchSection(key: EmailSequenceKey) {
     if (key === activeSection) return;
@@ -207,14 +212,9 @@ export function TemplatesEditor({
           </div>
           <div className="flex items-center gap-3 flex-wrap sm:flex-nowrap">
             <select
-              className={`min-w-[280px] h-9 rounded-lg border px-3 text-sm text-zinc-900 ${CARD_SUBPANEL_SURFACE_CLASS} focus:border-zinc-400 focus:outline-none transition-colors`}
-              value={selectedCampaignId}
-              onChange={(event) => {
-                const newCampaignId = event.target.value;
-                if (newCampaignId !== selectedCampaignId) {
-                  router.push(`/dashboard/templates?campaign_id=${newCampaignId}`);
-                }
-              }}
+              className={`min-w-[280px] h-11 rounded-lg border px-4 text-sm text-zinc-900 ${CARD_SUBPANEL_SURFACE_CLASS} focus:border-zinc-400 focus:outline-none transition-colors`}
+              value={pendingCampaignId}
+              onChange={(event) => setPendingCampaignId(event.target.value)}
             >
               {campaigns.map((campaign) => (
                 <option key={campaign.campaign_id} value={campaign.campaign_id}>
@@ -222,9 +222,22 @@ export function TemplatesEditor({
                 </option>
               ))}
             </select>
+            <button
+              type="button"
+              onClick={handleCampaignValidate}
+              disabled={pendingCampaignId === selectedCampaignId}
+              className="group relative inline-flex h-11 items-center justify-center disabled:opacity-50"
+            >
+              <span className="pointer-events-none absolute inset-x-5 inset-y-1.5 rounded-full bg-blue-500/30 blur-xl transition-opacity duration-300 group-hover:opacity-90" />
+              <span className="relative inline-flex h-11 rounded-full bg-gradient-to-r from-blue-500 via-blue-400 to-white p-[1px]">
+                <span className="inline-flex h-full items-center justify-center rounded-full bg-[rgba(8,20,46,0.92)] px-5 text-sm font-medium text-white transition-colors duration-300 group-hover:text-zinc-100">
+                  Valider
+                </span>
+              </span>
+            </button>
             <Link
               href={`/dashboard/campaigns/${selectedCampaignId}`}
-              className="inline-flex h-9 items-center rounded-lg border border-zinc-200 bg-white px-3 text-[13px] text-zinc-700 transition-colors hover:border-zinc-300 hover:bg-zinc-50"
+              className="inline-flex h-11 items-center rounded-lg border border-zinc-200 bg-white px-4 text-sm text-zinc-700 transition-colors hover:border-zinc-300 hover:bg-zinc-50"
             >
               Voir la campagne
             </Link>
