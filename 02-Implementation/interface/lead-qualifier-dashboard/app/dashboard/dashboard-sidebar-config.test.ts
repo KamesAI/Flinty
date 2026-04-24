@@ -7,7 +7,7 @@ import {
 
 describe("dashboard-sidebar-config", () => {
   it("affiche le titre du CRM dans la sidebar", () => {
-    expect(DASHBOARD_APP_TITLE).toBe("Kames CRM");
+    expect(DASHBOARD_APP_TITLE).toBe("Flinty");
     expect(DASHBOARD_APP_SUBTITLE).toBe("Lead gen dashboard");
   });
 
@@ -15,11 +15,17 @@ describe("dashboard-sidebar-config", () => {
     expect(dashboardSidebarGroups.flatMap((group) => group.items.map((item) => item.label))).toEqual([
       "Dashboard",
       "Campagnes",
-      "Templates",
-      "Inbox",
-      "Meetings",
+      "Configuration",
+      "Messagerie",
+      "Calendrier",
       "Donnees",
-      "Nouvelle campagne",
     ]);
+  });
+
+  it("ne garde plus d'action Nouvelle campagne dans la sidebar", () => {
+    expect(dashboardSidebarGroups).toHaveLength(1);
+    expect(
+      dashboardSidebarGroups.flatMap((group) => group.items.map((item) => item.href))
+    ).not.toContain("/dashboard/campaigns/new");
   });
 });

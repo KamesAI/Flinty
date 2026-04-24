@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { CalendarDays, Layers3, MailOpen, TrendingUp } from "lucide-react";
+import { CalendarDays, Layers3, Mail, Target } from "lucide-react";
 
 export interface PremiumStatsCard {
   label: string;
@@ -16,27 +16,27 @@ export function buildPremiumStatsCards(input: {
 }): PremiumStatsCard[] {
   return [
     {
-      label: "Campagnes",
+      label: "Campagnes actives",
       value: String(input.campaignsCount),
       sublabel: "au total",
       icon: Layers3,
     },
     {
-      label: "Emails recus",
+      label: "Leads qualifiés",
       value: String(input.repliedCount),
-      sublabel: `${input.repliedCount} a repondre`,
-      icon: MailOpen,
+      sublabel: "cette semaine",
+      icon: Target,
     },
     {
       label: "Taux d'ouverture",
       value: `${input.avgOpenRate}%`,
       sublabel: "moyenne globale",
-      icon: TrendingUp,
+      icon: Mail,
     },
     {
-      label: "Meetings",
+      label: "Meetings bookés",
       value: String(input.meetingsCount),
-      sublabel: "sur la semaine en cours",
+      sublabel: "sur la semaine",
       icon: CalendarDays,
     },
   ];

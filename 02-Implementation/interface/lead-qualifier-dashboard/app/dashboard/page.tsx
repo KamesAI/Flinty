@@ -1,250 +1,159 @@
-import Link from "next/link";
-import { getMeetings, getSheetData, parseCampaigns, parseLeads } from "@/lib/sheets";
+import React from "react";
+import {
+  getMeetings,
+  readIndex,
+  parseIndexCampaigns,
+  getAllLeadsV3,
+  getAnalyticsDailySnapshots,
+  indexCampaignToCampaign,
+  type Campaign,
+  type Lead,
+} from "@/lib/sheets";
 import {
   buildMeetingCarouselDays,
   getMeetingDayKey,
-  getMeetingStatusClasses,
-  getMeetingStatusLabel,
   getWeekWindow,
   isMeetingWithinWindow,
 } from "@/lib/meetings";
-import type { CampaignRowProps } from "./CampaignRow";
-import { CampaignList } from "./CampaignList";
-import { PulseStats } from "./PulseStats";
-import { buildPulseStats } from "./pulse-stats";
-import { UpcomingMeetingsCarousel } from "./UpcomingMeetingsCarousel";
+import { KpiGrid } from "@/components/dashboard/KpiGrid";
+import { CampaignList, type CampaignRowProps } from "@/components/dashboard/CampaignList";
+import { HotLeads } from "@/components/dashboard/HotLeads";
+import { UpcomingMeetings, type UpcomingMeetingItem } from "@/components/dashboard/UpcomingMeetings";
+import { buildDashboardKpiMetrics } from "./kpi-sparks";
 
 export default async function DashboardPage() {
-  let campaigns: Awaited<ReturnType<typeof parseCampaigns>> = [];
-  let hotLeads: Awaited<ReturnType<typeof parseLeads>> = [];
-  let leads: Awaited<ReturnType<typeof parseLeads>> = [];
-  let upcomingMeetings = await Promise.resolve([] as Awaited<ReturnType<typeof getMeetings>>);
+  let campaigns: Campaign[] = [];
+  let hotLeadsRaw: Lead[] = [];
+  let leads: Lead[] = [];
+  let upcomingMeetingItems: UpcomingMeetingItem[] = [];
   let meetingsThisWeekCount = 0;
   let repliedCount = 0;
-  let error = false;
+  let qualifiedCount = 0;
+  let kpiMetrics = buildDashboardKpiMetrics([]);
+
   try {
-    const [campRows, leadRows, meetings] = await Promise.all([
-      getSheetData("Campagnes!A:L"),
-      getSheetData("Leads_Qualified!A:P"),
+    const [indexRows, meetings, snapshots] = await Promise.all([
+      readIndex(),
       getMeetings(),
+      getAnalyticsDailySnapshots(),
     ]);
-    campaigns = parseCampaigns(campRows);
-    const allLeads = parseLeads(leadRows);
+    const indexCampaigns = parseIndexCampaigns(indexRows);
+    campaigns = indexCampaigns.map(indexCampaignToCampaign);
+    kpiMetrics = buildDashboardKpiMetrics(snapshots);
+    const allLeads = await getAllLeadsV3(indexCampaigns);
     leads = allLeads;
-    hotLeads = allLeads.filter(
+    hotLeadsRaw = allLeads.filter(
       (l) => l.statut_email === "replied" || l.statut_email === "clicked"
     );
     repliedCount = allLeads.filter((l) => l.statut_email === "replied").length;
+    qualifiedCount = allLeads.length;
+
     const weekWindow = getWeekWindow(new Date());
-    meetingsThisWeekCount = meetings.filter((meeting) =>
-      isMeetingWithinWindow(meeting, weekWindow)
-    ).length;
+    meetingsThisWeekCount = meetings.filter((m) => isMeetingWithinWindow(m, weekWindow)).length;
+
     const carouselDays = buildMeetingCarouselDays(meetings, new Date(), 10);
-    const allowedDayKeys = new Set(carouselDays.map((day) => day.key));
-    upcomingMeetings = meetings
-      .filter((meeting) =>
-        allowedDayKeys.has(getMeetingDayKey(meeting.start_at, meeting.timezone || "Europe/Paris"))
-      )
+    const allowedDayKeys = new Set(carouselDays.map((d) => d.key));
+    const leadsById = new Map(leads.map((l) => [l.lead_id, l]));
+    const campaignsById = new Map(campaigns.map((c) => [c.campaign_id, c]));
+
+    upcomingMeetingItems = meetings
+      .filter((m) => allowedDayKeys.has(getMeetingDayKey(m.start_at, m.timezone || "Europe/Paris")))
       .sort((a, b) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime())
-      .slice(0, 12);
+      .slice(0, 12)
+      .map((m) => {
+        const lead = leadsById.get(m.lead_id);
+        const campaign = campaignsById.get(m.campaign_id);
+        const date = new Date(m.start_at);
+        const dayFmt = new Intl.DateTimeFormat("en-US", {
+          weekday: "short",
+          timeZone: m.timezone || "Europe/Paris",
+        }).format(date);
+        const dateFmt = new Intl.DateTimeFormat("en-US", {
+          month: "short",
+          day: "numeric",
+          timeZone: m.timezone || "Europe/Paris",
+        }).format(date);
+        const timeFmt = new Intl.DateTimeFormat("fr-FR", {
+          hour: "2-digit",
+          minute: "2-digit",
+          timeZone: m.timezone || "Europe/Paris",
+        }).format(date);
+        return {
+          id: m.meeting_id,
+          day: dayFmt,
+          date: dateFmt,
+          title: lead?.nom || m.attendee_name || m.title || "Meeting",
+          campaign: campaign?.nom || "Campagne non reliée",
+          time: timeFmt,
+          status: (m.status === "scheduled" ? "confirmed" : "pending") as "confirmed" | "pending",
+        };
+      });
   } catch {
-    error = true;
+    // Sheets not configured — show empty state
   }
+
   const avgOpen = campaigns.length
     ? Math.round(campaigns.reduce((s, c) => s + parseFloat(c.taux_ouverture || "0"), 0) / campaigns.length)
     : 0;
+
   const topCampaigns = [...campaigns]
     .sort((a, b) => parseInt(b.total_leads_qualified || "0") - parseInt(a.total_leads_qualified || "0"))
     .slice(0, 3);
-  const campaignRows: CampaignRowProps[] = topCampaigns.map((campaign) => ({
-    href: `/dashboard/campaigns/${campaign.campaign_id}`,
-    name: campaign.nom,
-    subtitle: `${campaign.secteur} · ${campaign.offre_kames || "Prospection"} · ${campaign.localisation}`,
-    status:
-      campaign.statut === "active"
-        ? "active"
-        : campaign.statut === "completed"
-          ? "completed"
-          : campaign.statut === "paused"
-            ? "paused"
-            : "inactive",
-    stats: {
-      raw: parseInt(campaign.total_leads_raw || "0", 10) || 0,
-      qualified: parseInt(campaign.total_leads_qualified || "0", 10) || 0,
-      contacted: parseInt(campaign.emails_envoyés || "0", 10) || 0,
-      replies:
-        Math.round(
-          ((parseFloat(campaign.taux_réponse || "0") || 0) *
-            (parseInt(campaign.emails_envoyés || "0", 10) || 0)) /
-            100
-        ) || 0,
-    },
-    openRate: parseFloat(campaign.taux_ouverture || "0") || 0,
-    replyRate: parseFloat(campaign.taux_réponse || "0") || 0,
-    isGenerating: campaign.statut === "generating",
-  }));
-  const carouselDays = buildMeetingCarouselDays(upcomingMeetings, new Date(), 10);
-  const leadsById = new Map(leads.map((lead) => [lead.lead_id, lead]));
-  const campaignsById = new Map(campaigns.map((campaign) => [campaign.campaign_id, campaign]));
-  const upcomingMeetingItems = upcomingMeetings.map((meeting) => {
-    const lead = leadsById.get(meeting.lead_id);
-    const campaign = campaignsById.get(meeting.campaign_id);
-    const meetingDate = new Date(meeting.start_at);
 
-    return {
-      meetingId: meeting.meeting_id,
-      dayKey: getMeetingDayKey(meeting.start_at, meeting.timezone || "Europe/Paris"),
-      title: lead?.nom || meeting.attendee_name || meeting.title || "Meeting",
-      campaignName: campaign?.nom || "Campagne non reliee",
-      dateTimeLabel: new Intl.DateTimeFormat("fr-FR", {
-        weekday: "short",
-        day: "2-digit",
-        month: "short",
-        hour: "2-digit",
-        minute: "2-digit",
-        timeZone: meeting.timezone || "Europe/Paris",
-      }).format(meetingDate),
-      timeLabel: new Intl.DateTimeFormat("fr-FR", {
-        hour: "2-digit",
-        minute: "2-digit",
-        timeZone: meeting.timezone || "Europe/Paris",
-      }).format(meetingDate),
-      statusLabel: getMeetingStatusLabel(meeting.status),
-      statusClassName: getMeetingStatusClasses(meeting.status),
-    };
-  });
+  const campaignRows: CampaignRowProps[] = topCampaigns.map((c) => ({
+    href: `/dashboard/campaigns/${c.campaign_id}`,
+    name: c.nom,
+    subtitle: `${c.secteur} · ${c.offre_kames || "Prospection"} · ${c.localisation}`,
+    status:
+      c.statut === "active" ? "active"
+      : c.statut === "completed" ? "completed"
+      : c.statut === "paused" ? "paused"
+      : "inactive",
+    stats: {
+      raw: parseInt(c.total_leads_raw || "0", 10) || 0,
+      qualified: parseInt(c.total_leads_qualified || "0", 10) || 0,
+      contacted: parseInt(c.emails_envoyés || "0", 10) || 0,
+      replies: Math.round(
+        ((parseFloat(c.taux_réponse || "0") || 0) * (parseInt(c.emails_envoyés || "0", 10) || 0)) / 100
+      ) || 0,
+    },
+    openRate: parseFloat(c.taux_ouverture || "0") || 0,
+    replyRate: parseFloat(c.taux_réponse || "0") || 0,
+    isGenerating: c.statut === "generating",
+  }));
+
+  const hotLeads = hotLeadsRaw.map((l) => ({
+    id: l.lead_id,
+    name: l.nom,
+    company: l.ville || "",
+    campaign: l.campaign_id,
+    signal: (l.statut_email === "replied" ? "replied" : "clicked") as "replied" | "clicked",
+    hoursAgo: 0,
+  }));
 
   return (
-    <div className="p-4 sm:p-8">
-      {/* Eyebrow + Title */}
-      <div className="mb-6">
-        <p className="text-xs font-semibold tracking-widest uppercase text-[#FFA318] mb-1">Accueil</p>
-        <h1 className="text-3xl font-bold text-white">Dashboard principal</h1>
-        <p className="text-zinc-500 text-sm mt-1">Pipeline de prospection automatisé Kames AI</p>
-      </div>
-
-      {/* Leads chauds */}
-      {hotLeads.length > 0 && (
-        <div className="mb-8">
-          <p className="text-xs font-semibold tracking-widest uppercase text-orange-500 mb-3">
-            🔥 À traiter maintenant — {hotLeads.length} lead{hotLeads.length > 1 ? "s" : ""}
-          </p>
-          <div className="space-y-2">
-            {hotLeads.map((lead) => (
-              <Link
-                key={lead.lead_id}
-                href={`/dashboard/campaigns/${lead.campaign_id}/leads/${lead.lead_id}`}
-                className="flex items-center justify-between bg-zinc-950 border border-orange-500/30 rounded-xl px-5 py-3 hover:border-orange-500/60 transition-colors group"
-              >
-                <div className="flex items-center gap-3">
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                    lead.statut_email === "replied"
-                      ? "bg-emerald-500/20 text-emerald-400"
-                      : "bg-green-400/20 text-green-300"
-                  }`}>
-                    {lead.statut_email === "replied" ? "✅ Répondu" : "🖱 Cliqué"}
-                  </span>
-                  <span className="text-white text-sm font-medium group-hover:text-orange-400 transition-colors">
-                    {lead.nom}
-                  </span>
-                  <span className="text-zinc-500 text-xs">{lead.ville} · {lead.poste}</span>
-                </div>
-                <span className="text-zinc-600 text-xs group-hover:text-zinc-400 transition-colors">→ Voir la fiche</span>
-              </Link>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Google Sheets not configured */}
-      {error && (
-        <div className="mb-6 border border-zinc-700 bg-zinc-900/50 rounded-lg px-4 py-3">
-          <p className="text-zinc-400 text-sm">⚠️ Google Sheets non configuré — renseigner les credentials dans <code className="text-orange-400 text-xs">.env.local</code></p>
-        </div>
-      )}
-
-      {/* Top action */}
-      <div className="flex items-center justify-between mb-6">
-        <div />
-        <Link
-          href="/dashboard/campaigns/new"
-          className="group relative inline-flex items-center justify-center"
-        >
-          <span className="pointer-events-none absolute inset-x-5 inset-y-1.5 rounded-full bg-orange-500/30 blur-xl transition-opacity duration-300 group-hover:opacity-90" />
-          <span className="relative inline-flex rounded-full bg-gradient-to-r from-orange-500 via-orange-400 to-white p-[1px]">
-            <span className="inline-flex min-w-[170px] items-center justify-center rounded-full bg-black px-5 py-2.5 text-sm font-medium text-white transition-colors duration-300 group-hover:text-zinc-100">
-              Nouvelle campagne
-            </span>
-          </span>
-        </Link>
-      </div>
-
-      <PulseStats
-        stats={buildPulseStats({
-          campaignsCount: campaigns.length,
-          repliedCount,
-          avgOpenRate: avgOpen,
-          meetingsCount: meetingsThisWeekCount,
-        })}
+    <>
+      {/* KPI row */}
+      <KpiGrid
+        campaignsActive={campaigns.filter((c) => c.statut === "active").length}
+        qualifiedCount={qualifiedCount}
+        avgOpenRate={avgOpen}
+        meetingsCount={meetingsThisWeekCount}
+        deltas={kpiMetrics.deltas}
+        sparks={kpiMetrics.sparks}
       />
 
-      <div className="mb-8">
-        <div className="flex items-center justify-between gap-4 mb-4 flex-wrap">
-          <div>
-<p className="text-xs font-semibold tracking-widest uppercase text-[#FFA318] mb-1">
-            Upcoming meetings
-            </p>
-            <p className="text-sm text-zinc-500">
-              Vue rapide des prochains rendez-vous Calendly reliés au CRM.
-            </p>
-          </div>
-          <Link
-            href="/dashboard/meetings"
-            className="group relative inline-flex items-center justify-center"
-          >
-            <span className="pointer-events-none absolute inset-x-5 inset-y-1.5 rounded-full bg-orange-500/30 blur-xl transition-opacity duration-300 group-hover:opacity-90" />
-            <span className="relative inline-flex rounded-full bg-gradient-to-r from-orange-500 via-orange-400 to-white p-[1px]">
-              <span className="inline-flex min-w-[170px] items-center justify-center rounded-full bg-black px-5 py-2.5 text-sm font-medium text-white transition-colors duration-300 group-hover:text-zinc-100">
-                Voir tous les meetings
-              </span>
-            </span>
-          </Link>
-        </div>
-
-        <UpcomingMeetingsCarousel days={carouselDays} meetings={upcomingMeetingItems} />
+      <div className="mt-6">
+        <UpcomingMeetings meetings={upcomingMeetingItems} />
       </div>
 
-      {/* Campaign list — top 3 */}
-      {campaigns.length === 0 ? (
-        <div className="text-center py-24 text-zinc-600">
-          <p className="text-base mb-4">Aucune campagne créée</p>
-          <Link
-            href="/dashboard/campaigns/new"
-            className="group relative inline-flex items-center justify-center"
-          >
-            <span className="pointer-events-none absolute inset-x-5 inset-y-1.5 rounded-full bg-orange-500/30 blur-xl transition-opacity duration-300 group-hover:opacity-90" />
-            <span className="relative inline-flex rounded-full bg-gradient-to-r from-orange-500 via-orange-400 to-white p-[1px]">
-              <span className="inline-flex min-w-[220px] items-center justify-center rounded-full bg-black px-5 py-2.5 text-sm font-medium text-white transition-colors duration-300 group-hover:text-zinc-100">
-                Créer votre première campagne
-              </span>
-            </span>
-          </Link>
-        </div>
-      ) : (
-        <div className="mb-8">
-          <div className="mb-4 flex items-center justify-between gap-4 flex-wrap">
-            <div>
-              <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-[#FFA318]">
-                Main campagnes
-              </p>
-              <p className="text-sm text-zinc-500">
-                Vue rapide du pipeline de prospection et des campagnes actives du CRM.
-              </p>
-            </div>
-          </div>
+      {/* Main grid */}
+      <div className="mt-6 grid gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-2">
           <CampaignList campaigns={campaignRows} />
         </div>
-      )}
-    </div>
+        <HotLeads leads={hotLeads} />
+      </div>
+    </>
   );
 }

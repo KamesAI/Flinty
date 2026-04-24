@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
+import { Plus } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   computeIsRichTemplate,
   EMAIL_TEMPLATE_MEDIA_OPTIONS,
@@ -10,6 +12,7 @@ import {
   type CampaignEmailTemplates,
   type EmailTemplateEntry,
   type EmailSequenceKey,
+  type EmailVariantKey,
 } from "@/lib/email-templates";
 import { TemplatePreview } from "./TemplatePreview";
 
@@ -20,9 +23,20 @@ interface CampaignOption {
   localisation: string;
 }
 
-const SECTION_TONE_CLASS = "border-orange-400/28 bg-orange-400/[0.025]";
+const SECTION_TONE_CLASS = "border-zinc-200 bg-white shadow-sm";
 
-const VARIANT_TONE_CLASS = "border-orange-400/18 bg-orange-400/[0.012]";
+const VARIANT_TONE_CLASS = "bg-white shadow-sm";
+
+const CARD_PANEL_SURFACE_CLASS = "bg-white";
+
+const CARD_SUBPANEL_SURFACE_CLASS = "border-zinc-200 bg-zinc-50";
+
+const CARD_FIELD_CLASS =
+  "border-zinc-200 bg-white text-zinc-900 placeholder:text-zinc-400 transition-colors focus:border-zinc-400 focus:outline-none";
+
+const VARIANT_TABS_RAIL_CLASS = "border border-blue-200/60 bg-blue-50";
+const PREVIEW_TOGGLE_CLASS =
+  "inline-flex h-8 items-center rounded-lg px-3 text-xs font-medium transition-colors";
 
 function getEntryKey(entry: Pick<EmailTemplateEntry, "sequence_key" | "variant_key">) {
   return `${entry.sequence_key}:${entry.variant_key}`;
@@ -43,17 +57,20 @@ export function TemplatesEditor({
   campaigns,
   selectedCampaignId,
   initialTemplates,
+  initialActiveSection = "j0",
 }: {
   campaigns: CampaignOption[];
   selectedCampaignId: string;
   initialTemplates: CampaignEmailTemplates;
+  initialActiveSection?: EmailSequenceKey;
 }) {
   const router = useRouter();
   const [entries, setEntries] = useState(initialTemplates.entries);
-  const [pendingCampaignId, setPendingCampaignId] = useState(selectedCampaignId);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
-  const [activeSection, setActiveSection] = useState<EmailSequenceKey>("j0");
+  const [activeSection, setActiveSection] = useState<EmailSequenceKey>(initialActiveSection);
+  const [activeVariantKey, setActiveVariantKey] = useState<EmailVariantKey>("a");
+  const [displayMode, setDisplayMode] = useState<"edit" | "options" | "preview">("edit");
   const [contentVisible, setContentVisible] = useState(true);
 
   const selectedCampaign = useMemo(
@@ -61,15 +78,12 @@ export function TemplatesEditor({
     [campaigns, selectedCampaignId]
   );
 
-  function handleCampaignValidate() {
-    router.push(`/dashboard/templates?campaign_id=${pendingCampaignId}`);
-  }
-
   function switchSection(key: EmailSequenceKey) {
     if (key === activeSection) return;
     setContentVisible(false);
     setTimeout(() => {
       setActiveSection(key);
+      setDisplayMode("edit");
       setContentVisible(true);
     }, 150);
   }
@@ -138,12 +152,12 @@ export function TemplatesEditor({
 
       const data = await response.json();
       if (!response.ok || !data.success) {
-        setMessage(data.message ?? "Impossible d'enregistrer les templates.");
+        setMessage(data.message ?? "Impossible d'enregistrer l'emailing.");
         return;
       }
 
       setEntries(data.templates.entries);
-      setMessage("Templates enregistres dans Google Sheets.");
+      setMessage("Emailing enregistre dans Google Sheets.");
     } catch {
       setMessage("Erreur reseau pendant l'enregistrement.");
     } finally {
@@ -152,37 +166,55 @@ export function TemplatesEditor({
   }
 
   const currentSection = EMAIL_TEMPLATE_SECTIONS.find((s) => s.key === activeSection)!;
+  const visibleVariants =
+    currentSection.key === "j0"
+      ? currentSection.variants.filter((variant) => variant.key === activeVariantKey)
+      : currentSection.variants;
 
   return (
     <div className="space-y-8">
-      <div>
-        <p className="text-xs font-semibold tracking-widest uppercase text-orange-400 mb-2">
-          Templates email
-        </p>
-        <h1 className="text-3xl font-bold text-white">Bibliotheque de campagne</h1>
-        <p className="text-sm text-zinc-500 mt-2 max-w-2xl">
-          Gere ici les variantes J0 et les relances avec preview text, CTA et media email-safe
-          pour chaque campagne.
-        </p>
+      <div className="mb-8">
+        <div className="max-w-2xl">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-[0.22em] text-[#006596]">
+            Emailing
+          </p>
+          <h1 className="font-flinty text-3xl font-extrabold tracking-tight text-black">
+            Studio emailing
+          </h1>
+        </div>
+        <div
+          data-testid="templates-subheader"
+          className="mt-3 flex flex-wrap items-center justify-between gap-3"
+        >
+          <p className="text-sm text-[var(--dashboard-text-secondary)] sm:text-base">
+            Gere ici les emails J0 et les relances de chaque campagne avec une lecture plus claire
+            des variantes, du contenu et du rendu inbox.
+          </p>
+        </div>
       </div>
 
-      <section className="bg-zinc-950 border border-orange-500/35 bg-orange-500/[0.03] rounded-2xl p-6">
+      <div className="space-y-4">
         <div className="flex items-end justify-between gap-4 flex-wrap">
           <div>
-            <p className="text-xs font-semibold tracking-widest uppercase text-orange-400 mb-2">
+            <p className="text-xs font-semibold tracking-widest uppercase text-blue-400 mb-2">
               Choisir une campagne
             </p>
-            <h2 className="text-xl font-semibold text-white">Selection de la campagne</h2>
-            <p className="text-sm text-zinc-500 mt-1">
-              Les templates restent stockes par campagne, avec compatibilite V1 et metadonnees
-              V2 dans Google Sheets.
+            <h2 className="text-xl font-semibold text-black">Selection de la campagne</h2>
+            <p className="text-sm text-zinc-600 mt-1">
+              Chaque campagne conserve ses emails et variantes dans Google Sheets, sans melange
+              entre campagnes.
             </p>
           </div>
-          <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex items-center gap-3 flex-wrap sm:flex-nowrap">
             <select
-              className="bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:border-orange-500 transition-colors min-w-[280px]"
-              value={pendingCampaignId}
-              onChange={(event) => setPendingCampaignId(event.target.value)}
+              className={`min-w-[280px] h-9 rounded-lg border px-3 text-sm text-zinc-900 ${CARD_SUBPANEL_SURFACE_CLASS} focus:border-zinc-400 focus:outline-none transition-colors`}
+              value={selectedCampaignId}
+              onChange={(event) => {
+                const newCampaignId = event.target.value;
+                if (newCampaignId !== selectedCampaignId) {
+                  router.push(`/dashboard/templates?campaign_id=${newCampaignId}`);
+                }
+              }}
             >
               {campaigns.map((campaign) => (
                 <option key={campaign.campaign_id} value={campaign.campaign_id}>
@@ -190,33 +222,19 @@ export function TemplatesEditor({
                 </option>
               ))}
             </select>
-            <button
-              type="button"
-              onClick={handleCampaignValidate}
-              disabled={pendingCampaignId === selectedCampaignId}
-              className="group relative inline-flex items-center justify-center disabled:opacity-50"
-            >
-              <span className="pointer-events-none absolute inset-x-5 inset-y-1.5 rounded-full bg-orange-500/30 blur-xl transition-opacity duration-300 group-hover:opacity-90" />
-              <span className="relative inline-flex rounded-full bg-gradient-to-r from-orange-500 via-orange-400 to-white p-[1px]">
-                <span className="inline-flex items-center justify-center rounded-full bg-black px-5 py-2.5 text-sm font-medium text-white transition-colors duration-300 group-hover:text-zinc-100">
-                  Valider
-                </span>
-              </span>
-            </button>
             <Link
               href={`/dashboard/campaigns/${selectedCampaignId}`}
-              className="px-4 py-2.5 rounded-lg border border-zinc-700 text-zinc-300 text-sm hover:text-white hover:border-zinc-500 transition-colors"
+              className="inline-flex h-9 items-center rounded-lg border border-zinc-200 bg-white px-3 text-[13px] text-zinc-700 transition-colors hover:border-zinc-300 hover:bg-zinc-50"
             >
               Voir la campagne
             </Link>
           </div>
         </div>
-      </section>
+      </div>
 
       <div className="flex gap-6 items-start">
-        {/* Sidebar verticale */}
         <aside className="w-52 shrink-0 sticky top-6 self-start flex flex-col gap-1">
-          <p className="text-xs font-semibold tracking-widest uppercase text-orange-400 mb-2 px-1">
+          <p className="text-xs font-semibold tracking-widest uppercase text-blue-400 mb-2 px-1">
             Séquences
           </p>
           {EMAIL_TEMPLATE_SECTIONS.map((section) => {
@@ -230,12 +248,12 @@ export function TemplatesEditor({
                 onClick={() => switchSection(section.key)}
                 className={`w-full text-left rounded-xl px-3 py-3 transition-all duration-150 ${
                   isActive
-                    ? "bg-orange-500/15 border border-orange-500/40 text-orange-300"
-                    : "border border-transparent text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900"
+                    ? "border border-zinc-300 bg-zinc-100 text-zinc-900"
+                    : "border border-transparent text-zinc-500 hover:bg-zinc-50 hover:text-zinc-800"
                 }`}
               >
                 <span
-                  className={`block text-sm font-semibold mb-0.5 ${isActive ? "text-orange-400" : "text-zinc-300"}`}
+                  className={`block text-sm font-semibold mb-0.5 ${isActive ? "text-zinc-900" : "text-zinc-700"}`}
                 >
                   {section.key === "j0" ? "J0" : section.title.replace("Relance ", "")}
                 </span>
@@ -244,7 +262,7 @@ export function TemplatesEditor({
                 </span>
                 {hasContent && (
                   <span
-                    className={`mt-1.5 inline-block w-1.5 h-1.5 rounded-full ${isActive ? "bg-orange-400" : "bg-zinc-600"}`}
+                    className={`mt-1.5 inline-block w-1.5 h-1.5 rounded-full ${isActive ? "bg-zinc-500" : "bg-zinc-400"}`}
                   />
                 )}
               </button>
@@ -252,7 +270,6 @@ export function TemplatesEditor({
           })}
         </aside>
 
-        {/* Contenu animé */}
         <div
           className="flex-1 min-w-0 transition-all duration-150"
           style={{
@@ -260,25 +277,123 @@ export function TemplatesEditor({
             transform: contentVisible ? "translateY(0)" : "translateY(6px)",
           }}
         >
-          <section className={`bg-zinc-950 border rounded-2xl p-6 ${SECTION_TONE_CLASS}`}>
-            <div className="mb-5">
-              <p className="text-xs font-semibold tracking-widest uppercase text-orange-400 mb-2">
-                {currentSection.key === "j0" ? "Sequence J0" : `Sequence ${currentSection.title}`}
-              </p>
-              <h2 className="text-xl font-semibold text-white">
-                {currentSection.key === "j0"
-                  ? selectedCampaign?.nom ?? "Campagne introuvable"
-                  : currentSection.title}
-              </h2>
-              <p className="text-sm text-zinc-500 mt-1">
-                {currentSection.key === "j0"
-                  ? `${currentSection.title}${selectedCampaign ? ` · ${selectedCampaign.secteur} · ${selectedCampaign.localisation}` : ""}`
-                  : currentSection.description}
-              </p>
+          <section
+            className={`rounded-[28px] border p-6 lg:p-7 shadow-sm ${SECTION_TONE_CLASS}`}
+          >
+            <div className="mb-6 space-y-4">
+              <div>
+                <p className="text-xs font-semibold tracking-widest uppercase text-blue-400 mb-2">
+                  {currentSection.key === "j0" ? "Sequence J0" : `Sequence ${currentSection.title}`}
+                </p>
+                <div className="space-y-3">
+                  {selectedCampaign ? (
+                    <p className="text-sm text-zinc-500 max-w-2xl">
+                      {`${currentSection.title} · ${selectedCampaign.secteur} · ${selectedCampaign.localisation}`}
+                    </p>
+                  ) : null}
+                  <div className="flex flex-wrap items-end justify-between gap-4">
+                    <h2 className="text-xl font-semibold text-primary md:text-2xl">
+                      {selectedCampaign?.nom ?? "Campagne introuvable"}
+                    </h2>
+                    {currentSection.key !== "j0" && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setDisplayMode((currentMode) =>
+                            currentMode === "preview" ? "edit" : "preview"
+                          )
+                        }
+                        aria-pressed={displayMode === "preview"}
+                        className={`${PREVIEW_TOGGLE_CLASS} ${
+                          displayMode === "preview"
+                            ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                            : "border border-blue-200/60 bg-blue-50 text-primary hover:bg-blue-100"
+                        }`}
+                      >
+                        Apercu email
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {currentSection.key === "j0" ? (
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <Tabs
+                    value={activeVariantKey}
+                    onValueChange={(value) => setActiveVariantKey(value as EmailVariantKey)}
+                    className="w-full sm:w-auto"
+                  >
+                    <TabsList className={`h-auto rounded-xl p-0.5 ${VARIANT_TABS_RAIL_CLASS}`}>
+                      {currentSection.variants.map((variant) => {
+                        const variantEntry = entries.find(
+                          (candidate) =>
+                            candidate.sequence_key === currentSection.key &&
+                            candidate.variant_key === variant.key
+                        );
+                        const hasContent = Boolean(
+                          variantEntry?.subject.trim() || variantEntry?.body.trim()
+                        );
+
+                        return (
+                          <TabsTrigger
+                            key={variant.key}
+                            value={variant.key}
+                            className="min-w-0 rounded-lg px-2.5 py-1.5 text-left text-xs font-medium bg-primary/20 text-primary-foreground transition hover:bg-primary/30 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none data-[state=active]:hover:bg-primary/90"
+                          >
+                            <span className="flex items-center justify-between gap-2">
+                              <span>{variant.label}</span>
+                              <span
+                                className={`h-1.5 w-1.5 shrink-0 rounded-full ${hasContent ? "bg-emerald-400" : "bg-zinc-700"}`}
+                              />
+                            </span>
+                          </TabsTrigger>
+                        );
+                      })}
+                    </TabsList>
+                  </Tabs>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setDisplayMode((currentMode) =>
+                          currentMode === "options" ? "edit" : "options"
+                        )
+                      }
+                      aria-pressed={displayMode === "options"}
+                      className={`${PREVIEW_TOGGLE_CLASS} ${
+                        displayMode === "options"
+                          ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                          : "border border-blue-200/60 bg-blue-50 text-primary hover:bg-blue-100"
+                      }`}
+                    >
+                      CTA / Media optionnel
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setDisplayMode((currentMode) =>
+                          currentMode === "preview" ? "edit" : "preview"
+                        )
+                      }
+                      aria-pressed={displayMode === "preview"}
+                      className={`${PREVIEW_TOGGLE_CLASS} ${
+                        displayMode === "preview"
+                          ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                          : "border border-blue-200/60 bg-blue-50 text-primary hover:bg-blue-100"
+                      }`}
+                    >
+                      Apercu email
+                    </button>
+                  </div>
+                </div>
+              ) : null}
             </div>
 
             <div className="space-y-5">
-              {currentSection.variants.map((variant) => {
+              {visibleVariants.map((variant) => {
                 const entry = entries.find(
                   (candidate) =>
                     candidate.sequence_key === currentSection.key &&
@@ -290,186 +405,225 @@ export function TemplatesEditor({
                 return (
                   <div
                     key={`${currentSection.key}:${variant.key}`}
-                    className={`bg-black border rounded-2xl p-4 lg:p-5 ${VARIANT_TONE_CLASS}`}
+                    className={`rounded-[24px] p-5 lg:p-6 ${VARIANT_TONE_CLASS}`}
                   >
-                    <div className="flex items-center justify-between gap-3 mb-5 flex-wrap">
+                    <div className="mb-5 flex items-start justify-between gap-4 flex-wrap">
                       <div>
-                        <p className="text-sm font-medium text-white">{variant.label}</p>
-                        <p className="text-xs text-zinc-500 mt-1">
-                          Cle template: {selectedCampaignId} / {currentSection.key} / {variant.key}
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="text-lg font-semibold text-zinc-900">{variant.label}</p>
+                          <span className="rounded-full border border-zinc-200 bg-zinc-100 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-zinc-600">
+                            {currentSection.key.toUpperCase()}
+                          </span>
+                        </div>
+                        <p className="mt-1 text-sm text-zinc-500">
+                          {currentSection.key === "j0"
+                            ? "Travaille une seule variante a la fois pour comparer les angles sans surcharge visuelle."
+                            : "Concentre-toi sur un message court, lisible et facile a iterer."}
                         </p>
                       </div>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-[11px] text-zinc-600 uppercase tracking-widest">
-                          {currentSection.key.toUpperCase()}
+                      <div
+                        className={`flex items-center gap-2 rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1.5 text-xs text-zinc-600`}
+                      >
+                        <span className="text-zinc-500">ID interne</span>
+                        <span>
+                          {selectedCampaignId} / {currentSection.key} / {variant.key}
                         </span>
                       </div>
                     </div>
 
-                    <div className="grid gap-5 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
+                    {displayMode === "preview" ? (
+                      <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4 lg:p-5">
+                        <TemplatePreview entry={entry} />
+                      </div>
+                    ) : currentSection.key === "j0" && displayMode === "options" ? (
                       <div className="space-y-4">
-                        <div className="grid gap-4 md:grid-cols-2">
-                          <div>
-                            <label className="block text-[11px] font-semibold uppercase tracking-widest text-zinc-500 mb-2">
-                              Sujet
-                            </label>
-                            <input
-                              value={entry.subject}
-                              onChange={(event) =>
-                                updateEntry(entry, "subject", event.target.value)
-                              }
-                              placeholder="Objet de l'email"
-                              className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:border-orange-500 transition-colors"
-                            />
-                          </div>
-
-                          <div>
-                            <label className="block text-[11px] font-semibold uppercase tracking-widest text-zinc-500 mb-2">
-                              Preview text
-                            </label>
-                            <input
-                              value={entry.preview_text}
-                              onChange={(event) =>
-                                updateEntry(entry, "preview_text", event.target.value)
-                              }
-                              placeholder="Texte d'aperçu de la boite mail"
-                              className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:border-orange-500 transition-colors"
-                            />
-                          </div>
-                        </div>
-
-                        <div>
-                          <label className="block text-[11px] font-semibold uppercase tracking-widest text-zinc-500 mb-2">
-                            Corps
-                          </label>
-                          <textarea
-                            value={entry.body}
-                            onChange={(event) => updateEntry(entry, "body", event.target.value)}
-                            placeholder="Contenu de l'email..."
-                            rows={currentSection.key === "j0" ? 11 : 9}
-                            className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-3 text-sm text-white focus:outline-none focus:border-orange-500 transition-colors resize-y"
-                          />
-                        </div>
-
-                        <div className="rounded-xl border border-zinc-800 bg-gradient-to-b from-orange-500/[0.025] to-transparent p-4 shadow-[inset_0_1px_0_rgba(251,146,60,0.06)]">
-                          <div className="mb-3">
-                            <p className="text-sm font-medium text-orange-100">Bloc CTA</p>
-                            <p className="text-sm text-zinc-500 mt-1">
-                              Renseigne le libelle et l&apos;URL ensemble pour afficher un bouton
-                              d&apos;action dans le preview.
-                            </p>
-                          </div>
-                          <div className="grid gap-4 md:grid-cols-2">
-                            <div>
-                              <label className="block text-[11px] font-semibold uppercase tracking-widest text-zinc-500 mb-2">
-                                Libelle CTA
-                              </label>
-                              <input
-                                value={entry.cta_label}
-                                onChange={(event) =>
-                                  updateEntry(entry, "cta_label", event.target.value)
-                                }
-                                placeholder="Ex: Voir la demo"
-                                className="w-full bg-black border border-zinc-700 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:border-orange-500 transition-colors"
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-[11px] font-semibold uppercase tracking-widest text-zinc-500 mb-2">
-                                URL CTA
-                              </label>
-                              <input
-                                value={entry.cta_url}
-                                onChange={(event) =>
-                                  updateEntry(entry, "cta_url", event.target.value)
-                                }
-                                placeholder="https://..."
-                                className="w-full bg-black border border-zinc-700 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:border-orange-500 transition-colors"
-                              />
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="rounded-xl border border-zinc-800 bg-gradient-to-b from-orange-400/[0.02] to-transparent p-4 shadow-[inset_0_1px_0_rgba(251,146,60,0.05)]">
-                          <div className="mb-3">
-                            <p className="text-sm font-medium text-orange-100">Bloc media</p>
-                            <p className="text-sm text-zinc-500 mt-1">
-                              Pour une video, configure uniquement une miniature et une URL cible.
-                            </p>
-                          </div>
-                          <div className="grid gap-4 md:grid-cols-3">
-                            <div className="md:col-span-1">
-                              <label className="block text-[11px] font-semibold uppercase tracking-widest text-zinc-500 mb-2">
-                                Type de media
-                              </label>
-                              <select
-                                value={entry.media_type}
-                                onChange={(event) =>
-                                  updateEntry(entry, "media_type", event.target.value)
-                                }
-                                className="w-full bg-black border border-zinc-700 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:border-orange-500 transition-colors"
-                              >
-                                {EMAIL_TEMPLATE_MEDIA_OPTIONS.map((option) => (
-                                  <option key={option.value} value={option.value}>
-                                    {option.label}
-                                  </option>
-                                ))}
-                              </select>
-                              <p className="text-xs text-zinc-500 mt-2">
-                                {
-                                  EMAIL_TEMPLATE_MEDIA_OPTIONS.find(
-                                    (option) => option.value === entry.media_type
-                                  )?.description
-                                }
+                        <div className="grid gap-4 lg:grid-cols-3">
+                          <div className={`rounded-2xl border p-4 ${CARD_SUBPANEL_SURFACE_CLASS}`}>
+                            <div className="mb-3">
+                              <p className="text-sm font-medium text-zinc-900">CTA optionnel</p>
+                              <p className="mt-1 text-sm text-zinc-600">
+                                Libelle et URL doivent etre remplis ensemble.
                               </p>
                             </div>
-
-                            <div className="md:col-span-2 grid gap-4 md:grid-cols-2">
+                            <div className="space-y-3">
                               <div>
-                                <label className="block text-[11px] font-semibold uppercase tracking-widest text-zinc-500 mb-2">
-                                  URL miniature
+                                <label className="mb-2 block text-[11px] font-semibold uppercase tracking-widest text-zinc-500">
+                                  Libelle CTA
                                 </label>
                                 <input
-                                  value={entry.media_thumbnail_url}
+                                  value={entry.cta_label}
                                   onChange={(event) =>
-                                    updateEntry(entry, "media_thumbnail_url", event.target.value)
+                                    updateEntry(entry, "cta_label", event.target.value)
                                   }
-                                  placeholder="https://.../thumbnail.jpg"
-                                  className="w-full bg-black border border-zinc-700 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:border-orange-500 transition-colors"
+                                  placeholder="Ex: Voir la demo"
+                                  className={`w-full rounded-xl border px-4 py-2.5 text-sm ${CARD_FIELD_CLASS}`}
                                 />
                               </div>
                               <div>
-                                <label className="block text-[11px] font-semibold uppercase tracking-widest text-zinc-500 mb-2">
-                                  URL cible
+                                <label className="mb-2 block text-[11px] font-semibold uppercase tracking-widest text-zinc-500">
+                                  URL CTA
                                 </label>
                                 <input
-                                  value={entry.media_target_url}
+                                  value={entry.cta_url}
                                   onChange={(event) =>
-                                    updateEntry(entry, "media_target_url", event.target.value)
+                                    updateEntry(entry, "cta_url", event.target.value)
                                   }
-                                  placeholder="https://loom.com/... ou landing page"
-                                  className="w-full bg-black border border-zinc-700 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:border-orange-500 transition-colors"
+                                  placeholder="https://..."
+                                  className={`w-full rounded-xl border px-4 py-2.5 text-sm ${CARD_FIELD_CLASS}`}
                                 />
                               </div>
                             </div>
                           </div>
+
+                          <div
+                            className={`rounded-2xl border p-4 lg:col-span-2 ${CARD_SUBPANEL_SURFACE_CLASS}`}
+                          >
+                            <div className="mb-3">
+                              <p className="text-sm font-medium text-zinc-900">Media optionnel</p>
+                              <p className="mt-1 text-sm text-zinc-600">
+                                Utilise une miniature cliquable, jamais une video embarquee.
+                              </p>
+                            </div>
+                            <div className="grid gap-4 md:grid-cols-3">
+                              <div>
+                                <label className="mb-2 block text-[11px] font-semibold uppercase tracking-widest text-zinc-500">
+                                  Type de media
+                                </label>
+                                <select
+                                  value={entry.media_type}
+                                  onChange={(event) =>
+                                    updateEntry(entry, "media_type", event.target.value)
+                                  }
+                                  className={`w-full rounded-xl border px-4 py-2.5 text-sm ${CARD_FIELD_CLASS}`}
+                                >
+                                  {EMAIL_TEMPLATE_MEDIA_OPTIONS.map((option) => (
+                                    <option key={option.value} value={option.value}>
+                                      {option.label}
+                                    </option>
+                                  ))}
+                                </select>
+                                <p className="mt-2 text-xs text-zinc-500">
+                                  {
+                                    EMAIL_TEMPLATE_MEDIA_OPTIONS.find(
+                                      (option) => option.value === entry.media_type
+                                    )?.description
+                                  }
+                                </p>
+                              </div>
+
+                              <div className="grid gap-4 md:col-span-2 md:grid-cols-2">
+                                <div>
+                                  <label className="mb-2 block text-[11px] font-semibold uppercase tracking-widest text-zinc-500">
+                                    URL miniature
+                                  </label>
+                                  <input
+                                    value={entry.media_thumbnail_url}
+                                    onChange={(event) =>
+                                      updateEntry(
+                                        entry,
+                                        "media_thumbnail_url",
+                                        event.target.value
+                                      )
+                                    }
+                                    placeholder="https://.../thumbnail.jpg"
+                                    className={`w-full rounded-xl border px-4 py-2.5 text-sm ${CARD_FIELD_CLASS}`}
+                                  />
+                                </div>
+                                <div>
+                                  <label className="mb-2 block text-[11px] font-semibold uppercase tracking-widest text-zinc-500">
+                                    URL cible
+                                  </label>
+                                  <input
+                                    value={entry.media_target_url}
+                                    onChange={(event) =>
+                                      updateEntry(
+                                        entry,
+                                        "media_target_url",
+                                        event.target.value
+                                      )
+                                    }
+                                    placeholder="https://loom.com/... ou landing page"
+                                    className={`w-full rounded-xl border px-4 py-2.5 text-sm ${CARD_FIELD_CLASS}`}
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        <div
+                          className={`rounded-2xl p-4 lg:p-5 ${CARD_PANEL_SURFACE_CLASS}`}
+                        >
+                          <div className="mb-4">
+                            <p className="text-sm font-medium text-zinc-900">Contenu principal</p>
+                            <p className="mt-1 text-sm text-zinc-600">
+                              Garde l&apos;essentiel visible: objet, apercu et corps du message.
+                            </p>
+                          </div>
+
+                          <div className="grid gap-4 md:grid-cols-2">
+                            <div>
+                              <label className="mb-2 block text-[11px] font-semibold uppercase tracking-widest text-zinc-500">
+                              Sujet
+                              </label>
+                              <input
+                                value={entry.subject}
+                                onChange={(event) =>
+                                  updateEntry(entry, "subject", event.target.value)
+                                }
+                                placeholder="Objet de l'email"
+                                className={`w-full rounded-xl border px-4 py-2.5 text-sm ${CARD_FIELD_CLASS}`}
+                              />
+                            </div>
+
+                            <div>
+                              <label className="mb-2 block text-[11px] font-semibold uppercase tracking-widest text-zinc-500">
+                              Preview text
+                              </label>
+                              <input
+                                value={entry.preview_text}
+                                onChange={(event) =>
+                                  updateEntry(entry, "preview_text", event.target.value)
+                                }
+                                placeholder="Texte d'aperçu de la boite mail"
+                                className={`w-full rounded-xl border px-4 py-2.5 text-sm ${CARD_FIELD_CLASS}`}
+                              />
+                            </div>
+                          </div>
+
+                          <div className="mt-4">
+                            <label className="mb-2 block text-[11px] font-semibold uppercase tracking-widest text-zinc-500">
+                              Corps
+                            </label>
+                            <textarea
+                              value={entry.body}
+                              onChange={(event) => updateEntry(entry, "body", event.target.value)}
+                              placeholder="Contenu de l'email..."
+                              rows={currentSection.key === "j0" ? 10 : 8}
+                              className={`w-full resize-y rounded-xl border px-4 py-3 text-sm ${CARD_FIELD_CLASS}`}
+                            />
+                          </div>
                         </div>
 
-                        <div className="rounded-xl border border-orange-300/20 bg-orange-300/[0.025] p-4">
-                          <label className="block text-[11px] font-semibold uppercase tracking-widest text-zinc-500 mb-2">
-                            Notes internes
-                          </label>
+                        <div className={`rounded-2xl border p-4 ${CARD_SUBPANEL_SURFACE_CLASS}`}>
+                          <div className="mb-3">
+                            <p className="text-sm font-medium text-zinc-900">Notes internes</p>
+                            <p className="mt-1 text-sm text-zinc-600">
+                              Conserve ici les hypotheses, segments et angles a tester.
+                            </p>
+                          </div>
                           <textarea
                             value={entry.notes}
                             onChange={(event) => updateEntry(entry, "notes", event.target.value)}
                             placeholder="Hypothese de test, cible, angle commercial..."
                             rows={3}
-                            className="w-full bg-black border border-zinc-700 rounded-lg px-4 py-3 text-sm text-white focus:outline-none focus:border-orange-500 transition-colors resize-y"
+                            className={`w-full resize-y rounded-xl border px-4 py-3 text-sm ${CARD_FIELD_CLASS}`}
                           />
                         </div>
                       </div>
-
-                      <TemplatePreview entry={entry} />
-                    </div>
+                    )}
                   </div>
                 );
               })}
@@ -484,9 +638,10 @@ export function TemplatesEditor({
           <button
             onClick={handleSave}
             disabled={saving}
-            className="px-5 py-2.5 rounded-lg bg-gradient-to-r from-orange-500 to-pink-500 text-white font-medium text-sm hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-primary-foreground font-medium text-sm hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {saving ? "Enregistrement..." : "Enregistrer les templates"}
+            <Plus className="size-4" />
+            {saving ? "Enregistrement..." : "Enregistrer le template"}
           </button>
         </div>
       </div>

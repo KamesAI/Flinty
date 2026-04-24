@@ -15,6 +15,6 @@ describe("pulse stats theme tokens", () => {
   it("conserve un accent orange unique et discret", () => {
     const tokens = getPulseStatsThemeTokens();
 
-    expect(tokens.accent).toBe("#FFA318");
+    expect(tokens.accent).toBe("#006596");
   });
 });

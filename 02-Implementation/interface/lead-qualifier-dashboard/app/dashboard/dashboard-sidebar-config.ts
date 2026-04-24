@@ -4,8 +4,7 @@ export type DashboardSidebarIcon =
   | "templates"
   | "inbox"
   | "meetings"
-  | "data"
-  | "new-campaign";
+  | "data";
 
 export interface DashboardSidebarItem {
   label: string;
@@ -19,7 +18,7 @@ export interface DashboardSidebarGroup {
   items: DashboardSidebarItem[];
 }
 
-export const DASHBOARD_APP_TITLE = "Kames CRM";
+export const DASHBOARD_APP_TITLE = "Flinty";
 export const DASHBOARD_APP_SUBTITLE = "Lead gen dashboard";
 
 export const dashboardSidebarGroups: DashboardSidebarGroup[] = [
@@ -34,19 +33,19 @@ export const dashboardSidebarGroups: DashboardSidebarGroup[] = [
         matchPrefixes: ["/dashboard/campaigns"],
       },
       {
-        label: "Templates",
+        label: "Configuration",
         icon: "templates",
         href: "/dashboard/templates",
         matchPrefixes: ["/dashboard/templates"],
       },
       {
-        label: "Inbox",
+        label: "Messagerie",
         icon: "inbox",
         href: "/dashboard/inbox",
         matchPrefixes: ["/dashboard/inbox"],
       },
       {
-        label: "Meetings",
+        label: "Calendrier",
         icon: "meetings",
         href: "/dashboard/meetings",
         matchPrefixes: ["/dashboard/meetings"],
@@ -56,17 +55,6 @@ export const dashboardSidebarGroups: DashboardSidebarGroup[] = [
         icon: "data",
         href: "/dashboard/data",
         matchPrefixes: ["/dashboard/data"],
-      },
-    ],
-  },
-  {
-    id: "actions",
-    items: [
-      {
-        label: "Nouvelle campagne",
-        icon: "new-campaign",
-        href: "/dashboard/campaigns/new",
-        matchPrefixes: ["/dashboard/campaigns/new"],
       },
     ],
   },

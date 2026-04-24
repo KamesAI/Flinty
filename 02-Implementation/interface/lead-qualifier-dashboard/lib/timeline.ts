@@ -85,5 +85,5 @@ export function getTimelineChannelBadge(item: TimelineItem): {
   if (item.channel === "email") {
     return { label: "Email", classes: "bg-blue-900/40 text-blue-400" };
   }
-  return { label: "Meeting", classes: "bg-orange-900/40 text-orange-400" };
+  return { label: "Meeting", classes: "bg-blue-900/40 text-blue-400" };
 }

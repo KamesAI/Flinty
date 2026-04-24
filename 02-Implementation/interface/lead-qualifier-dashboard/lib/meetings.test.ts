@@ -33,7 +33,7 @@ describe("parseMeetingRows", () => {
         "lead_1",
         "camp_1",
         "calendly",
-        "Demo Kames",
+        "Demo Flinty",
         "2026-03-10T09:00:00.000Z",
         "2026-03-10T09:30:00.000Z",
         "Europe/Paris",

@@ -52,7 +52,7 @@ export function ActionButtons({ campaignId }: { campaignId: string }) {
       <button
         onClick={handleSendJ0}
         disabled={sendingJ0}
-        className="px-4 py-2 rounded-lg bg-gradient-to-r from-orange-500 to-pink-500 text-white font-medium text-sm hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
+        className="px-4 py-2 rounded-lg bg-gradient-to-r from-blue-500 to-pink-500 text-white font-medium text-sm hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
       >
         {sendingJ0 ? "Envoi..." : "📧 Envoyer emails J0"}
       </button>

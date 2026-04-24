@@ -25,7 +25,7 @@ export function SidebarCampaignsGroup({
         className="group flex items-center justify-between w-full px-3 py-2 rounded-lg text-zinc-300 hover:text-white hover:bg-zinc-900 text-sm transition-colors"
       >
         <span className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full shrink-0 bg-orange-500" />
+          <span className="w-2 h-2 rounded-full shrink-0 bg-blue-500" />
           Campagnes
         </span>
         <span className="text-zinc-700 group-hover:text-zinc-500 text-xs transition-colors">

@@ -1,0 +1,84 @@
+---
+description: Projet Flinty — stack, contraintes, skills locaux et workflow (dérivé de CLAUDE.md)
+alwaysApply: true
+---
+
+# Flinty — Règles projet
+
+**Référence complète** : `CLAUDE.md` à la racine du repo.
+
+## Langue
+
+Réponses à l’utilisateur en **français**.
+
+## Skills
+
+Avant de répondre, vérifier si un skill du repo (`skills/`) ou mentionné dans `CLAUDE.md` correspond à la demande ; **l’appliquer** plutôt que d’improviser. Ne pas sous-déclencher les skills.
+
+| Situation | Skill (préfixe local si présent) |
+|-----------|-----------------------------------|
+| Bug / comportement inattendu | systematic-debugging |
+| Nouveau code Next.js / TS | test-driven-development |
+| Avant « terminé » | verification-before-completion |
+| Plan multi-étapes | writing-plan |
+| Architecture BLOC | create-architecture |
+| Découpage tâches | create-tasks |
+| Idée produit | brainstorming |
+| n8n | skills `n8n-*` + MCP n8n |
+
+## Stack (vérité projet)
+
+- **UI** : Next.js 15 App Router, TypeScript, Tailwind thème dark custom — **pas de shadcn**.
+- **Tests** : Vitest, **TDD** : test avant code pour `lib/*.ts` et `app/**/*.ts` sous le dashboard.
+- **Données** : Google Sheets — 1 Index maître + 1 GSheet enfant par campagne ; isolation stricte ; dédup cross-campagnes via Contacts_Registry (BLOC 4) uniquement.
+- **IA** : Claude Opus via **OpenRouter** (`OPENROUTER_API_KEY`).
+- **Automation** : n8n (staging puis prod). **Emails** : Resend.
+
+## Interdits
+
+- `docker-compose` ; référencer AWS EC2/RDS ou Supabase Pro comme stack vivante ; installer **shadcn**.
+- Mélanger des données entre campagnes hors Contacts_Registry.
+- Refetch systématique d’un `sheet_id` déjà en cache sans vérifier le cache.
+- Committer `.env.local`.
+- Dire « c’est terminé » sans preuve (tests / sorties d’outils).
+- Corriger un bug sans **root cause** ; plusieurs changements à la fois pour débugger ; modifier du code hors périmètre (style, formatage, « refactors » gratuits).
+
+## Obligations
+
+- **staging → valider → prod** pour les changements sensibles.
+- **Exécuter** `npm run test` (et ce qui s’impose) depuis le dossier dashboard — ne pas demander à Thomas de vérifier ce que l’agent peut lancer lui-même.
+- Commandes **copy-paste** avec chemins complets ; **risques** (downtime, données) annoncés avant action sensible.
+- Demande **ambiguë** : exposer les interprétations possibles au lieu de choisir en silence.
+
+## Chemins et commandes
+
+- Code principal : `02-Implementation/interface/lead-qualifier-dashboard/`
+- `npm run dev` | `npm run test` | `npm run build` depuis ce dossier.
+
+## Suivi des tâches v3
+
+Après une tâche réalisée : mettre à jour `tasks/v3/TASKS.md`, `tasks/v3/TASK-XXX.md`, et `02-Implementation/Dev-Log.md` (voir `CLAUDE.md` pour le format exact).
+
+## UI
+
+Couleur accent Flinty : **`#FFA318`**.
+
+## Variables d’environnement (noms)
+
+`GOOGLE_INDEX_SHEET_ID`, `GOOGLE_DRIVE_FOLDER_ID`, `GOOGLE_SERVICE_ACCOUNT_EMAIL`, `GOOGLE_PRIVATE_KEY`, `OPENROUTER_API_KEY`, `N8N_BASE_URL`, `N8N_STAGING_URL`, `N8N_WF1_WEBHOOK` … `N8N_WF4_WEBHOOK`, `RESEND_API_KEY`, `RESEND_FROM`.
+
+## Contexte utilisateur (Thomas)
+
+Instructions pas à pas précises ; une voie privilégiée quand c’est possible ; pas lui faire tester ce que l’agent peut exécuter localement.
+
+## Tâches non triviales (3+ étapes / archi)
+
+Hypothèses explicites ; options nommées si trade-offs ; plan dans `tasks/v3/todo.md` avec validation avant gros chantier (voir `CLAUDE.md`).
+
+## Bug — rappel
+
+Phase 1 = root cause ; un changement à la fois ; après 3 échecs, stop et remise en question avec Thomas.
+
+## Leçons
+
+Nouvelles leçons dans `tasks/v3/lessons.md` (tableau), pas dans ce fichier.

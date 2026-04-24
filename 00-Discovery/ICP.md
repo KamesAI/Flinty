@@ -1,11 +1,11 @@
-# ICP Kames AI — 2026-03-11
+# ICP Flinty — 2026-03-11
 
-> Profils cibles pour les deux produits actifs : Kames CRM et QualioFlow.
+> Profils cibles pour les deux produits actifs : Flinty et QualioFlow.
 > ⚠️ Statut : **hypothèses fortes** — aucun client signé à ce jour. À valider dès les premiers appels.
 
 ---
 
-## Segment 1 : Solopreneur / Founder — Cible Kames CRM
+## Segment 1 : Solopreneur / Founder — Cible Flinty
 
 - **Secteur :** Tous secteurs — SaaS, agences, freelances, consultants
 - **Taille :** 1 personne (solopreneur) ou petite équipe 1-3
@@ -36,6 +36,6 @@
 - **Éviter :** CRM, pipeline, système, webhook, n8n, API, révolutionnaire, incroyable
 
 ### Résultats qui convertissent
-- "J'ai obtenu X nouveaux clients en Y semaines avec Kames CRM"
+- "J'ai obtenu X nouveaux clients en Y semaines avec Flinty"
 - "X heures économisées sur la prospection chaque semaine"
 

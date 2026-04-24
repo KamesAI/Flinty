@@ -17,7 +17,7 @@ function FunnelMini({
           const colors = [
             "from-white/20 to-white/5",
             "from-blue-400/50 to-blue-400/10",
-            "from-orange-400/50 to-orange-400/10",
+            "from-blue-400/50 to-blue-400/10",
             "from-emerald-400/50 to-emerald-400/10",
           ];
 

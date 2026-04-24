@@ -1,4 +1,4 @@
-# Kames CRM Dashboard — Vue d'ensemble
+# Flinty Dashboard — Vue d'ensemble
 
 > **Dernière mise à jour :** 2026-03-10
 > **Statut :** 27/30 tâches complétées — 3 restantes avant prod
@@ -7,7 +7,7 @@
 
 ## Ce que c'est
 
-Un CRM interne de prospection cold email, utilisé par Thomas (Kames AI) pour piloter ses campagnes B2B de prospection commerciale.
+Un CRM interne de prospection cold email (**Flinty**), utilisé par Thomas pour piloter ses campagnes B2B de prospection commerciale.
 
 **Principe :** Google Sheets comme base de données, n8n comme moteur d'automatisation, Next.js comme interface. Pas de SQL, pas de backend custom.
 
@@ -40,7 +40,7 @@ Dashboard Next.js — Affiche tout en temps réel depuis Google Sheets
 | Couche | Techno | Détail |
 |---|---|---|
 | UI | Next.js 15 App Router + TypeScript + Tailwind | localhost:3000 en dev |
-| Base de données | Google Sheets API v4 | Service account Kames |
+| Base de données | Google Sheets API v4 | Service account Flinty |
 | Emails | Resend | Domaine outreach.kamesai.com |
 | Scoring IA | Claude Haiku via OpenRouter | |
 | Automatisation | n8n self-hosted | staging-n8n.kamesai.com (dev) / agent.kamesai.com (prod) |
@@ -71,7 +71,7 @@ Dashboard Next.js — Affiche tout en temps réel depuis Google Sheets
 - Liste des top campagnes avec funnel visuel
 
 ### `/dashboard/campaigns/new` — Nouvelle campagne
-- Formulaire : secteur, ville, taille équipe, poste ciblé, offre Kames
+- Formulaire : secteur, ville, taille équipe, poste ciblé, offre Flinty
 - Appelle WF1 via webhook n8n au submit
 
 ### `/dashboard/campaigns/[id]` — Détail campagne

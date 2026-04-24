@@ -28,7 +28,7 @@ import {
   type Meeting,
 } from "@/lib/meetings";
 
-const SPREADSHEET_ID = process.env.GOOGLE_SHEETS_SPREADSHEET_ID!;
+const SPREADSHEET_ID = process.env.GOOGLE_INDEX_SHEET_ID!;
 const SHEET_READ_CACHE_TTL_MS = 15_000;
 const SHEET_ENSURE_CACHE_TTL_MS = 5 * 60_000;
 
@@ -475,3 +475,301 @@ export async function getAllEmailEvents(): Promise<EmailEvent[]> {
 }
 
 export { type EmailEvent };
+
+/** Parse les lignes d'un onglet {campaign_id}_Qualified (schéma v3, 21 colonnes A:U). */
+export function parseLeadsV3(rows: string[][]): Lead[] {
+  if (!rows.length) return [];
+  const [, ...data] = rows;
+  return data
+    .filter((r) => r[0])
+    .map((r) => ({
+      lead_id:            r[0]  ?? "",
+      campaign_id:        r[1]  ?? "",
+      nom:                r[2]  ?? "",
+      prénom:             r[9]  ?? "",
+      poste:              r[10] ?? "",
+      secteur:            r[11] ?? "",
+      email:              r[7]  ?? "",
+      téléphone:          r[8]  ?? "",
+      score:              r[5]  ?? "0",
+      site:               r[3]  ?? "",
+      ville:              r[4]  ?? "",
+      taille_equipe:      r[12] ?? "",
+      has_ia_services:    r[13] ?? "",
+      statut_email:       r[18] ?? "new",
+      resend_email_id:    "",
+      last_email_sent_at: undefined,
+    }));
+}
+
+/** Aggrège les leads qualifiés de toutes les feuilles enfants en parallèle. */
+export async function getAllLeadsV3(campaigns: IndexCampaign[]): Promise<Lead[]> {
+  const results = await Promise.all(
+    campaigns
+      .filter((c) => c.sheet_id)
+      .map(async (c) => {
+        const rows = await readChildSheet(c.sheet_id, `${c.campaign_id}_Qualified!A:U`);
+        return parseLeadsV3(rows);
+      })
+  );
+  return results.flat();
+}
+
+/** Convertit un IndexCampaign v3 vers l'ancien type Campaign (taux_ouverture absent → "0"). */
+export function indexCampaignToCampaign(c: IndexCampaign): Campaign {
+  return {
+    campaign_id:           c.campaign_id,
+    nom:                   c.nom,
+    secteur:               c.secteur,
+    localisation:          c.localisation,
+    date_création:         c.date_création,
+    offre_kames:           c.offre_kames,
+    statut:                c.statut,
+    total_leads_raw:       c.total_leads_raw,
+    total_leads_qualified: c.total_leads_qualified,
+    emails_envoyés:        c.emails_envoyés,
+    taux_ouverture:        "0",
+    taux_réponse:          c.taux_réponse,
+  };
+}
+
+// ——— Types v3 Index ———
+
+export interface IndexCampaign {
+  campaign_id: string;
+  nom: string;
+  sheet_id: string;
+  sheet_url: string;
+  secteur: string;
+  localisation: string;
+  offre_kames: string;
+  statut: "active" | "generating" | "scheduled" | "paused" | "completed" | "archived";
+  date_création: string;
+  total_leads_raw: string;
+  total_leads_qualified: string;
+  emails_envoyés: string;
+  taux_réponse: string;
+}
+
+export function parseIndexCampaigns(rows: string[][]): IndexCampaign[] {
+  if (!rows.length) return [];
+  const [, ...data] = rows;
+  return data
+    .filter((r) => r[0])
+    .map((r) => ({
+      campaign_id:           r[0]  ?? "",
+      nom:                   r[1]  ?? "",
+      sheet_id:              r[2]  ?? "",
+      sheet_url:             r[3]  ?? "",
+      secteur:               r[4]  ?? "",
+      localisation:          r[5]  ?? "",
+      offre_kames:           r[6]  ?? "",
+      statut:                (r[7] as IndexCampaign["statut"]) ?? "paused",
+      date_création:         r[8]  ?? "",
+      total_leads_raw:       r[9]  ?? "0",
+      total_leads_qualified: r[10] ?? "0",
+      emails_envoyés:        r[11] ?? "0",
+      taux_réponse:          r[12] ?? "0",
+    }));
+}
+
+// ——— Index GSheet (v3 — GOOGLE_INDEX_SHEET_ID) ———
+
+const INDEX_SHEET_ID = process.env.GOOGLE_INDEX_SHEET_ID!;
+
+export const INDEX_CAMPAIGNS_COLUMNS = [
+  "campaign_id",
+  "nom",
+  "sheet_id",
+  "sheet_url",
+  "secteur",
+  "localisation",
+  "offre_kames",
+  "statut",
+  "date_création",
+  "total_leads_raw",
+  "total_leads_qualified",
+  "emails_envoyés",
+  "taux_réponse",
+] as const;
+
+type IndexCampaignColumnName = (typeof INDEX_CAMPAIGNS_COLUMNS)[number];
+type IndexCampaignPatch = Partial<Record<IndexCampaignColumnName, string>>;
+
+const INDEX_CAMPAIGNS_RANGE = "Campagnes!A:M";
+
+/** Lecture directe de l'onglet Campagnes (sans cache — TASK-022 s'en chargera). */
+export async function readIndex(): Promise<string[][]> {
+  const sheets = await getSheets();
+  const response = await sheets.spreadsheets.values.get({
+    spreadsheetId: INDEX_SHEET_ID,
+    range: INDEX_CAMPAIGNS_RANGE,
+  });
+  return (response.data.values ?? []) as string[][];
+}
+
+/** Ajout d'une ligne dans l'onglet Campagnes de l'Index. */
+export async function appendIndex(row: string[]): Promise<void> {
+  const sheets = await getSheets();
+  await sheets.spreadsheets.values.append({
+    spreadsheetId: INDEX_SHEET_ID,
+    range: INDEX_CAMPAIGNS_RANGE,
+    valueInputOption: "USER_ENTERED",
+    requestBody: { values: [row] },
+  });
+}
+
+/** Mise à jour partielle d'une campagne dans l'Index (par campaign_id). */
+export async function updateIndex(
+  campaignId: string,
+  patch: IndexCampaignPatch
+): Promise<void> {
+  const rows = await readIndex();
+  if (rows.length <= 1) return;
+
+  const [, ...data] = rows;
+  const rowDataIndex = data.findIndex((r) => r[0] === campaignId);
+  if (rowDataIndex === -1) return;
+
+  const existingRow = [...(data[rowDataIndex] ?? [])];
+  while (existingRow.length < INDEX_CAMPAIGNS_COLUMNS.length) existingRow.push("");
+
+  for (const [key, value] of Object.entries(patch)) {
+    const colIndex = (INDEX_CAMPAIGNS_COLUMNS as readonly string[]).indexOf(key);
+    if (colIndex >= 0 && value !== undefined) {
+      existingRow[colIndex] = value;
+    }
+  }
+
+  const sheetRowNumber = rowDataIndex + 2; // +1 header, +1 base-1
+  const lastCol = getColumnLetter(INDEX_CAMPAIGNS_COLUMNS.length);
+  const sheets = await getSheets();
+  await sheets.spreadsheets.values.update({
+    spreadsheetId: INDEX_SHEET_ID,
+    range: `Campagnes!A${sheetRowNumber}:${lastCol}${sheetRowNumber}`,
+    valueInputOption: "USER_ENTERED",
+    requestBody: { values: [existingRow] },
+  });
+}
+
+/** Lecture d'un GSheet enfant avec son spreadsheetId dynamique. */
+export async function readChildSheet(
+  sheetId: string,
+  range: string
+): Promise<string[][]> {
+  const sheets = await getSheets();
+  const response = await sheets.spreadsheets.values.get({
+    spreadsheetId: sheetId,
+    range,
+  });
+  return (response.data.values ?? []) as string[][];
+}
+
+/** Écriture dans un GSheet enfant (spreadsheetId = fichier campagne). */
+export async function updateChildSheetValues(
+  spreadsheetId: string,
+  range: string,
+  values: string[][]
+): Promise<void> {
+  const sheets = await getSheets();
+  await sheets.spreadsheets.values.update({
+    spreadsheetId,
+    range,
+    valueInputOption: "USER_ENTERED",
+    requestBody: { values },
+  });
+}
+
+// ——— Création GSheet enfant (v3 — Option A : onglets dans spreadsheet partagé) ———
+
+export interface ChildSheetConfig {
+  campaign_id: string;
+  icp_md: string;
+  secteur: string;
+  villes: string;
+  taille_equipe: string;
+  poste_cible: string;
+  offre_kames: string;
+  template_email: string;
+  score_minimum: string;
+}
+
+/**
+ * Crée les 4 onglets d'une campagne dans GOOGLE_CAMPAIGNS_SHEET_ID (spreadsheet partagé).
+ * Onglets : {campaign_id}_Raw, {campaign_id}_Qualified, {campaign_id}_Rejected, {campaign_id}_Config
+ * Retourne spreadsheetId = GOOGLE_CAMPAIGNS_SHEET_ID et un sheetUrl ancré sur l'onglet Raw.
+ */
+export async function createChildGSheet(
+  _sheetName: string,
+  config: ChildSheetConfig
+): Promise<{ spreadsheetId: string; sheetUrl: string }> {
+  const sheets = await getSheets();
+  const spreadsheetId = process.env.GOOGLE_CAMPAIGNS_SHEET_ID!;
+  const p = config.campaign_id; // préfixe onglets
+
+  // 1. Créer les 4 onglets
+  const batchRes = await sheets.spreadsheets.batchUpdate({
+    spreadsheetId,
+    requestBody: {
+      requests: [
+        { addSheet: { properties: { title: `${p}_Raw` } } },
+        { addSheet: { properties: { title: `${p}_Qualified` } } },
+        { addSheet: { properties: { title: `${p}_Rejected` } } },
+        { addSheet: { properties: { title: `${p}_Config` } } },
+      ],
+    },
+  });
+
+  // Récupérer le gid de l'onglet Raw pour l'URL d'ancrage
+  const rawGid = batchRes.data.replies?.[0]?.addSheet?.properties?.sheetId;
+  const sheetUrl = rawGid != null
+    ? `https://docs.google.com/spreadsheets/d/${spreadsheetId}#gid=${rawGid}`
+    : `https://docs.google.com/spreadsheets/d/${spreadsheetId}`;
+
+  // 2. Headers v3 sur chaque onglet
+  await sheets.spreadsheets.values.batchUpdate({
+    spreadsheetId,
+    requestBody: {
+      valueInputOption: "USER_ENTERED",
+      data: [
+        {
+          range: `${p}_Raw!A1:J1`,
+          values: [["lead_id", "campaign_id", "nom", "site", "ville", "téléphone", "rating", "reviews_count", "maps_url", "found_at"]],
+        },
+        {
+          range: `${p}_Qualified!A1:U1`,
+          values: [["lead_id", "campaign_id", "nom", "site", "ville", "score", "score_reason", "email", "téléphone", "prénom", "poste", "secteur", "taille_equipe", "has_ia_services", "hiring_signals", "growth_stage", "buying_signal", "personalized_hook", "statut_email", "web_quality_score", "web_quality_signals"]],
+        },
+        {
+          range: `${p}_Rejected!A1:G1`,
+          values: [["lead_id", "campaign_id", "nom", "site", "score", "rejection_reason", "processed_at"]],
+        },
+        {
+          range: `${p}_Config!A1:C1`,
+          values: [["param_key", "param_value", "description"]],
+        },
+      ],
+    },
+  });
+
+  // 3. Lignes Config
+  await sheets.spreadsheets.values.append({
+    spreadsheetId,
+    range: `${p}_Config!A2:C`,
+    valueInputOption: "USER_ENTERED",
+    requestBody: {
+      values: [
+        ["icp_md", config.icp_md, "ICP généré par Claude"],
+        ["secteur", config.secteur, "Secteur cible"],
+        ["villes", config.villes, "Villes (séparées virgule)"],
+        ["taille_equipe", config.taille_equipe, "Taille équipe cible"],
+        ["poste_cible", config.poste_cible, "Poste décideur"],
+        ["offre_kames", config.offre_kames, "Offre proposée"],
+        ["template_email", config.template_email, "Template email J0"],
+        ["score_minimum", config.score_minimum, "Seuil qualification (%)"],
+      ],
+    },
+  });
+
+  return { spreadsheetId, sheetUrl };
+}

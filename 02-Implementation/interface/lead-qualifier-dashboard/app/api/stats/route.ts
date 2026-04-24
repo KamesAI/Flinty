@@ -1,6 +1,13 @@
 import { NextResponse } from "next/server";
 import { buildDataDashboardModel, type AnalyticsPeriod, type AnalyticsStatusGroup } from "@/lib/analytics";
-import { getAnalyticsDailySnapshots, getMeetings, getSheetData, parseCampaigns, parseLeads } from "@/lib/sheets";
+import {
+  getAnalyticsDailySnapshots,
+  getMeetings,
+  readIndex,
+  parseIndexCampaigns,
+  getAllLeadsV3,
+  indexCampaignToCampaign,
+} from "@/lib/sheets";
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
@@ -9,14 +16,16 @@ export async function GET(req: Request) {
     (searchParams.get("status_group") as AnalyticsStatusGroup | null) ?? "all";
   const campaignId = searchParams.get("campaign_id") ?? undefined;
 
-  const [campRows, leadRows, meetings, snapshots] = await Promise.all([
-    getSheetData("Campagnes!A:L"),
-    getSheetData("Leads_Qualified!A:P"),
+  const [indexRows, meetings, snapshots] = await Promise.all([
+    readIndex(),
     getMeetings(),
     getAnalyticsDailySnapshots(),
   ]);
-  const campaigns = parseCampaigns(campRows);
-  const leads = parseLeads(leadRows);
+
+  const indexCampaigns = parseIndexCampaigns(indexRows);
+  const campaigns = indexCampaigns.map(indexCampaignToCampaign);
+  const leads = await getAllLeadsV3(indexCampaigns);
+
   const model = buildDataDashboardModel({
     campaigns,
     leads,

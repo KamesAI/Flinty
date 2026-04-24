@@ -231,7 +231,7 @@ function Vibe3Card({ stat, index }: { stat: (typeof VIBE3_DATA)[0]; index: numbe
         <div>
           <p className={cn(
             "text-[10px] font-mono tracking-[0.15em] font-medium",
-            stat.isAccent ? "text-orange-500" : "text-zinc-500",
+            stat.isAccent ? "text-blue-500" : "text-zinc-500",
           )}>
             {stat.label}
           </p>
@@ -239,14 +239,14 @@ function Vibe3Card({ stat, index }: { stat: (typeof VIBE3_DATA)[0]; index: numbe
         </div>
         <div className={cn(
           "p-2 rounded-full border transition-all",
-          stat.isAccent ? "border-orange-500/20 text-orange-500 bg-orange-500/5" : "border-zinc-800 text-zinc-600",
+          stat.isAccent ? "border-blue-500/20 text-blue-500 bg-blue-500/5" : "border-zinc-800 text-zinc-600",
         )}>
           <Icon size={14} strokeWidth={1.5} />
         </div>
       </div>
       <h2 className={cn(
         "text-6xl font-light tracking-tighter tabular-nums mt-4",
-        stat.isAccent ? "text-orange-500" : "text-zinc-100",
+        stat.isAccent ? "text-blue-500" : "text-zinc-100",
       )}>
         {stat.value}
       </h2>
@@ -254,16 +254,16 @@ function Vibe3Card({ stat, index }: { stat: (typeof VIBE3_DATA)[0]; index: numbe
         {stat.trend && (
           <span className={cn(
             "text-[10px] font-mono px-1.5 py-0.5 rounded-sm",
-            stat.isAccent ? "bg-orange-500/10 text-orange-400" : "bg-zinc-800 text-zinc-400",
+            stat.isAccent ? "bg-blue-500/10 text-blue-400" : "bg-zinc-800 text-zinc-400",
           )}>
             {stat.trend}
           </span>
         )}
         <span className="text-[9px] text-zinc-700 uppercase tracking-widest">Vs Previous Period</span>
       </div>
-      {stat.isAccent && <div className="absolute inset-0 pointer-events-none border border-orange-500/10" />}
+      {stat.isAccent && <div className="absolute inset-0 pointer-events-none border border-blue-500/10" />}
       <div className={cn(
-        "absolute bottom-0 left-0 h-[1px] bg-orange-500 transition-all duration-700",
+        "absolute bottom-0 left-0 h-[1px] bg-blue-500 transition-all duration-700",
         stat.isAccent ? "w-full" : "w-0 group-hover:w-full",
       )} />
     </motion.div>
@@ -275,7 +275,7 @@ function Vibe3() {
     <div className="bg-[#050505] p-6 rounded-xl">
       <header className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-zinc-800/50 pb-6">
         <div>
-          <span className="text-[10px] font-mono tracking-[0.2em] text-orange-500 uppercase mb-2 block">Performance Overview</span>
+          <span className="text-[10px] font-mono tracking-[0.2em] text-blue-500 uppercase mb-2 block">Performance Overview</span>
           <h1 className="text-3xl font-light tracking-tight text-zinc-100">
             Outbound <span className="italic text-zinc-500">Intelligence</span>
           </h1>

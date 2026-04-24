@@ -2,114 +2,132 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #000000;
-  --foreground: #ffffff;
+/* Flinty — design system. TrueHorizon blue = hsl(200 100% 29%) = #006596 */
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 220 25% 12%;
+    --card: 0 0% 100%;
+    --card-foreground: 220 25% 12%;
+    --card-elevated: 220 30% 99%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 25% 12%;
+
+    /* Blue Lovable Flinty */
+    --primary: 200 100% 29%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 200 100% 42%;
+
+    --secondary: 220 25% 96%;
+    --secondary-foreground: 220 25% 12%;
+    --muted: 220 20% 96%;
+    --muted-foreground: 220 12% 45%;
+    --accent: 200 100% 29%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --success: 142 71% 45%;
+    --warning: 38 92% 50%;
+    --border: 220 20% 90%;
+    --input: 220 20% 90%;
+    --ring: 200 100% 29%;
+    --radius: 0.75rem;
+
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 220 10% 35%;
+    --sidebar-primary: 200 100% 29%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 15% 96%;
+    --sidebar-accent-foreground: 220 25% 12%;
+    --sidebar-border: 220 15% 92%;
+    --sidebar-ring: 200 100% 29%;
+
+    --gradient-card: linear-gradient(135deg, hsl(0 0% 100%) 0%, hsl(0 0% 100%) 100%);
+    --gradient-primary: linear-gradient(135deg, hsl(245 70% 45%) 0%, hsl(210 95% 55%) 100%);
+    --gradient-glow: radial-gradient(60% 80% at 50% 0%, hsl(200 100% 29% / 0.12) 0%, transparent 70%);
+    --shadow-card: 0 1px 2px 0 hsl(220 15% 80% / 0.10), 0 8px 24px -12px hsl(220 20% 40% / 0.10);
+    --shadow-glow: 0 0 0 1px hsl(200 100% 29% / 0.25), 0 8px 32px -8px hsl(200 100% 29% / 0.30);
+    --shadow-elevated: 0 16px 40px -16px hsl(220 30% 25% / 0.15);
+    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .dark {
+    --background: 220 15% 7%;
+    --foreground: 220 15% 96%;
+    --card: 220 15% 10%;
+    --card-foreground: 220 15% 96%;
+    --card-elevated: 220 15% 12%;
+    --popover: 220 15% 9%;
+    --popover-foreground: 220 15% 96%;
+    --primary: 200 80% 45%;
+    --primary-foreground: 0 0% 0%;
+    --primary-glow: 200 80% 55%;
+    --secondary: 220 15% 15%;
+    --secondary-foreground: 220 15% 96%;
+    --muted: 220 15% 13%;
+    --muted-foreground: 220 12% 55%;
+    --accent: 200 80% 45%;
+    --accent-foreground: 0 0% 0%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 220 15% 16%;
+    --input: 220 15% 16%;
+    --ring: 200 80% 45%;
+    --sidebar-background: 220 15% 8%;
+    --sidebar-foreground: 220 12% 65%;
+    --sidebar-primary: 200 80% 45%;
+    --sidebar-primary-foreground: 0 0% 0%;
+    --sidebar-accent: 220 15% 13%;
+    --sidebar-accent-foreground: 220 15% 96%;
+    --sidebar-border: 220 15% 14%;
+    --sidebar-ring: 200 80% 45%;
+    --gradient-card: linear-gradient(135deg, hsl(220 15% 10%) 0%, hsl(220 15% 11%) 100%);
+    --gradient-primary: linear-gradient(135deg, hsl(245 70% 45%) 0%, hsl(210 95% 55%) 100%);
+    --gradient-glow: radial-gradient(60% 80% at 50% 0%, hsl(200 80% 45% / 0.08) 0%, transparent 70%);
+    --shadow-card: 0 1px 2px 0 hsl(0 0% 0% / 0.20), 0 8px 24px -12px hsl(0 0% 0% / 0.30);
+    --shadow-glow: 0 0 0 1px hsl(200 80% 45% / 0.20), 0 8px 32px -8px hsl(200 80% 45% / 0.25);
+    --shadow-elevated: 0 16px 40px -16px hsl(0 0% 0% / 0.40);
+  }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer base {
+  * { @apply border-border; }
+  html, body { @apply h-full; }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "cv02","cv03","cv04","cv11","ss01";
+  }
 }
 
-.dashboard-theme-root {
-  --accent-orange: #FFA318;
-  --dashboard-app-bg: #050506;
-  --dashboard-card-bg: #09090b;
-  --dashboard-card-bg-muted: #111113;
-  --dashboard-input-bg: #050506;
-  --dashboard-border: rgba(255, 255, 255, 0.08);
-  --dashboard-border-strong: rgba(255, 255, 255, 0.16);
-  --dashboard-text-primary: #ffffff;
-  --dashboard-text-secondary: #a1a1aa;
-  --dashboard-text-muted: #71717a;
-  --pulse-surface: #000000;
-  --pulse-border: #151515;
-  --pulse-row-hover: #0a0a0a;
-  --pulse-icon-surface: rgba(255, 255, 255, 0.025);
-  --pulse-icon-color: #ffffff;
-  --pulse-dot: #171717;
-  --pulse-label: #ffffff;
-  --pulse-sublabel: #5f5f5f;
-  --pulse-value: #ffffff;
+@layer components {
+  .card-premium {
+    @apply relative rounded-xl border border-border bg-card overflow-hidden;
+    background-image: var(--gradient-card);
+    box-shadow: var(--shadow-card);
+    transition: border-color 200ms var(--ease-out), box-shadow 200ms var(--ease-out), transform 200ms var(--ease-out);
+  }
+  .card-premium:hover {
+    border-color: hsl(var(--primary) / 0.35);
+    box-shadow: var(--shadow-card), 0 0 24px -4px hsl(var(--primary) / 0.18);
+  }
+  .card-premium::before {
+    content: "";
+    @apply pointer-events-none absolute inset-x-0 top-0 h-px;
+    background: linear-gradient(90deg, transparent, hsl(var(--primary) / 0.4), transparent);
+    opacity: 0;
+    transition: opacity 200ms var(--ease-out);
+  }
+  .card-premium:hover::before { opacity: 1; }
+
+  .text-gradient-primary {
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
 }
 
-.dashboard-theme-root[data-dashboard-theme="light"] {
-  --dashboard-app-bg: #f3f3f0;
-  --dashboard-card-bg: #ffffff;
-  --dashboard-card-bg-muted: #f7f7f5;
-  --dashboard-input-bg: #ffffff;
-  --dashboard-border: rgba(15, 23, 42, 0.08);
-  --dashboard-border-strong: rgba(15, 23, 42, 0.14);
-  --dashboard-text-primary: #141414;
-  --dashboard-text-secondary: #5f5f66;
-  --dashboard-text-muted: #8a8a93;
-  --pulse-surface: #ffffff;
-  --pulse-border: rgba(15, 23, 42, 0.08);
-  --pulse-row-hover: #f7f7f5;
-  --pulse-icon-surface: rgba(15, 23, 42, 0.03);
-  --pulse-icon-color: #6f6f75;
-  --pulse-dot: rgba(15, 23, 42, 0.08);
-  --pulse-label: #66666d;
-  --pulse-sublabel: #91919a;
-  --pulse-value: #141414;
-}
-
-.dashboard-theme-root [class*="bg-zinc-950"] {
-  background-color: var(--dashboard-card-bg) !important;
-}
-
-.dashboard-theme-root [class*="bg-zinc-900"] {
-  background-color: var(--dashboard-card-bg-muted) !important;
-}
-
-.dashboard-theme-root [class*="bg-zinc-800"] {
-  background-color: color-mix(in srgb, var(--dashboard-card-bg-muted) 82%, black 18%) !important;
-}
-
-.dashboard-theme-root [class*="bg-black"] {
-  background-color: var(--dashboard-input-bg) !important;
-}
-
-.dashboard-theme-root [class*="border-zinc-800"],
-.dashboard-theme-root [class*="border-zinc-700"] {
-  border-color: var(--dashboard-border) !important;
-}
-
-.dashboard-theme-root [class*="text-zinc-600"],
-.dashboard-theme-root [class*="text-zinc-500"] {
-  color: var(--dashboard-text-muted) !important;
-}
-
-.dashboard-theme-root [class*="text-zinc-400"],
-.dashboard-theme-root [class*="text-zinc-300"] {
-  color: var(--dashboard-text-secondary) !important;
-}
-
-.dashboard-theme-root [class*="text-white"] {
-  color: var(--dashboard-text-primary) !important;
-}
-
-.dashboard-theme-root [class*="hover:border-zinc-600"]:hover,
-.dashboard-theme-root [class*="hover:border-zinc-500"]:hover,
-.dashboard-theme-root [class*="hover:border-zinc-700"]:hover {
-  border-color: var(--dashboard-border-strong) !important;
-}
-
-.dashboard-theme-root [class*="hover:text-white"]:hover {
-  color: var(--dashboard-text-primary) !important;
-}
-
-.dashboard-theme-root [class*="hover:bg-zinc-900"]:hover {
-  background-color: var(--dashboard-card-bg-muted) !important;
-}
-
-.dashboard-theme-root .dashboard-keep-white {
-  color: #ffffff !important;
-}
-
-.dashboard-theme-root [class*="bg-gradient-to-r"][class*="from-orange-500"][class*="to-pink-500"],
-.dashboard-theme-root [class*="bg-gradient-to-r"][class*="from-orange-500"][class*="to-pink-500"] * {
-  color: #ffffff !important;
+@layer utilities {
+  .tabular-nums { font-variant-numeric: tabular-nums; }
 }

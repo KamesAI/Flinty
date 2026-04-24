@@ -33,6 +33,8 @@ next-env.d.ts
 02-Implementation/interface/lead-qualifier-dashboard/out/
 02-Implementation/interface/lead-qualifier-dashboard/dist/
 02-Implementation/interface/lead-qualifier-dashboard/*.tsbuildinfo
+02-Implementation/interface/lead-qualifier-dashboard/playwright-report/
+02-Implementation/interface/lead-qualifier-dashboard/test-results/
 
 # Editor / OS
 .idea/

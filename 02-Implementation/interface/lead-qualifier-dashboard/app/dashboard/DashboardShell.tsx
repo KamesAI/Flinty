@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
@@ -10,21 +11,19 @@ import {
   FileText,
   Home,
   Inbox,
-  PlusCircle,
   LogOut,
   Menu,
   Search,
   SunMedium,
 } from "lucide-react";
 import {
-  DASHBOARD_APP_SUBTITLE,
-  DASHBOARD_APP_TITLE,
   type DashboardSidebarIcon,
   type DashboardSidebarItem,
   dashboardSidebarGroups,
 } from "./dashboard-sidebar-config";
 import {
   DASHBOARD_THEME_STORAGE_KEY,
+  getDashboardThemeCssVariables,
   type DashboardTheme,
   resolveDashboardTheme,
   toggleDashboardSidebar,
@@ -38,7 +37,6 @@ const iconMap: Record<DashboardSidebarIcon, typeof Home> = {
   inbox: Inbox,
   meetings: CalendarDays,
   data: BarChart3,
-  "new-campaign": PlusCircle,
 };
 
 const themeStyles = {
@@ -52,9 +50,9 @@ const themeStyles = {
     divider: "border-black/6",
     search: "bg-[#fbfbfa] border-black/8 text-[#111111] placeholder:text-[#aaaaa7]",
     railButton: "text-[#666663] hover:bg-[#f4f4f2] hover:text-black",
-    railButtonActive: "bg-[#f5f5f3] text-[#FFA318] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.05)]",
+    railButtonActive: "bg-[#f5f5f3] text-[hsl(var(--primary))] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.05)]",
     item: "text-[#6d6d69] hover:bg-[#f4f4f2] hover:text-black",
-    itemActive: "bg-[#f5f5f3] text-[#FFA318] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.04)]",
+    itemActive: "bg-[#f5f5f3] text-[hsl(var(--primary))] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.04)]",
     main: "bg-[#fafafa] text-[#111111]",
     overlay: "bg-black/40",
   },
@@ -68,9 +66,9 @@ const themeStyles = {
     divider: "border-white/10",
     search: "bg-[#141416] border-white/10 text-white placeholder:text-[#66666b]",
     railButton: "text-white hover:bg-[#101012]",
-    railButtonActive: "bg-[#121214] text-[#FFA318] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]",
+    railButtonActive: "bg-[#121214] text-[hsl(var(--primary))] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]",
     item: "text-white hover:bg-[#101012]",
-    itemActive: "bg-[#121214] text-[#FFA318] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]",
+    itemActive: "bg-[#121214] text-[hsl(var(--primary))] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]",
     main: "bg-[#050506] text-white",
     overlay: "bg-black/70",
   },
@@ -238,14 +236,15 @@ function ExpandedSidebar({
 
   return (
     <div className={`flex h-full w-full flex-col rounded-[30px] border px-5 py-4 ${styles.panel}`}>
-      <div className="flex items-start gap-3">
-        <div className={`flex h-10 w-10 items-center justify-center rounded-2xl ${styles.logo}`}>
-          <div className="h-4 w-4 rounded-[5px] border-2 border-current" />
-        </div>
-        <div className="pt-0.5">
-          <p className="text-sm font-semibold leading-none">{DASHBOARD_APP_TITLE}</p>
-          <p className={`mt-1 text-xs ${styles.subtleText}`}>{DASHBOARD_APP_SUBTITLE}</p>
-        </div>
+      <div className="flex items-center px-1 pb-2 pt-1">
+        <Image
+          src="/logo-flinty-cropped.png"
+          alt="Flinty"
+          width={110}
+          height={36}
+          className="object-contain"
+          priority
+        />
       </div>
 
       <SidebarSearch theme={theme} />
@@ -275,12 +274,19 @@ function CompactSidebar({
       <button
         type="button"
         onClick={onToggleExpanded}
-        className={`dashboard-keep-white flex h-10 w-10 items-center justify-center rounded-2xl transition-all duration-300 ${
-          expanded ? styles.logo : theme === "light" ? "bg-black text-white hover:bg-zinc-800" : styles.railButtonActive
+        className={`flex h-10 w-10 items-center justify-center rounded-2xl overflow-hidden transition-all duration-300 ${
+          expanded || theme === "light" ? "dashboard-logo-surface" : styles.railButtonActive
         }`}
         aria-label={expanded ? "Masquer le menu" : "Afficher le menu"}
       >
-        <div className="h-4 w-4 rounded-[5px] border-2 border-current" />
+        <Image
+          src="/logo-flinty-cropped.png"
+          alt="Flinty"
+          width={36}
+          height={36}
+          className="object-contain"
+          priority
+        />
       </button>
 
       <button
@@ -324,6 +330,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   }, [pathname]);
 
   const styles = useMemo(() => themeStyles[theme], [theme]);
+  const cssVariables = useMemo(() => getDashboardThemeCssVariables(theme), [theme]);
 
   if (!mounted) {
     return (
@@ -337,6 +344,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     <div
       className={`dashboard-theme-root flex min-h-screen ${styles.shell}`}
       data-dashboard-theme={theme}
+      style={cssVariables}
     >
       <aside className={`hidden lg:flex shrink-0 px-6 py-6 transition-[gap] duration-300 ${desktopExpanded ? "gap-5" : "gap-0"}`}>
         <CompactSidebar
@@ -374,10 +382,14 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
             >
               <Menu className="h-5 w-5" strokeWidth={1.8} />
             </button>
-            <div>
-              <p className="text-sm font-semibold leading-none">{DASHBOARD_APP_TITLE}</p>
-              <p className={`mt-1 text-xs ${styles.subtleText}`}>{DASHBOARD_APP_SUBTITLE}</p>
-            </div>
+            <Image
+              src="/logo-flinty-cropped.png"
+              alt="Flinty"
+              width={90}
+              height={30}
+              className="object-contain"
+              priority
+            />
           </div>
           <button
             type="button"

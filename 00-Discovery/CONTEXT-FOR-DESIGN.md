@@ -1,4 +1,4 @@
-# Kames AI CRM Dashboard — Contexte Design (réalité implémentée)
+# Flinty — Contexte Design (réalité implémentée)
 
 > Ce document décrit l'état **réel** du projet au 2026-03-05, à destination de Claude Web + Figma MCP pour améliorer le design de l'interface.
 
@@ -6,7 +6,7 @@
 
 ## 1. C'est quoi ce projet ?
 
-Un **CRM interne de prospection cold email** pour Kames AI (agence automatisation IA).
+Un **CRM interne de prospection cold email** — produit SaaS **Flinty**.
 Usage : Thomas (fondateur) l'utilise seul pour piloter ses campagnes de lead generation B2B.
 
 **Pipeline complet :**
@@ -60,7 +60,7 @@ Usage : Thomas (fondateur) l'utilise seul pour piloter ses campagnes de lead gen
 - Ville / Zone (texte libre, ex: "Bordeaux")
 - Taille d'équipe cible (select: 1-5 / 1-10 / 10-50 / 50-200 / 200+)
 - Poste ciblé (texte libre, ex: "Gérant")
-- Offre Kames (select: Répondeur IA 24/7 / Lead Scoring / Résumé appels CRM / Relances Email/SMS)
+- Offre Flinty (select: Répondeur IA 24/7 / Lead Scoring / Résumé appels CRM / Relances Email/SMS)
 - Template email (select: Template #1 Intro / #2 Question / #3 Valeur)
 
 **Actions :** Annuler | 🚀 Lancer la campagne (appelle WF1 via webhook n8n)

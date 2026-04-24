@@ -4,7 +4,7 @@
 
 **Goal:** Créer un système automatisé de génération et qualification de leads B2B (agences digitales 5-30 pers) avec scoring IA, stockage Google Sheets, et dashboard Next.js déployé sur Vercel.
 
-**Client:** Internal Kames AI (usage personnel + MVP vendable)
+**Client:** Internal Flinty (usage personnel + MVP vendable)
 
 **Architecture:** 
 - Google Maps Places API → n8n Workflow #1 → Google Sheets "Leads_Raw"
@@ -1465,7 +1465,7 @@ Voir `.env.local.example` pour la liste complète.
 
 ---
 
-**Built with ❤️ by Kames AI**
+**Built with ❤️ by Flinty**
 ```
 
 **Expected result:**

@@ -226,7 +226,7 @@ export function CampaignRow(props: CampaignRowProps) {
               hover: { opacity: 1, x: 0, transition: { duration: 0.12, ease: "easeOut" } },
             }}
             className="hidden h-8 w-8 items-center justify-center rounded-full md:inline-flex"
-            style={{ backgroundColor: tokens.border, color: "#FFA318" }}
+            style={{ backgroundColor: tokens.border, color: "#006596" }}
           >
             <ArrowRight className="h-4 w-4" strokeWidth={1.9} />
           </motion.span>

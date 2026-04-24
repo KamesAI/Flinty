@@ -1,6 +1,12 @@
 import Link from "next/link";
 import { createEmptyCampaignEmailTemplates } from "@/lib/email-templates";
-import { getCampaignEmailTemplates, getSheetData, parseCampaigns } from "@/lib/sheets";
+import {
+  getCampaignEmailTemplates,
+  readIndex,
+  parseIndexCampaigns,
+  indexCampaignToCampaign,
+  type Campaign,
+} from "@/lib/sheets";
 import { TemplatesEditor } from "./TemplatesEditor";
 
 export default async function TemplatesPage({
@@ -10,10 +16,10 @@ export default async function TemplatesPage({
 }) {
   const { campaign_id } = await searchParams;
 
-  let campaigns: ReturnType<typeof parseCampaigns> = [];
+  let campaigns: Campaign[] = [];
   try {
-    const campRows = await getSheetData("Campagnes!A:L");
-    campaigns = parseCampaigns(campRows);
+    const indexRows = await readIndex();
+    campaigns = parseIndexCampaigns(indexRows).map(indexCampaignToCampaign);
   } catch {
     campaigns = [];
   }
@@ -25,18 +31,26 @@ export default async function TemplatesPage({
 
   if (!selectedCampaign) {
     return (
-      <div className="p-8">
-        <p className="text-xs font-semibold tracking-widest uppercase text-orange-400 mb-2">
-          Templates email
-        </p>
-        <h1 className="text-3xl font-bold text-white mb-2">Aucune campagne disponible</h1>
-        <p className="text-sm text-zinc-500 mb-6 max-w-xl">
-          Cree d&apos;abord une campagne pour pouvoir stocker ses variantes d&apos;emails et
-          ses relances.
-        </p>
+      <div className="px-1 py-2 sm:px-2 sm:py-3">
+        <div className="mb-8">
+          <div className="max-w-2xl">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-[0.22em] text-[#006596]">
+              Emailing
+            </p>
+            <h1 className="font-flinty text-3xl font-extrabold tracking-tight text-black">
+              Aucune campagne disponible
+            </h1>
+          </div>
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+            <p className="text-sm text-[var(--dashboard-text-secondary)] sm:text-base">
+              Cree d&apos;abord une campagne pour pouvoir stocker ses variantes d&apos;emails et
+              ses relances.
+            </p>
+          </div>
+        </div>
         <Link
           href="/dashboard/campaigns/new"
-          className="inline-flex px-4 py-2 rounded-lg bg-gradient-to-r from-orange-500 to-pink-500 text-white font-medium text-sm hover:opacity-90 transition-opacity"
+          className="mb-6 inline-flex px-4 py-2 rounded-lg bg-gradient-to-r from-blue-500 to-pink-500 text-white font-medium text-sm hover:opacity-90 transition-opacity"
         >
           + Nouvelle campagne
         </Link>
@@ -49,7 +63,7 @@ export default async function TemplatesPage({
   );
 
   return (
-    <div className="p-8">
+    <div className="px-1 py-2 sm:px-2 sm:py-3">
       <TemplatesEditor
         key={selectedCampaign.campaign_id}
         campaigns={campaigns.map((campaign) => ({

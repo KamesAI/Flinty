@@ -1,5 +1,11 @@
 import { NextResponse } from "next/server";
-import { getCampaignEmailTemplates, getSheetData, parseLeads } from "@/lib/sheets";
+import {
+  getCampaignEmailTemplates,
+  readIndex,
+  parseIndexCampaigns,
+  readChildSheet,
+  parseLeadsV3,
+} from "@/lib/sheets";
 
 const WF3_WEBHOOK = process.env.N8N_WF3_WEBHOOK!;
 
@@ -13,9 +19,16 @@ export async function POST(
     return NextResponse.json({ success: false, message: "N8N_WF3_WEBHOOK non configuré" }, { status: 500 });
   }
 
-  const rows = await getSheetData("Leads_Qualified!A:P");
-  const leads = parseLeads(rows).filter(
-    (l) => l.campaign_id === campaign_id && l.statut_email === "new"
+  const indexRows = await readIndex();
+  const campaign = parseIndexCampaigns(indexRows).find((c) => c.campaign_id === campaign_id);
+
+  if (!campaign?.sheet_id) {
+    return NextResponse.json({ success: false, message: "Campagne introuvable" }, { status: 404 });
+  }
+
+  const rows = await readChildSheet(campaign.sheet_id, `${campaign_id}_Qualified!A:U`);
+  const leads = parseLeadsV3(rows).filter(
+    (l) => l.statut_email === "new"
   );
 
   if (leads.length === 0) {

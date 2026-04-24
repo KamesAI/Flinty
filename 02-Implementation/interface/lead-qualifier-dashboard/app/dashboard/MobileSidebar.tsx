@@ -26,10 +26,10 @@ export function MobileSidebar({ children }: { children: React.ReactNode }) {
           </svg>
         </button>
         <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded-md bg-gradient-to-br from-orange-500 to-pink-500 flex items-center justify-center text-white font-bold text-xs">
+          <div className="w-6 h-6 rounded-md bg-gradient-to-br from-blue-500 to-pink-500 flex items-center justify-center text-white font-bold text-xs">
             K
           </div>
-          <p className="text-white font-semibold text-sm">Kames AI</p>
+          <p className="text-white font-semibold text-sm">Flinty</p>
         </div>
       </div>
 

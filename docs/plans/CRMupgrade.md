@@ -1,17 +1,17 @@
-# Kames CRM Upgrade
+# Flinty Upgrade
 
 > Document de cadrage produit pour faire évoluer le dashboard `lead-gen` vers un CRM commercial plus complet.
 > Hypothèse prioritaire validée : **approche email-first**, avec architecture prête pour l'omnicanal ensuite.
 
 **Date :** 2026-03-08  
-**Projet :** Kames CRM / Lead Gen Dashboard  
+**Projet :** Flinty / Lead Gen Dashboard  
 **Statut :** Vision produit mise a jour avec arbitrages valides
 
 ---
 
 ## 1. Vision Produit
 
-Transformer l'actuel dashboard "lead generation + qualification" en **cockpit commercial Kames** capable de piloter :
+Transformer l'actuel dashboard "lead generation + qualification" en **cockpit commercial Flinty** capable de piloter :
 
 - la génération de leads,
 - la qualification IA,
@@ -30,7 +30,7 @@ La recommandation produit est :
 2. **Ajouter une couche "conversations" et "timeline"** qui pourra ensuite accueillir LinkedIn, WhatsApp, X et Instagram.
 3. **Créer un onglet Data très solide** pour devenir le centre de pilotage business.
 
-En pratique, le CRM doit évoluer d'un dashboard de suivi vers un **système d'exploitation commercial** pour Kames, avec une logique assez propre et modulaire pour pouvoir etre **reconditionne plus tard en produit vendable a des entreprises**.
+En pratique, le CRM doit évoluer d'un dashboard de suivi vers un **système d'exploitation commercial** pour Flinty, avec une logique assez propre et modulaire pour pouvoir etre **reconditionne plus tard en produit vendable a des entreprises**.
 
 ---
 
@@ -60,7 +60,7 @@ Le CRM doit gérer 3 couches :
 
 ### Cible business validee
 
-Le produit est pense d'abord pour **l'agence Kames en usage long terme**, mais il doit etre concu avec une logique suffisamment generique pour etre :
+Le produit est pense d'abord pour **l'agence Flinty en usage long terme**, mais il doit etre concu avec une logique suffisamment generique pour etre :
 
 - reutilisable sur plusieurs campagnes et plusieurs offres,
 - adaptable a plusieurs commerciaux plus tard,
@@ -286,9 +286,9 @@ Recommandation pragmatique :
 4. **Mesurer le clic sur média**
    pour savoir si le bloc visuel améliore le taux de réponse ou de booking.
 
-### Standard recommande pour Kames
+### Standard recommande pour Flinty
 
-Le plus robuste pour les campagnes Kames est :
+Le plus robuste pour les campagnes Flinty est :
 
 - une miniature video personnalisee,
 - un CTA vers une page de demo ou une video Loom,
@@ -528,7 +528,7 @@ Chaque canal doit être évalué selon :
 - stabilité API,
 - coût,
 - conformité,
-- vrai usage commercial chez Kames.
+- vrai usage commercial chez Flinty.
 
 ## Phase 4 - Intelligence commerciale
 
@@ -624,7 +624,7 @@ Pour les templates visuels :
 
 ### 9. Readiness multi-tenant
 
-Si Kames revend ce CRM plus tard, il faudra deja avoir prevu :
+Si Flinty revend ce CRM plus tard, il faudra deja avoir prevu :
 
 - separation propre des donnees,
 - parametrage des marques/offres,
@@ -688,7 +688,7 @@ Ces decisions sont maintenant validees et doivent servir de base pour la suite.
 
 ### Produit
 
-- le CRM est concu d'abord pour **Kames en usage long terme**,
+- le CRM est concu d'abord pour **Flinty en usage long terme**,
 - il doit rester assez propre pour etre **reutilise ou vendu plus tard a des entreprises**,
 - la logique produit doit donc etre pensee des maintenant pour evoluer vers plusieurs users et plusieurs comptes plus tard.
 
@@ -706,7 +706,7 @@ Ces decisions sont maintenant validees et doivent servir de base pour la suite.
 
 ### Templates
 
-- les templates email doivent pouvoir contenir des **videos demo** des solutions Kames,
+- les templates email doivent pouvoir contenir des **videos demo** des solutions Flinty,
 - l'implementation recommandee reste un bloc visuel cliquable robuste pour l'email,
 - la performance du media doit etre mesurable dans les stats.
 
@@ -727,7 +727,7 @@ Ces decisions sont maintenant validees et doivent servir de base pour la suite.
 
 ## 12. Recommandation Finale
 
-La meilleure évolution pour Kames aujourd'hui est :
+La meilleure évolution pour Flinty aujourd'hui est :
 
 **construire un CRM commercial email-first tres fort, avec un socle data + conversations + calendrier en lecture seule, puis ouvrir l'omnicanal en affichage centralise sans casser le noyau existant.**
 

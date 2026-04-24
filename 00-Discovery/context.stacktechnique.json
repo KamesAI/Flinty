@@ -1,7 +1,7 @@
 {
   "metadata": {
     "nom_fichier": "context_stacktechnique.json",
-    "description": "Stack technique complet de Kames AI - Agence d'automatisation par IA",
+    "description": "Stack technique complet de Flinty - Agence d'automatisation par IA",
     "derniere_mise_a_jour": "2026-03-06",
     "owner": "Thomas Callendreau",
     "co_fondateur": "Clément (profil marketing)",
@@ -11,7 +11,7 @@
   },
 
   "projet": {
-    "nom": "Kames AI",
+    "nom": "Flinty",
     "type": "Agence d'automatisation par intelligence artificielle",
     "cible_marche": "TPE/PME françaises et européennes (90% sans connaissance IA)",
     "objectif_business": {

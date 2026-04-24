@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   DASHBOARD_THEME_STORAGE_KEY,
+  getDashboardThemeCssVariables,
   resolveDashboardTheme,
   toggleDashboardSidebar,
   toggleDashboardTheme,
@@ -30,5 +31,18 @@ describe("dashboard-theme", () => {
   it("ouvre ou ferme le panneau desktop via un toggle simple", () => {
     expect(toggleDashboardSidebar(true)).toBe(false);
     expect(toggleDashboardSidebar(false)).toBe(true);
+  });
+
+  it("expose des variables CSS de theme pour les surfaces et textes du dashboard", () => {
+    const lightVars = getDashboardThemeCssVariables("light");
+    const darkVars = getDashboardThemeCssVariables("dark");
+
+    expect(lightVars["--dashboard-text-primary"]).toBeDefined();
+    expect(lightVars["--dashboard-card-bg"]).toBeDefined();
+    expect(lightVars["--dashboard-border"]).toBeDefined();
+    expect(darkVars["--dashboard-text-primary"]).toBeDefined();
+    expect(darkVars["--dashboard-card-bg"]).toBeDefined();
+    expect(darkVars["--dashboard-border"]).toBeDefined();
+    expect(lightVars["--dashboard-text-primary"]).not.toBe(darkVars["--dashboard-text-primary"]);
   });
 });

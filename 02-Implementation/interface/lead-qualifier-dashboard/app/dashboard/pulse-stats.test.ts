@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { buildPulseStats } from "./pulse-stats";
 
 describe("buildPulseStats", () => {
-  it("construit les 4 metriques Kames CRM avec un accent sur la stat campagnes", () => {
+  it("construit les 4 metriques Flinty avec un accent sur la stat campagnes", () => {
     const stats = buildPulseStats({
       campaignsCount: 7,
       repliedCount: 0,

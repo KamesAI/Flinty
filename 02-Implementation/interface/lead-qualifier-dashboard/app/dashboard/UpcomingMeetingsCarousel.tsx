@@ -20,7 +20,7 @@ function getInitialSelectedDay(days: MeetingCarouselDay[]) {
 }
 
 export function getMeetingCountTextClass(meetingCount: number) {
-  return meetingCount > 0 ? "text-[#FFA318]" : "text-white";
+  return meetingCount > 0 ? "text-[#006596]" : "text-white";
 }
 
 export function UpcomingMeetingsCarousel({
@@ -90,7 +90,7 @@ export function UpcomingMeetingsCarousel({
               onClick={() => setSelectedDayKey(day.key)}
               className={`group relative snap-start shrink-0 rounded-[999px] border transition-all duration-300 ${
                 active
-                  ? "border-[#FFA318] bg-transparent"
+                  ? "border-[#006596] bg-transparent"
                   : "border-[var(--dashboard-border)] bg-transparent hover:border-[var(--dashboard-border-strong)]"
               }`}
               aria-pressed={active}

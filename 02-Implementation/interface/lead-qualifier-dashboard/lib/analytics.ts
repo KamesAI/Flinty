@@ -196,6 +196,8 @@ export function buildDataDashboardModel({
         campaignId: campaign.campaign_id,
         campaignName: campaign.nom,
         status: campaign.statut,
+        secteur: campaign.secteur,
+        localisation: campaign.localisation,
         rawLeads: toNumber(campaign.total_leads_raw),
         qualifiedLeads: toNumber(campaign.total_leads_qualified),
         emailsSent,

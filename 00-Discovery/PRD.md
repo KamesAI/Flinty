@@ -1,131 +1,166 @@
-# Product Requirements Document : Kames CRM
+# Product Requirements Document : Flinty
 
-> Version 1.0 — 2026-03-11
-> Statut : MVP implémenté (staging) — déploiement prod en cours
+> Version 2.0 (v3 produit) — 2026-04-15
+> Statut : v1 (MVP) en prod — v3 en phase de spécification
+> Source : `docs/plans/flinty-plan-v3.md`
 
 ---
 
 ## 1. Overview
 
 ### Problem Statement
-Thomas Callendreau (fondateur solo de Kames AI) consacrait plusieurs heures par semaine à la prospection manuelle : recherche d'entreprises, qualification, envoi d'emails, relances. Sans système structuré, le taux de conversion restait faible et l'effort non scalable.
+En v1, Flinty trouve des leads, les score et envoie des emails. Mais toutes les campagnes vivent dans un GSheet unique : au-delà de quelques campagnes en parallèle, les performances chutent, les données s'entremêlent (RGPD compromis dès qu'un client est invité), et les leads enrichis restent pauvres — pas de hook personnalisé, pas de signal d'achat, pas de raison de rejet tracée. Le scoring IA actuel (Haiku) ne produit que 7 champs basiques et ne s'appuie pas sur un ICP propre à chaque campagne.
 
 ### Product Vision
-Un CRM interne qui automatise 100% du pipeline de prospection cold email — de la génération de leads jusqu'aux relances automatiques — permettant à Thomas de lancer une campagne en 2 minutes et d'en suivre les résultats en temps réel.
+Flinty v3 devient un moteur d'intelligence commerciale par campagne : chaque campagne vit dans son propre GSheet isolé, l'IA (Claude Opus 4.6) enrichit chaque lead avec signaux d'achat / hook email prêt à coller / raison de rejet documentée, et l'ICP de campagne est généré via un dialogue avec Claude avant lancement.
 
 ### Target Launch Date
-Staging opérationnel depuis mars 2026 — déploiement Vercel (prod) en cours (Task 016)
+v3 S1–S4 avril–mai 2026. BLOC 0 (architecture GSheet-par-campagne) priorité 1 — pré-requis de tout le reste.
 
 ---
 
 ## 2. Target Users
 
-### Primary Persona : Thomas (Fondateur Kames AI)
-- **Rôle** : CEO solo, responsable de sa propre acquisition client
-- **Contexte** : Prospecte des TPE/PME françaises pour vendre des automatisations IA (500-2500€/mois)
+### Primary Persona : Thomas (Fondateur Flinty / Kames AI)
+- **Rôle** : CEO solo, responsable de son acquisition + prospection pour clients agence
+- **Contexte** : Prospecte des TPE/PME françaises pour vendre des automatisations IA (500–2500 €/mois). Lance désormais plusieurs campagnes en parallèle par secteur/zone
 - **Pain Points** :
-  - Trouver des leads qualifiés manuellement prend 3-5h/semaine
-  - Pas de visibilité sur l'état des séquences en cours
-  - Impossible de scaler sans automatisation
-- **Goals** : Signer 3-5 nouveaux clients/mois sans y passer plus de 2h/semaine
+  - Tout est mélangé dans un GSheet global → illisible à >3 campagnes actives
+  - Les leads rejetés disparaissent sans trace → risque de re-prospection
+  - Les emails manquent de personnalisation → taux d'ouverture stagnant
+  - Créer l'ICP d'une nouvelle campagne prend 30+ min à la main
+- **Goals** : Lancer 10+ campagnes isolées en parallèle sans perdre en qualité, doubler le taux de réponse grâce aux hooks perso, pouvoir partager une campagne à un client sans exposer les autres
+
+### Secondary Persona : Client agence (lecture seule)
+- **Rôle** : PME cliente de Kames AI qui reçoit un accès lecture à sa propre campagne
+- **Contexte** : Reçoit l'URL d'UN GSheet enfant isolé (pas de contact avec les autres clients)
+- **Pain Points** : Aujourd'hui impossible de partager les résultats sans exposer l'ensemble
+- **Goals** : Voir en temps réel les leads générés pour sa campagne, pouvoir exporter en CSV/Instantly
 
 ---
 
-## 3. Core Features (MVP Scope)
+## 3. Core Features (v3 Scope)
 
-### Feature 1 : Création de campagne
-**Priorité** : P0 (Must Have)
+### Feature 1 : Architecture 1 GSheet par campagne (BLOC 0)
+**Priorité** : P0 (Must Have — fondation)
 
-**Description** : Formulaire qui déclenche le pipeline complet (génération → qualification → emails) via un webhook n8n.
+**Description** : WF1 crée dynamiquement un GSheet enfant par campagne (4 onglets : Leads_Raw, Leads_Qualified, Leads_Rejected, Config) et enregistre sa référence dans un GSheet maître "Flinty Index".
 
 **User Stories** :
-- En tant que Thomas, je veux créer une campagne en 2 minutes (secteur + ville + offre) pour lancer une prospection ciblée sans configuration technique.
-- En tant que Thomas, je veux choisir un template email existant pour que les messages soient cohérents avec mon ICP.
+- En tant que Thomas, je veux que chaque campagne ait son propre GSheet isolé pour garantir la conformité RGPD et pouvoir partager une campagne sans exposer les autres.
+- En tant que Thomas, je veux qu'un GSheet maître référence toutes les campagnes pour avoir une vue d'ensemble dans le dashboard sans avoir à ouvrir chaque fichier.
 
 **Acceptance Criteria** :
-- [x] Formulaire avec : nom, secteur, ville, taille d'équipe, poste ciblé, offre Kames, template email
-- [x] Soumission déclenche WF1 via webhook POST (n8n)
-- [x] Campagne apparaît immédiatement dans la liste avec statut "generating"
-- [x] Redirection automatique vers la liste des campagnes après création
+- [ ] GSheet maître "Flinty Index" créé avec onglet `Campagnes` (13 colonnes) + `Contacts_Registry`
+- [ ] WF1 appelle Google Drive API pour créer un GSheet enfant nommé `Flinty — [secteur] [ville] [MM/YYYY]`
+- [ ] WF1 écrit une ligne dans `Flinty Index` avec `campaign_id`, `sheet_id`, `sheet_url`, statut `new`
+- [ ] Chaque GSheet enfant a les 4 onglets + headers corrects dès sa création
+- [ ] Variable `GOOGLE_INDEX_SHEET_ID` présente dans `.env.local` et Vercel
+- [ ] API `/api/campaigns` lit l'Index, API `/api/campaigns/[id]` résout `sheet_id` puis lit l'enfant
+- [ ] WF6 parcourt l'Index et met à jour les stats (colonnes J→M du maître) toutes les heures
 
 ---
 
-### Feature 2 : Pipeline de qualification automatique
+### Feature 2 : Enrichissement IA augmenté (BLOC 1)
 **Priorité** : P0 (Must Have)
 
-**Description** : n8n génère des leads via Google Maps, scrape leurs sites avec Firecrawl, et les score via Claude (0-100).
+**Description** : WF2 passe de 7 à 14 champs en sortie Claude : ajout de `score_reason`, `hiring_signals`, `growth_stage`, `buying_signal`, `personalized_hook`, `rejection_reason`, plus un `web_quality_score` calculé côté n8n depuis le contenu Firecrawl.
 
 **User Stories** :
-- En tant que Thomas, je veux que les leads soient scorés automatiquement pour ne voir que les prospects pertinents.
-- En tant que Thomas, je veux voir le score de chaque lead d'un coup d'œil pour prioriser mes actions.
+- En tant que Thomas, je veux recevoir un hook email perso (≤20 mots) pour chaque lead qualifié afin de personnaliser massivement sans effort manuel.
+- En tant que Thomas, je veux connaître la raison du rejet de chaque lead pour éviter de le re-prospecter et détecter les faux négatifs.
+- En tant que Thomas, je veux que le scoring s'appuie sur l'ICP de la campagne (pas des critères génériques) pour qu'il reflète vraiment mon intention commerciale.
 
 **Acceptance Criteria** :
-- [x] WF1 alimente `Leads_Raw` depuis Google Maps Places API
-- [x] WF2 scrape chaque site (Firecrawl) + génère un score /100 (Claude Haiku)
-- [x] Score coloré : ≥70 = vert / ≥50 = jaune / <50 = gris
-- [x] Leads qualifiés visibles dans le tableau de la vue campagne
+- [ ] Nouveau prompt Claude Opus 4.6 dans WF2 retourne un JSON à 14 clés
+- [ ] WF2 lit `Config.icp_md` et `Config.score_minimum` du GSheet enfant avant le scoring
+- [ ] Leads avec `score >= score_minimum` → écrits dans `Leads_Qualified` avec les 7 nouveaux champs
+- [ ] Leads avec `score < score_minimum` → écrits dans `Leads_Rejected` avec `rejection_reason` + `processed_at`
+- [ ] Code node post-Firecrawl calcule `web_quality_score` (0–100) + `web_quality_signals`
+- [ ] Fiche lead UI affiche : hook copiable, buying_signal, hiring_signals, growth_stage (badge coloré), web_quality_score
+- [ ] 100% des leads traités atterrissent dans Qualified OU Rejected (taux de perte = 0)
 
 ---
 
-### Feature 3 : Séquence email automatique J0/J+3/J+7
+### Feature 3 : ICP.md généré par dialogue Claude (BLOC 3)
 **Priorité** : P0 (Must Have)
 
-**Description** : Envoi automatique des 3 touches email via Resend, avec tracking ouverture/clic/réponse/rebond.
+**Description** : Le bouton "+ Nouvelle campagne" ouvre une interface chat où Claude pose 8 questions stratégiques, synthétise un ICP.md structuré, affiche une preview Markdown, puis déclenche WF1 avec l'ICP injecté dans le `Config` du GSheet enfant.
 
 **User Stories** :
-- En tant que Thomas, je veux que les emails partent automatiquement sans action manuelle pour ne pas dépendre de ma disponibilité.
-- En tant que Thomas, je veux voir le statut de chaque lead (J0 envoyé, ouvert, répondu…) pour savoir où en est la relation.
+- En tant que Thomas, je veux répondre à 8 questions dans un chat plutôt que remplir un formulaire pour créer un ICP complet en moins de 5 minutes.
+- En tant que Thomas, je veux valider / éditer l'ICP.md avant le lancement pour corriger la synthèse Claude si besoin.
 
 **Acceptance Criteria** :
-- [x] WF3 envoie J0 immédiatement après qualification
-- [x] WF5 (schedule horaire) envoie J+3 et J+7 automatiquement
-- [x] WF4 reçoit les webhooks Resend et met à jour `statut_email` dans le GSheet
-- [x] Badges colorés sur la fiche campagne : contacted / opened / clicked / replied / bounced
+- [ ] Page `/dashboard/campaigns/new` affiche un chat séquentiel (1 question à la fois)
+- [ ] Route `POST /api/campaigns/generate-icp` appelle Claude Opus 4.6 (SDK `@anthropic-ai/sdk`)
+- [ ] ICP.md généré avec structure fixe : profil cible / problème / offre / signaux + / signaux - / exclusions / grille scoring / hook type
+- [ ] Preview Markdown éditable avant lancement
+- [ ] `POST /api/campaigns` envoie `icp_md` dans le payload à WF1
+- [ ] WF1 écrit `icp_md` dans l'onglet `Config` du GSheet enfant
 
 ---
 
-### Feature 4 : Dashboard de suivi
-**Priorité** : P0 (Must Have)
-
-**Description** : Vue d'ensemble des campagnes avec KPIs globaux et détail par campagne.
-
-**User Stories** :
-- En tant que Thomas, je veux voir les KPIs de toutes mes campagnes d'un coup d'œil pour évaluer la performance globale.
-- En tant que Thomas, je veux accéder au détail d'une campagne et de chaque lead pour qualifier manuellement si besoin.
-
-**Acceptance Criteria** :
-- [x] Page `/dashboard` : 4 KPIs globaux + liste des campagnes avec stats inline
-- [x] Page `/dashboard/campaigns/[id]` : 6 KPIs + tableau leads qualifiés
-- [x] Page `/dashboard/campaigns/[id]/leads/[id]` : fiche complète du lead
-- [x] Données lues en temps réel depuis Google Sheets API v4
-
----
-
-### Feature 5 : Timeline email sur fiche lead
+### Feature 4 : Vue Kanban des leads (BLOC 2)
 **Priorité** : P1 (Should Have)
 
-**Description** : Historique chronologique des événements email (J0 envoyé, ouvert le X, cliqué le Y) sur la fiche de chaque lead.
+**Description** : Page Kanban par campagne avec 6 colonnes (Nouveaux → Contactés → Ouvert → Cliqué → Répondu → Bounced), cartes drag & drop qui persistent le statut dans le GSheet enfant.
 
 **User Stories** :
-- En tant que Thomas, je veux voir l'historique complet des interactions email d'un lead pour adapter mon approche (relancer ou arrêter).
+- En tant que Thomas, je veux voir le pipeline de ma campagne en colonnes pour détecter d'un coup d'œil où en sont les leads.
+- En tant que Thomas, je veux forcer manuellement un statut (drag & drop) quand je sais par ailleurs qu'un lead a répondu (ex: sur LinkedIn).
 
 **Acceptance Criteria** :
-- [ ] Onglet `Email_Events` dans Google Sheets alimenté par WF3/WF4/WF5
-- [ ] Timeline affichée sur la fiche lead avec date + type d'événement
-- [ ] Statut actuel mis en évidence (dernier événement)
+- [ ] Dépendances installées : `@dnd-kit/core`, `@dnd-kit/sortable`, `@dnd-kit/utilities`
+- [ ] Route `/dashboard/campaigns/[campaign_id]/kanban/page.tsx` créée
+- [ ] Cartes affichent nom, ville, score coloré, hook perso au hover
+- [ ] Drag & drop appelle `PATCH /api/leads/[id]/status` avec `sheet_id` en body
+- [ ] Onglet de navigation "Kanban" ajouté sur la page campagne
 
 ---
 
-## 4. Out of Scope (v1)
+### Feature 5 : Déduplication inter-campagnes (BLOC 4)
+**Priorité** : P1 (Should Have — activable à 5+ campagnes actives)
+
+**Description** : Un onglet `Contacts_Registry` dans le GSheet maître trace chaque domaine déjà contacté. WF1 filtre les doublons avant écriture dans `Leads_Raw` ; WF3 append au registre après chaque envoi J0.
+
+**User Stories** :
+- En tant que Thomas, je ne veux jamais prospecter deux fois le même domaine, même si je lance plusieurs campagnes qui se chevauchent.
+
+**Acceptance Criteria** :
+- [ ] Onglet `Contacts_Registry` (domain | last_contacted_at | campaign_id | statut) présent dans le maître
+- [ ] WF1 lit le registre + filtre les leads dont le domaine est connu (code node)
+- [ ] WF3 append au registre après envoi Resend J0
+
+---
+
+### Feature 6 : Export multi-format (BLOC 5)
+**Priorité** : P1 (Should Have)
+
+**Description** : 3 formats d'export pour une campagne : CSV standard (tous les champs v3), JSON développeur, CSV Instantly-ready (Email / Prénom / Company / Personalization = `personalized_hook`).
+
+**User Stories** :
+- En tant que Thomas, je veux importer mes leads dans Instantly en 1 clic avec le hook perso déjà rempli pour brancher l'outreach externe sans saisie manuelle.
+
+**Acceptance Criteria** :
+- [ ] Route `GET /api/campaigns/[id]/export?format=csv|json|instantly` opérationnelle
+- [ ] CSV standard inclut les 16 colonnes v3 (dont score_reason, buying_signal, personalized_hook, hiring_signals, growth_stage, web_quality_score)
+- [ ] Format Instantly filtre les leads sans email et mappe `personalized_hook` → colonne `Personalization`
+- [ ] 3 boutons d'export affichés sur la page campagne
+
+---
+
+## 4. Out of Scope (v3)
 
 | Feature | Raison du report |
 |---|---|
-| Mode mobile | Usage exclusivement desktop (Thomas) |
-| Multi-utilisateurs | Outil solo, pas de besoin immédiat |
-| A/B testing des templates | Complexité non justifiée avant d'avoir des données |
-| Intégration CRM externe (HubSpot, Pipedrive) | GSheet suffit pour le volume actuel |
-| Graphiques de performance dans le temps | Nice-to-have, pas bloquant pour l'usage |
-| Actions manuelles sur les leads (forcer relance) | P2 — utile mais pas critique pour le MVP |
+| Version mobile | Usage desktop exclusif (Thomas + clients agence) |
+| Authentification multi-user | Partage client se fait via URL Google Sheets natif (droits lecture) |
+| A/B testing templates email | Pas de volume statistique suffisant avant 10+ campagnes closes |
+| Migration vers Postgres | Déclencheur : >1000 leads/mois ou latence GSheet >1s soutenue |
+| Intégration HubSpot / Pipedrive | Export Instantly / CSV suffit pour le volume actuel |
+| Graphiques temporels de performance | Nice-to-have, pas bloquant pour piloter les campagnes |
+| Timeline email sur fiche lead (Feature P1 v1) | Reporté en v3.2 après stabilisation du BLOC 0 |
 
 ---
 
@@ -133,56 +168,79 @@ Staging opérationnel depuis mars 2026 — déploiement Vercel (prod) en cours (
 
 | Métrique | Cible | Délai | Mesure |
 |---|---|---|---|
-| Taux d'ouverture email | >30% | 1er mois de campagnes | Google Sheets `taux_ouverture` |
-| Taux de réponse email | >5% | 1er mois | Google Sheets `taux_réponse` |
-| Temps de création campagne | <2 min | Dès la V1 | Chronométrage manuel |
-| Leads qualifiés générés/campagne | >30 | Par campagne | `total_leads_qualified` |
-| Appels de découverte générés | 3-5/mois | Mois 1-2 | Suivi manuel |
+| Taux d'ouverture email | >35% | 1er mois v3 | `taux_ouverture` GSheet maître |
+| Taux de réponse email | >8% | 1er mois v3 | `taux_réponse` GSheet maître |
+| Temps de création campagne (chat ICP → lancement) | <5 min | Dès v3.1 | Chronométrage manuel |
+| Leads qualifiés générés / campagne | >30 | Par campagne | `total_leads_qualified` onglet Campagnes |
+| Hook coverage | 100% | Par campagne | % lignes `Leads_Qualified` avec `personalized_hook` non vide |
+| Taux de rejet documenté | 100% | Par campagne | Chaque ligne `Leads_Rejected` a un `rejection_reason` |
+| Appels de découverte générés | 5–8/mois | Mois 1–2 post v3 | Suivi manuel |
 
 ---
 
 ## 6. Technical Constraints
 
-- **Platform** : Web desktop (Next.js 15, App Router, TypeScript, Tailwind)
-- **Base de données** : Google Sheets API v4 (Spreadsheet ID : `14Uf6GlvmlCxzaFxENExW-FkCV0CZNQ_7zwzik9SAelY`)
-- **Automatisation** : n8n self-hosted sur Hetzner (staging : staging-n8n.kamesai.com / prod : agent.kamesai.com)
-- **Email** : Resend (domaine outreach.kamesai.com)
-- **Scoring IA** : Claude Haiku via OpenRouter
-- **Scraping** : Firecrawl API
+- **Platform** : Web desktop (Next.js 15 App Router, TypeScript, Tailwind)
+- **Base de données** : Google Sheets API v4 — 1 maître + N enfants (1 par campagne)
+- **Automatisation** : n8n self-hosted Hetzner (staging + prod)
+- **Email** : Resend (domaine outreach.kamesai.com — inchangé)
+- **Scoring IA** : Claude Opus 4.6 (v3 — upgrade depuis Haiku) pour enrichir les 14 champs + pour la génération ICP
+- **Scraping** : Firecrawl (inchangé)
 - **Déploiement** : Vercel (CI/CD depuis GitHub)
-- **Pas de base de données SQL** : décision MVP, GSheet suffit pour le volume solo
+- **Nouvelles env vars** :
+  - `GOOGLE_INDEX_SHEET_ID` — Vercel + `.env.local`
+  - `GOOGLE_DRIVE_FOLDER_ID` — n8n (dossier où WF1 crée les enfants)
+  - `ANTHROPIC_API_KEY` — Vercel + `.env.local` (pour `generate-icp`)
 
 ---
 
 ## 7. Open Questions
 
-- [ ] Quel template email par défaut pour chaque offre Kames ? (lié à ICP.md + email-templates-library.md)
-- [ ] Quand migrer de GSheet vers une vraie DB ? (à partir de quel volume de leads ?)
-- [ ] Intégrer les templates de email-templates-library.md dans le select "Template email" du formulaire ?
+- [ ] `score_minimum` par défaut : 60 pour toutes les campagnes, ou configurable par secteur ?
+- [ ] Seuil exact pour activer BLOC 4 (déduplication) — 5 campagnes actives confirmé ?
+- [ ] Quand migrer vers Postgres (Neon) ? Volumétrie exacte observée en prod
+- [ ] Faut-il un "mode dégradé" si Claude Opus retourne un JSON invalide (fallback Haiku ou rejet auto) ?
+- [ ] Rate limiting sur `/api/campaigns/generate-icp` avant ouverture prod (éviter burn de tokens)
 
 ---
 
 ## 8. Appendix
 
-### User Flow principal : Lancer une campagne
+### User Flow v3 : Lancer une campagne
 
 ```
 Thomas ouvre /dashboard
-  → Clique "Nouvelle campagne"
-  → Remplit le formulaire (secteur + ville + offre + template)
-  → Soumet → webhook WF1 déclenché
-  → Redirection /dashboard — campagne visible en statut "generating"
-  → WF1 génère leads → Leads_Raw
-  → WF2 qualifie + score → Leads_Qualified
-  → Campagne passe en statut "active"
-  → WF3 envoie J0 → statut leads = "contacted"
-  → J+3 et J+7 envoyés automatiquement par WF5
-  → Thomas consulte /dashboard/campaigns/[id] pour voir les réponses
+  → Clique "+ Nouvelle campagne"
+  → Chat : Claude pose 8 questions une par une
+  → Claude synthétise un ICP.md structuré
+  → Preview Markdown éditable → Thomas valide
+  → POST /api/campaigns { icp_md, secteur, localisation, offre_kames, ... }
+  → WF1 déclenché (webhook)
+      → Google Drive API → crée GSheet enfant
+      → Google Sheets API → crée 4 onglets + headers + écrit icp_md dans Config
+      → Google Sheets API → append ligne dans Flinty Index (maître)
+      → Google Maps Places API → filter → dedupe via Contacts_Registry
+      → écrit dans Leads_Raw du GSheet enfant
+  → WF2 scrape Firecrawl + scoring Claude Opus 4.6 (14 champs)
+      → IF score ≥ seuil → Leads_Qualified (enfant)
+      → ELSE → Leads_Rejected (enfant)
+  → WF3 envoi J0 Resend → statut_email = contacted
+      → append domaine dans Contacts_Registry (maître)
+  → WF5 (horaire) envoie J+3 et J+7
+  → WF4 reçoit webhooks Resend → MAJ statut_email
+  → WF6 (horaire) agrège stats dans l'Index
+  → Thomas consulte /dashboard/campaigns/[id] ou /kanban
+  → Export CSV / JSON / Instantly en 1 clic
 ```
 
-### Statuts email du pipeline
+### Statuts email
 ```
 new → contacted (J0) → relance_1 (J+3) → relance_2 (J+7)
                     ↘ opened → clicked → replied
                     ↘ bounced / disqualified
 ```
+
+### Références
+- Plan v3 détaillé : `docs/plans/flinty-plan-v3.md`
+- Architecture technique : `00-Discovery/ARCHI.md` v2
+- Templates email : `00-Discovery/email-templates-library.md`

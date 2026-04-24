@@ -1,10 +1,10 @@
-# Kames CRM Dashboard — Plan d'Implémentation v2
+# Flinty Dashboard — Plan d'Implémentation v2
 
 > **For Claude Code CLI:** Follow this plan task-by-task. Execute each step, report the result, then move to the next. Do NOT skip steps. Do NOT proceed if a step fails — stop and report the error.
 
-**Goal:** Construire un dashboard Next.js complet pour gérer les campagnes de prospection cold email de Kames AI, de la génération de leads jusqu'au suivi des séquences email.
+**Goal:** Construire un dashboard Next.js complet pour gérer les campagnes de prospection cold email de Flinty, de la génération de leads jusqu'au suivi des séquences email.
 
-**Client:** Kames AI (usage interne)
+**Client:** Flinty (usage interne)
 
 **Architecture:**
 - Google Sheets = base de données (4 onglets : Campagnes, Leads_Raw, Leads_Qualified, Config)
@@ -50,7 +50,7 @@ app/
 
 ---
 
-## Structure Google Sheets — "Kames CRM"
+## Structure Google Sheets — "Flinty"
 
 ### Onglet 1 — Campagnes
 ```
@@ -77,7 +77,7 @@ lead_id | campaign_id | nom | site | ville | score | email | téléphone | prén
 ```
 param_key | param_value | description
 ```
-> Paramètres ICP par défaut : secteur, villes, taille équipe, poste ciblé, offre Kames, template email.
+> Paramètres ICP par défaut : secteur, villes, taille équipe, poste ciblé, offre Flinty, template email.
 > Sert à pré-remplir le formulaire de nouvelle campagne.
 
 ---
@@ -88,7 +88,7 @@ param_key | param_value | description
 
 ---
 
-### Tâche 1.1 — Créer le Google Sheet "Kames CRM"
+### Tâche 1.1 — Créer le Google Sheet "Flinty"
 
 **Ce qu'on fait :** Créer la base de données Google Sheets avec les 4 onglets bien structurés.
 
@@ -98,7 +98,7 @@ param_key | param_value | description
 
 **Action :**
 1. Va sur [sheets.google.com](https://sheets.google.com) → clique **"+ Nouveau"**
-2. Clique sur le nom en haut → renomme en : `Kames CRM`
+2. Clique sur le nom en haut → renomme en : `Flinty`
 3. Note l'URL : `https://docs.google.com/spreadsheets/d/XXXXXXXX.../edit`
 4. **Copie l'ID** (la partie entre `/d/` et `/edit`) → colle dans Notion, tu en auras besoin partout.
    Exemple : `1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms`
@@ -199,7 +199,7 @@ A2: secteur_defaut        B2: plomberie              C2: Secteur cible principal
 A3: ville_defaut          B3: Bordeaux               C3: Ville cible principale
 A4: taille_equipe_defaut  B4: 1-10                   C4: Taille d'équipe cible
 A5: poste_cible_defaut    B5: Gérant                 C5: Poste du décideur
-A6: offre_defaut          B6: Répondeur IA 24/7      C6: Offre Kames à proposer
+A6: offre_defaut          B6: Répondeur IA 24/7      C6: Offre Flinty à proposer
 A7: template_defaut       B7: Template #1 - Intro    C7: Template email de départ
 ```
 
@@ -238,7 +238,7 @@ A7: template_defaut       B7: Template #1 - Intro    C7: Template email de dépa
 
 **Action :**
 1. Menu gauche → **"Identifiants"** → **"+ Créer des identifiants"** → **"Compte de service"**
-2. Nom : `kames-n8n-sheets` | Description : `Accès n8n vers GSheet Kames CRM`
+2. Nom : `kames-n8n-sheets` | Description : `Accès n8n vers GSheet Flinty`
 3. **"Créer et continuer"** → **"Continuer"** → **"OK"**
 
 **Résultat attendu :** Email créé : `kames-n8n-sheets@kames-crm-api.iam.gserviceaccount.com`
@@ -260,7 +260,7 @@ A7: template_defaut       B7: Template #1 - Intro    C7: Template email de dépa
 #### Étape 1.2.5 — Partager le GSheet avec le Service Account
 
 **Action :**
-1. Retourne sur "Kames CRM" → **"Partager"** (bouton bleu haut droite)
+1. Retourne sur "Flinty" → **"Partager"** (bouton bleu haut droite)
 2. Colle l'adresse `client_email` du fichier JSON
 3. Rôle : **"Éditeur"** | Décoche "Envoyer une notification" → **"Partager"**
 
@@ -274,7 +274,7 @@ A7: template_defaut       B7: Template #1 - Intro    C7: Template email de dépa
 1. [agent.kamesai.com](https://agent.kamesai.com) → **"Credentials"** → **"+ Add credential"** → **"Google Sheets"**
 2. Dans **"Service Account Key JSON"** : colle le contenu ENTIER du fichier JSON
 3. **"Test"** → attends "Connection tested successfully"
-4. Nom : `Google Sheets - Kames CRM` → **"Save"**
+4. Nom : `Google Sheets - Flinty` → **"Save"**
 
 **Résultat attendu :** Credential sauvegardée avec carré vert ✅
 
@@ -532,7 +532,7 @@ Google Sheets : `Get Many Rows` | Sheet : `Leads_Raw` | Filter : `campaign_id` =
   "max_tokens": 600,
   "messages": [{
     "role": "user",
-    "content": "Tu es expert en qualification B2B pour Kames AI (agence d'automatisation IA). Analyse cette entreprise et retourne UNIQUEMENT un JSON valide, rien d'autre.\n\nEntreprise: {{ $('Google Sheets').item.json.nom }}\nVille: {{ $('Google Sheets').item.json.ville }}\nRating Google: {{ $('Google Sheets').item.json.rating }}/5 ({{ $('Google Sheets').item.json.reviews_count }} avis)\nContenu site web: {{ $json.data.content.substring(0, 2000) }}\n\nJSON attendu :\n{\"score\": 75, \"prénom\": \"Jean\", \"poste\": \"Gérant\", \"email\": \"contact@example.com\", \"taille_equipe\": \"5-10\", \"has_ia_services\": false, \"raison_score\": \"PME active avec process répétitifs\"}"
+    "content": "Tu es expert en qualification B2B pour le produit SaaS Flinty. Analyse cette entreprise et retourne UNIQUEMENT un JSON valide, rien d'autre.\n\nEntreprise: {{ $('Google Sheets').item.json.nom }}\nVille: {{ $('Google Sheets').item.json.ville }}\nRating Google: {{ $('Google Sheets').item.json.rating }}/5 ({{ $('Google Sheets').item.json.reviews_count }} avis)\nContenu site web: {{ $json.data.content.substring(0, 2000) }}\n\nJSON attendu :\n{\"score\": 75, \"prénom\": \"Jean\", \"poste\": \"Gérant\", \"email\": \"contact@example.com\", \"taille_equipe\": \"5-10\", \"has_ia_services\": false, \"raison_score\": \"PME active avec process répétitifs\"}"
   }]
 }
 ```
@@ -615,10 +615,10 @@ Ajoute un **IF** node : `{{ $json.email }}` is not empty (évite les leads sans 
 - Body :
 ```json
 {
-  "from": "Thomas de Kames AI <thomas@outreach.kamesai.com>",
+  "from": "Thomas de Flinty <thomas@outreach.kamesai.com>",
   "to": ["={{ $json.email }}"],
   "subject": "={{ $json.nom }} — une question rapide",
-  "html": "<p>Bonjour {{ $json.prénom }},</p><p>J'ai trouvé <strong>{{ $json.nom }}</strong> en cherchant des {{ $json.secteur }} à {{ $json.ville }}.</p><p>Chez Kames AI, on aide les TPE/PME à automatiser leurs tâches répétitives (relances, qualification leads, reporting) grâce à l'IA. On a aidé une entreprise similaire à économiser 8h/semaine.</p><p>Seriez-vous disponible 15 minutes ?</p><p>Thomas Callendreau — Kames AI</p>"
+  "html": "<p>Bonjour {{ $json.prénom }},</p><p>J'ai trouvé <strong>{{ $json.nom }}</strong> en cherchant des {{ $json.secteur }} à {{ $json.ville }}.</p><p>Chez Flinty, on aide les TPE/PME à automatiser leurs tâches répétitives (relances, qualification leads, reporting) grâce à l'IA. On a aidé une entreprise similaire à économiser 8h/semaine.</p><p>Seriez-vous disponible 15 minutes ?</p><p>Thomas Callendreau — Flinty</p>"
 }
 ```
 - Active **"Continue On Fail"**
@@ -734,10 +734,10 @@ IF node : `{{ $json.skip }}` = `true` → fin | sinon → envoi
 HTTP Request Resend :
 ```json
 {
-  "from": "Thomas de Kames AI <thomas@outreach.kamesai.com>",
+  "from": "Thomas de Flinty <thomas@outreach.kamesai.com>",
   "to": ["={{ $json.email }}"],
   "subject": "Re: {{ $json.nom }} — ma proposition",
-  "html": "<p>Bonjour {{ $json.prénom }},</p><p>Je me permets de revenir suite à mon message précédent.</p><p>15 minutes d'échange cette semaine ?</p><p>Thomas — Kames AI</p>"
+  "html": "<p>Bonjour {{ $json.prénom }},</p><p>Je me permets de revenir suite à mon message précédent.</p><p>15 minutes d'échange cette semaine ?</p><p>Thomas — Flinty</p>"
 }
 ```
 
@@ -1061,7 +1061,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-400 to-pink-500 flex items-center justify-center font-bold text-sm text-black">K</div>
             <div>
-              <p className="font-bold text-sm">Kames AI</p>
+              <p className="font-bold text-sm">Flinty</p>
               <p className="text-xs text-zinc-500">CRM Dashboard</p>
             </div>
           </div>
@@ -1135,7 +1135,7 @@ export default async function DashboardPage() {
           <h1 className="text-4xl font-bold">
             Campagnes <span className="bg-gradient-to-r from-orange-400 to-pink-500 bg-clip-text text-transparent">Cold Email</span>
           </h1>
-          <p className="text-zinc-400 mt-1">Pipeline de prospection automatisé Kames AI</p>
+          <p className="text-zinc-400 mt-1">Pipeline de prospection automatisé Flinty</p>
         </div>
         <Link href="/dashboard/campaigns/new"
           className="px-4 py-2 rounded-lg bg-gradient-to-r from-orange-500 to-pink-500 text-white font-medium text-sm hover:opacity-90 transition-opacity">
@@ -1294,7 +1294,7 @@ export default function NewCampaignPage() {
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-zinc-300 mb-1">Offre Kames</label>
+            <label className="block text-sm font-medium text-zinc-300 mb-1">Offre Flinty</label>
             <select className={inputCls} value={form.offre_kames} onChange={e => set('offre_kames', e.target.value)}>
               {OFFRES.map(o => <option key={o}>{o}</option>)}
             </select>
@@ -1600,7 +1600,7 @@ git checkout main && git merge staging && git push origin main
 
 ## ✅ Checklist finale
 
-**Google Sheets "Kames CRM" :**
+**Google Sheets "Flinty" :**
 - [ ] Onglet `Campagnes` — 12 colonnes (campaign_id → taux_réponse)
 - [ ] Onglet `Leads_Raw` — 10 colonnes (lead_id → found_at)
 - [ ] Onglet `Leads_Qualified` — 14 colonnes (lead_id → statut_email)
@@ -1647,7 +1647,7 @@ Architecture actuelle : 1 GSheet global pour toutes les campagnes.
 
 Migration vers **1 GSheet par campagne** :
 ```
-Kames CRM - Plombiers Bordeaux Jan 2026
+Flinty - Plombiers Bordeaux Jan 2026
 ├── Leads_Raw
 ├── Leads_Qualified
 └── Config (ICP spécifique à cette campagne)
@@ -1660,6 +1660,6 @@ Pour migrer :
 
 ---
 
-*Plan généré le 2026-02-23 | Kames AI - Dashboard CRM v2*
+*Plan généré le 2026-02-23 | Flinty - Dashboard CRM v2*
 *Source : https://claude.ai/chat/a6a3d5a1-9733-4978-a7b7-8b346d0fd5dd*
 *Pour Claude Code CLI : exécuter bloc par bloc, confirmer chaque résultat avant de continuer*
