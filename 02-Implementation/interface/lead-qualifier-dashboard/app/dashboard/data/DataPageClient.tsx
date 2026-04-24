@@ -513,8 +513,8 @@ function CampaignCard({
   const inView = useInView(ref, { once: true, margin: "-60px" });
 
   const statusMap: Record<CampaignStatus, { label: string; cls: string }> = {
-    active: { label: "Actif", cls: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400" },
-    paused: { label: "Pause", cls: "bg-red-500/15 text-red-600 dark:text-red-400" },
+    active: { label: "Actif", cls: "bg-emerald-500/15 text-emerald-600" },
+    paused: { label: "Pause", cls: "bg-red-500/15 text-red-600" },
     archived: { label: "Archivé", cls: "bg-[hsl(var(--muted))] text-muted-foreground" },
     completed: { label: "Terminé", cls: "bg-[hsl(var(--muted))] text-muted-foreground" },
     generating: { label: "Génération", cls: "bg-primary/10 text-primary" },

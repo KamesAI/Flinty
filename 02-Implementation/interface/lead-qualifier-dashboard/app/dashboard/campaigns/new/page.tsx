@@ -1,33 +1,26 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, KeyboardEvent } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ArrowUp, Sparkles, Rocket } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { ArrowUp, ArrowLeft, Sparkles, Rocket, Bot, Loader2 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
-import {
-  CAMPAIGN_QUESTIONS,
-  ChatState,
-  currentQuestion,
-  getDraftAnswer,
-  goBack,
-  initialChatState,
-  isComplete,
-  submitAnswer,
-} from "./chat-state";
+import { CAMPAIGN_QUESTIONS } from "./chat-state";
 import { deriveFormDefaults } from "./campaign-launch";
 
+const BRAND = "#006596";
+const BRAND_LIGHT = "#00A8E8";
 const STORAGE_KEY = "flinty.campaigns.new.chat";
 const TOAST_KEY = "flinty.flash_toast";
 
 export default function NewCampaignPage() {
   const router = useRouter();
-  const [state, setState] = useState<ChatState>(initialChatState);
+  const [answers, setAnswers] = useState<string[]>([]);
   const [draft, setDraft] = useState("");
   const [generating, setGenerating] = useState(false);
-  const [generationError, setGenerationError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [icpMd, setIcpMd] = useState<string | null>(null);
 
-  // Campaign form state (shown after ICP is generated)
   const [nom, setNom] = useState("");
   const [secteur, setSecteur] = useState("");
   const [localisation, setLocalisation] = useState("");
@@ -35,71 +28,77 @@ export default function NewCampaignPage() {
   const [launching, setLaunching] = useState(false);
   const [launchError, setLaunchError] = useState<string | null>(null);
 
-  const transcriptRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  const currentIndex = answers.length;
+  const isComplete = currentIndex >= CAMPAIGN_QUESTIONS.length;
+  const progress = Math.min(currentIndex, CAMPAIGN_QUESTIONS.length);
+  const showLaunch = icpMd !== null;
 
   useEffect(() => {
     try {
       const raw = sessionStorage.getItem(STORAGE_KEY);
       if (raw) {
-        const parsed = JSON.parse(raw) as ChatState;
-        if (parsed && Array.isArray(parsed.answers) && typeof parsed.currentIndex === "number") {
-          setState(parsed);
-        }
+        const parsed = JSON.parse(raw) as { answers: string[] };
+        if (parsed && Array.isArray(parsed.answers)) setAnswers(parsed.answers);
       }
-    } catch {
-      /* ignore */
-    }
+    } catch { /* ignore */ }
   }, []);
 
   useEffect(() => {
     try {
-      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    } catch {
-      /* ignore */
-    }
-  }, [state]);
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ answers }));
+    } catch { /* ignore */ }
+  }, [answers]);
 
   useEffect(() => {
-    setDraft(getDraftAnswer(state));
-    inputRef.current?.focus();
-    transcriptRef.current?.scrollTo({ top: transcriptRef.current.scrollHeight, behavior: "smooth" });
-  }, [state]);
+    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+  }, [answers, isComplete]);
 
-  // Pre-fill form when ICP is generated
+  useEffect(() => {
+    if (!isComplete) inputRef.current?.focus();
+  }, [currentIndex, isComplete]);
+
   useEffect(() => {
     if (icpMd !== null) {
-      const defaults = deriveFormDefaults(state.answers);
+      const defaults = deriveFormDefaults(answers);
       setNom(defaults.nom);
       setSecteur(defaults.secteur);
       setLocalisation(defaults.localisation);
       setOffre(defaults.offre_kames);
     }
-  }, [icpMd, state.answers]);
+  }, [icpMd, answers]);
 
-  const question = currentQuestion(state);
-  const complete = isComplete(state);
-  const showLaunch = icpMd !== null && !generationError;
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!draft.trim()) return;
-    setState((s) => submitAnswer(s, draft));
+  const submit = () => {
+    const value = draft.trim();
+    if (!value || isComplete) return;
+    setAnswers((prev) => [...prev, value]);
+    setDraft("");
   };
 
-  const handleBack = () => {
-    if (state.currentIndex === 0) return;
-    setState(goBack);
+  const handleKey = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      submit();
+    }
+  };
+
+  const goBack = () => {
+    if (answers.length === 0) return;
+    const last = answers[answers.length - 1];
+    setAnswers((prev) => prev.slice(0, -1));
+    setDraft(last);
   };
 
   const handleGenerate = async () => {
     setGenerating(true);
-    setGenerationError(null);
+    setError(null);
     try {
       const res = await fetch("/api/campaigns/generate-icp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ answers: state.answers }),
+        body: JSON.stringify({ answers }),
       });
       if (!res.ok) {
         const data = (await res.json().catch(() => ({}))) as { error?: string };
@@ -108,7 +107,7 @@ export default function NewCampaignPage() {
       const data = (await res.json()) as { icp_md?: string };
       setIcpMd(data.icp_md ?? "");
     } catch (err) {
-      setGenerationError(err instanceof Error ? err.message : "Erreur génération ICP");
+      setError(err instanceof Error ? err.message : "Erreur génération ICP");
     } finally {
       setGenerating(false);
     }
@@ -119,7 +118,7 @@ export default function NewCampaignPage() {
     setLaunching(true);
     setLaunchError(null);
     try {
-      const defaults = deriveFormDefaults(state.answers);
+      const defaults = deriveFormDefaults(answers);
       const res = await fetch("/api/campaigns", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -150,36 +149,39 @@ export default function NewCampaignPage() {
     }
   };
 
-  const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSubmit(e as unknown as React.FormEvent);
+  const timeline: Array<
+    | { kind: "q"; index: number; text: string }
+    | { kind: "a"; index: number; text: string }
+  > = [];
+  for (let i = 0; i < CAMPAIGN_QUESTIONS.length; i++) {
+    if (i > currentIndex) break;
+    timeline.push({ kind: "q", index: i, text: CAMPAIGN_QUESTIONS[i].text });
+    if (i < answers.length) {
+      timeline.push({ kind: "a", index: i, text: answers[i] });
     }
-  };
+  }
 
+  // --- LAUNCH SCREEN (after ICP generated) ---
   if (showLaunch) {
     return (
       <div className="flex h-[calc(100vh-2rem)] max-h-[calc(100vh-2rem)] flex-col p-4 sm:p-8">
         <header className="mb-6 flex items-start justify-between gap-4">
           <div>
-            <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-[#006596]">
+            <p className="mb-1 text-xs font-semibold uppercase tracking-widest" style={{ color: BRAND }}>
               Nouvelle campagne
             </p>
-            <h1 className="text-3xl font-bold text-white">Ton ICP est prêt</h1>
-            <p className="mt-1 text-sm text-zinc-500">
-              Édite si besoin, configure puis lance.
-            </p>
+            <h1 className="text-3xl font-bold">Ton ICP est prêt</h1>
+            <p className="mt-1 text-sm text-[#6b6b69]">Édite si besoin, configure puis lance.</p>
           </div>
           <button
             type="button"
             onClick={() => setIcpMd(null)}
-            className="rounded-lg border border-zinc-800 px-3 py-2 text-xs text-zinc-400 transition-colors hover:border-zinc-600 hover:text-white"
+            className="rounded-lg border border-black/10 px-3 py-2 text-xs text-[#6b6b69] transition-colors hover:border-black/20 hover:text-[#111111]"
           >
             ← Retour
           </button>
         </header>
 
-        {/* Campaign meta form */}
         <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {[
             { label: "Nom de la campagne", value: nom, onChange: setNom, placeholder: "Campagne Plombiers Bordeaux" },
@@ -188,57 +190,51 @@ export default function NewCampaignPage() {
             { label: "Offre Kames", value: offre, onChange: setOffre, placeholder: "Votre proposition de valeur" },
           ].map(({ label, value, onChange, placeholder }) => (
             <div key={label}>
-              <label className="mb-1 block text-xs text-zinc-500">{label}</label>
+              <label className="mb-1 block text-xs text-[#6b6b69]">{label}</label>
               <input
                 type="text"
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
                 placeholder={placeholder}
-                className="w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-white placeholder:text-zinc-600 focus:border-blue-500/60 focus:outline-none"
+                className="w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm text-[#111111] placeholder:text-[#aaaaa7] focus:border-[#006596]/40 focus:outline-none focus:ring-2 focus:ring-[#006596]/10"
               />
             </div>
           ))}
         </div>
 
-        {/* Split view */}
         <div className="flex flex-1 gap-4 overflow-hidden">
-          {/* Textarea */}
-          <div className="flex flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-950">
-            <div className="border-b border-zinc-800 px-4 py-2">
-              <span className="text-xs font-semibold uppercase tracking-widest text-zinc-500">Édition</span>
+          <div className="flex flex-1 flex-col overflow-hidden rounded-2xl border border-black/8 bg-white shadow-sm">
+            <div className="border-b border-black/6 px-4 py-2">
+              <span className="text-xs font-semibold uppercase tracking-widest text-[#6b6b69]">Édition</span>
             </div>
             <textarea
               value={icpMd}
               onChange={(e) => setIcpMd(e.target.value)}
-              className="flex-1 resize-none bg-transparent p-4 font-mono text-xs text-zinc-300 focus:outline-none"
-              rows={30}
+              className="flex-1 resize-none bg-transparent p-4 font-mono text-xs text-[#111111] focus:outline-none"
               spellCheck={false}
             />
           </div>
-
-          {/* Markdown preview */}
-          <div className="flex flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-950">
-            <div className="border-b border-zinc-800 px-4 py-2">
-              <span className="text-xs font-semibold uppercase tracking-widest text-zinc-500">Aperçu</span>
+          <div className="flex flex-1 flex-col overflow-hidden rounded-2xl border border-black/8 bg-white shadow-sm">
+            <div className="border-b border-black/6 px-4 py-2">
+              <span className="text-xs font-semibold uppercase tracking-widest text-[#6b6b69]">Aperçu</span>
             </div>
             <div className="flex-1 overflow-y-auto p-4">
-              <div className="prose prose-invert prose-sm max-w-none prose-headings:text-white prose-p:text-zinc-300 prose-li:text-zinc-300 prose-strong:text-white">
+              <div className="prose prose-sm max-w-none">
                 <ReactMarkdown>{icpMd}</ReactMarkdown>
               </div>
             </div>
           </div>
         </div>
 
-        {launchError && (
-          <p className="mt-3 text-sm text-red-400">{launchError}</p>
-        )}
+        {launchError && <p className="mt-3 text-sm text-red-600">{launchError}</p>}
 
         <div className="mt-4 flex justify-end">
           <button
             type="button"
             onClick={handleLaunch}
             disabled={launching || !nom.trim()}
-            className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-500 to-blue-400 px-6 py-3 text-sm font-medium text-black transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+            style={{ background: `linear-gradient(135deg, ${BRAND}, ${BRAND_LIGHT})` }}
           >
             <Rocket className="h-4 w-4" />
             {launching ? "Lancement en cours…" : "Lancer la campagne"}
@@ -248,157 +244,206 @@ export default function NewCampaignPage() {
     );
   }
 
+  // --- CHAT SCREEN ---
   return (
-    <div className="flex h-[calc(100vh-2rem)] max-h-[calc(100vh-2rem)] flex-col p-4 sm:p-8">
-      <header className="mb-6 flex items-start justify-between gap-4">
-        <div>
-          <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-[#006596]">
-            Nouvelle campagne
-          </p>
-          <h1 className="text-3xl font-bold text-white">Construisons ton ICP</h1>
-          <p className="mt-1 text-sm text-zinc-500">
-            8 questions pour cadrer ta cible — Claude générera l&apos;ICP ensuite.
-          </p>
+    <div className="flex flex-col bg-slate-50" style={{ minHeight: "calc(100vh - 0px)" }}>
+      {/* Top bar */}
+      <header className="w-full border-b border-slate-200/70 bg-white/70 backdrop-blur-sm">
+        <div className="mx-auto max-w-2xl px-5 py-4 flex items-center gap-4">
+          <div className="flex-1">
+            <div
+              className="text-[11px] font-semibold tracking-[0.18em] uppercase mb-2"
+              style={{ color: BRAND }}
+            >
+              Nouvelle campagne
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="h-1.5 flex-1 rounded-full bg-slate-200 overflow-hidden">
+                <motion.div
+                  initial={false}
+                  animate={{ width: `${(progress / CAMPAIGN_QUESTIONS.length) * 100}%` }}
+                  transition={{ type: "spring", stiffness: 120, damping: 20 }}
+                  className="h-full rounded-full"
+                  style={{ background: `linear-gradient(90deg, ${BRAND}, ${BRAND_LIGHT})` }}
+                />
+              </div>
+              <span className="text-xs font-medium text-slate-500 tabular-nums">
+                {progress}/{CAMPAIGN_QUESTIONS.length}
+              </span>
+            </div>
+          </div>
+          <button
+            onClick={() => router.back()}
+            className="text-sm text-slate-500 hover:text-slate-900 transition-colors px-3 py-1.5 rounded-md hover:bg-slate-100"
+          >
+            Annuler
+          </button>
         </div>
-        <button
-          type="button"
-          onClick={() => router.back()}
-          className="rounded-lg border border-zinc-800 px-3 py-2 text-xs text-zinc-400 transition-colors hover:border-zinc-600 hover:text-white"
-        >
-          Annuler
-        </button>
       </header>
 
-      <div className="mb-4 flex items-center gap-2">
-        <div className="h-1 flex-1 overflow-hidden rounded-full bg-zinc-900">
+      {/* Chat panel */}
+      <main className="flex-1 flex justify-center px-4 py-8">
+        <div className="w-full max-w-2xl flex flex-col bg-white rounded-2xl shadow-[0_1px_3px_rgba(15,23,42,0.04),0_8px_32px_-8px_rgba(15,23,42,0.08)] border border-slate-200/60 overflow-hidden">
+          {/* Thread */}
           <div
-            className="h-full rounded-full bg-[#006596] transition-all"
-            style={{ width: `${(state.currentIndex / CAMPAIGN_QUESTIONS.length) * 100}%` }}
-          />
-        </div>
-        <span className="text-xs tabular-nums text-zinc-500">
-          {Math.min(state.currentIndex, CAMPAIGN_QUESTIONS.length)} / {CAMPAIGN_QUESTIONS.length}
-        </span>
-      </div>
+            ref={scrollRef}
+            className="flex-1 overflow-y-auto px-6 py-8 space-y-6 min-h-[420px] max-h-[calc(100vh-300px)]"
+          >
+            <AnimatePresence initial={false}>
+              {timeline.map((item) => {
+                const key = `${item.kind}-${item.index}`;
+                if (item.kind === "q") {
+                  return (
+                    <motion.div
+                      key={key}
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                      className="flex items-start gap-3"
+                    >
+                      <div
+                        className="shrink-0 mt-0.5 h-8 w-8 rounded-full flex items-center justify-center text-white shadow-sm"
+                        style={{ background: `linear-gradient(135deg, ${BRAND}, ${BRAND_LIGHT})` }}
+                      >
+                        <Bot className="h-4 w-4" />
+                      </div>
+                      <div className="flex-1 pt-1">
+                        <div
+                          className="text-[10px] font-semibold tracking-wider uppercase mb-1"
+                          style={{ color: BRAND }}
+                        >
+                          Question {item.index + 1}
+                        </div>
+                        <p className="text-[15px] leading-relaxed text-gray-800">{item.text}</p>
+                      </div>
+                    </motion.div>
+                  );
+                }
+                return (
+                  <motion.div
+                    key={key}
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                    className="flex justify-end"
+                  >
+                    <div
+                      className="max-w-[80%] rounded-2xl rounded-br-md px-4 py-2.5 text-[15px] leading-relaxed shadow-sm whitespace-pre-wrap break-words text-white"
+                      style={{ backgroundColor: BRAND }}
+                    >
+                      {item.text}
+                    </div>
+                  </motion.div>
+                );
+              })}
 
-      <div
-        ref={transcriptRef}
-        className="flex-1 space-y-4 overflow-y-auto rounded-2xl border border-zinc-900 bg-zinc-950/40 p-4 sm:p-6"
-      >
-        {state.answers.map((answer, index) => {
-          const q = CAMPAIGN_QUESTIONS[index];
-          if (!q) return null;
-          const editing = index === state.currentIndex;
-          return (
-            <div key={q.key} className="space-y-3">
-              <ChatBubble role="assistant" text={q.text} />
-              <ChatBubble role="user" text={answer} muted={editing} />
-            </div>
-          );
-        })}
+              {isComplete && (
+                <motion.div
+                  key="complete"
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4 }}
+                  className="flex items-start gap-3"
+                >
+                  <div
+                    className="shrink-0 mt-0.5 h-8 w-8 rounded-full flex items-center justify-center text-white shadow-sm"
+                    style={{ background: `linear-gradient(135deg, ${BRAND}, ${BRAND_LIGHT})` }}
+                  >
+                    <Sparkles className="h-4 w-4" />
+                  </div>
+                  <div className="flex-1 pt-1">
+                    <p className="text-[15px] leading-relaxed text-gray-800">
+                      ✨ Tu as répondu aux 8 questions. Génère ton ICP pour passer à l&apos;étape suivante.
+                    </p>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
-        {!complete && question && state.currentIndex >= state.answers.length && (
-          <ChatBubble role="assistant" text={question.text} />
-        )}
-
-        {complete && (
-          <div className="space-y-3 rounded-2xl border border-blue-500/30 bg-blue-500/5 p-4">
-            <p className="text-sm font-medium text-blue-300">
-              ✨ Tu as répondu aux 8 questions. Génère ton ICP pour passer à l&apos;étape suivante.
-            </p>
-            {generationError && (
-              <p className="text-sm text-red-400">{generationError}</p>
+            {error && (
+              <div className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
+                {error}
+              </div>
             )}
           </div>
-        )}
-      </div>
 
-      {!complete && question && (
-        <form onSubmit={handleSubmit} className="mt-4">
-          <div className="flex items-end gap-2 rounded-2xl border border-zinc-800 bg-zinc-950 p-2 focus-within:border-blue-500/60">
-            <button
-              type="button"
-              onClick={handleBack}
-              disabled={state.currentIndex === 0}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-zinc-500 transition-colors hover:bg-zinc-900 hover:text-white disabled:cursor-not-allowed disabled:opacity-30"
-              aria-label="Retour à la question précédente"
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </button>
-            <textarea
-              ref={inputRef}
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              onKeyDown={onKeyDown}
-              placeholder={question.placeholder}
-              rows={2}
-              className="flex-1 resize-none bg-transparent px-2 py-2 text-sm text-white placeholder:text-zinc-600 focus:outline-none"
-              autoFocus
-            />
-            <button
-              type="submit"
-              disabled={!draft.trim()}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#006596] text-black transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-30"
-              aria-label="Envoyer la réponse"
-            >
-              <ArrowUp className="h-4 w-4" />
-            </button>
+          {/* Input / completion bar */}
+          <div className="border-t border-slate-200/70 bg-white px-4 py-4">
+            {!isComplete ? (
+              <>
+                <div className="flex items-end gap-2">
+                  <button
+                    onClick={goBack}
+                    disabled={answers.length === 0}
+                    className="shrink-0 h-10 w-10 rounded-full flex items-center justify-center text-slate-500 hover:text-slate-900 hover:bg-slate-100 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+                    aria-label="Revenir à la question précédente"
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                  </button>
+                  <div className="flex-1 flex items-end gap-2 bg-slate-50 hover:bg-slate-100/70 focus-within:bg-white focus-within:ring-2 focus-within:border-[#006596]/40 border border-slate-200 rounded-3xl px-4 py-2 transition-all"
+                    style={{ "--tw-ring-color": `${BRAND}33` } as React.CSSProperties}
+                  >
+                    <textarea
+                      ref={inputRef}
+                      rows={1}
+                      value={draft}
+                      onChange={(e) => {
+                        setDraft(e.target.value);
+                        e.target.style.height = "auto";
+                        e.target.style.height = Math.min(e.target.scrollHeight, 140) + "px";
+                      }}
+                      onKeyDown={handleKey}
+                      placeholder={CAMPAIGN_QUESTIONS[currentIndex]?.placeholder}
+                      className="flex-1 resize-none bg-transparent outline-none text-[15px] text-gray-900 placeholder:text-slate-400 leading-relaxed py-1.5 max-h-[140px]"
+                    />
+                    <button
+                      onClick={submit}
+                      disabled={!draft.trim()}
+                      className="shrink-0 h-9 w-9 rounded-full flex items-center justify-center text-white shadow-sm disabled:opacity-30 transition-all hover:scale-105 active:scale-95"
+                      style={{ backgroundColor: BRAND }}
+                      aria-label="Envoyer"
+                    >
+                      <ArrowUp className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+                <p className="text-[11px] text-slate-400 mt-2 text-center">
+                  Entrée pour valider · Shift+Entrée pour saut de ligne
+                </p>
+              </>
+            ) : (
+              <div className="space-y-2">
+                <button
+                  onClick={handleGenerate}
+                  disabled={generating}
+                  className="w-full h-12 rounded-xl text-white font-medium text-[15px] flex items-center justify-center gap-2 shadow-md hover:shadow-lg disabled:opacity-70 transition-all hover:scale-[1.01] active:scale-[0.99]"
+                  style={{ background: `linear-gradient(135deg, ${BRAND}, ${BRAND_LIGHT})` }}
+                >
+                  {generating ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Génération en cours…
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="h-4 w-4" />
+                      Générer l&apos;ICP
+                      <Rocket className="h-4 w-4 ml-1" />
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={goBack}
+                  disabled={generating}
+                  className="w-full h-9 rounded-lg text-sm text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors"
+                >
+                  Modifier la dernière réponse
+                </button>
+              </div>
+            )}
           </div>
-          <p className="mt-2 text-[11px] text-zinc-600">
-            Entrée pour valider · Shift+Entrée pour saut de ligne
-          </p>
-        </form>
-      )}
-
-      {complete && (
-        <div className="mt-4 flex gap-3">
-          <button
-            type="button"
-            onClick={handleBack}
-            className="flex items-center gap-2 rounded-xl border border-zinc-800 px-4 py-2.5 text-sm text-zinc-400 transition-colors hover:border-zinc-600 hover:text-white"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Modifier la dernière réponse
-          </button>
-          <button
-            type="button"
-            onClick={handleGenerate}
-            disabled={generating}
-            className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-500 to-blue-400 px-5 py-2.5 text-sm font-medium text-black transition-opacity hover:opacity-90 disabled:opacity-60"
-          >
-            <Sparkles className="h-4 w-4" />
-            {generating ? "Génération en cours…" : "Générer l'ICP"}
-          </button>
         </div>
-      )}
-    </div>
-  );
-}
-
-function ChatBubble({
-  role,
-  text,
-  muted = false,
-}: {
-  role: "assistant" | "user";
-  text: string;
-  muted?: boolean;
-}) {
-  const isUser = role === "user";
-  return (
-    <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
-      <div
-        className={[
-          "max-w-[80%] whitespace-pre-wrap rounded-2xl px-4 py-2.5 text-sm leading-relaxed",
-          isUser
-            ? muted
-              ? "border border-zinc-800 bg-zinc-900/50 text-zinc-500 line-through decoration-zinc-700"
-              : "bg-[#006596] text-black"
-            : "border border-zinc-800 bg-zinc-900/60 text-zinc-200",
-        ].join(" ")}
-      >
-        {text}
-      </div>
+      </main>
     </div>
   );
 }

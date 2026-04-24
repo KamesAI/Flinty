@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   LayoutDashboard, FolderKanban, FileText, Inbox,
-  CalendarDays, BarChart3, Search, Sun, Moon, LogOut, Plus,
+  CalendarDays, BarChart3, Search, LogOut, Plus,
   ChevronDown, LayoutGrid, Table2,
 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -52,22 +52,17 @@ interface AppSidebarProps {
 
 export function AppSidebar({ collapsed }: AppSidebarProps) {
   const pathname = usePathname();
-  const [dark, setDark] = useState(false);
 
   useEffect(() => {
-    const stored = localStorage.getItem("theme");
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    if (stored === "dark" || (!stored && prefersDark)) {
-      document.documentElement.classList.add("dark");
-      setDark(true);
+    document.documentElement.classList.remove("dark");
+    document.documentElement.style.colorScheme = "light";
+    try {
+      localStorage.removeItem("theme");
+      localStorage.removeItem("lead-gen-dashboard-theme");
+    } catch {
+      /* ignore */
     }
   }, []);
-
-  const toggleTheme = () => {
-    const isDark = document.documentElement.classList.toggle("dark");
-    localStorage.setItem("theme", isDark ? "dark" : "light");
-    setDark(isDark);
-  };
 
   return (
     <TooltipProvider delayDuration={100}>
@@ -188,13 +183,6 @@ export function AppSidebar({ collapsed }: AppSidebarProps) {
             </div>
           )}
           <div className={cn("flex items-center gap-1", collapsed && "flex-col")}>
-            <button
-              onClick={toggleTheme}
-              className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-foreground"
-              aria-label="Toggle theme"
-            >
-              {dark ? <Moon className="size-4" /> : <Sun className="size-4" />}
-            </button>
             <button className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-foreground">
               <LogOut className="size-4" />
             </button>

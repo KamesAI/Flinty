@@ -14,21 +14,13 @@ import {
   LogOut,
   Menu,
   Search,
-  SunMedium,
 } from "lucide-react";
 import {
   type DashboardSidebarIcon,
   type DashboardSidebarItem,
   dashboardSidebarGroups,
 } from "./dashboard-sidebar-config";
-import {
-  DASHBOARD_THEME_STORAGE_KEY,
-  getDashboardThemeCssVariables,
-  type DashboardTheme,
-  resolveDashboardTheme,
-  toggleDashboardSidebar,
-  toggleDashboardTheme,
-} from "./dashboard-theme";
+import { getDashboardThemeCssVariables, toggleDashboardSidebar } from "./dashboard-theme";
 
 const iconMap: Record<DashboardSidebarIcon, typeof Home> = {
   home: Home,
@@ -39,47 +31,21 @@ const iconMap: Record<DashboardSidebarIcon, typeof Home> = {
   data: BarChart3,
 };
 
-const themeStyles = {
-  light: {
-    shell: "bg-[#fafafa] text-[#111111]",
-    rail: "bg-white text-[#6b6b69] border-black/5 shadow-[0_18px_45px_rgba(15,23,42,0.06)]",
-    panel: "bg-white text-[#111111] border-black/5 shadow-[0_18px_45px_rgba(15,23,42,0.06)]",
-    logo: "bg-black text-white",
-    subtleText: "text-[#9f9f9c]",
-    mutedText: "text-[#72726f]",
-    divider: "border-black/6",
-    search: "bg-[#fbfbfa] border-black/8 text-[#111111] placeholder:text-[#aaaaa7]",
-    railButton: "text-[#666663] hover:bg-[#f4f4f2] hover:text-black",
-    railButtonActive: "bg-[#f5f5f3] text-[hsl(var(--primary))] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.05)]",
-    item: "text-[#6d6d69] hover:bg-[#f4f4f2] hover:text-black",
-    itemActive: "bg-[#f5f5f3] text-[hsl(var(--primary))] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.04)]",
-    main: "bg-[#fafafa] text-[#111111]",
-    overlay: "bg-black/40",
-  },
-  dark: {
-    shell: "bg-[#0c0c0d] text-white",
-    rail: "bg-black text-[#7f7f82] border-white/10 shadow-[0_18px_45px_rgba(0,0,0,0.35)]",
-    panel: "bg-black text-white border-white/10 shadow-[0_18px_45px_rgba(0,0,0,0.35)]",
-    logo: "bg-white text-black",
-    subtleText: "text-[#8e8e93]",
-    mutedText: "text-[#737379]",
-    divider: "border-white/10",
-    search: "bg-[#141416] border-white/10 text-white placeholder:text-[#66666b]",
-    railButton: "text-white hover:bg-[#101012]",
-    railButtonActive: "bg-[#121214] text-[hsl(var(--primary))] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]",
-    item: "text-white hover:bg-[#101012]",
-    itemActive: "bg-[#121214] text-[hsl(var(--primary))] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]",
-    main: "bg-[#050506] text-white",
-    overlay: "bg-black/70",
-  },
+const styles = {
+  shell: "bg-[#fafafa] text-[#111111]",
+  rail: "bg-white text-[#6b6b69] border-black/5 shadow-[0_18px_45px_rgba(15,23,42,0.06)]",
+  panel: "bg-white text-[#111111] border-black/5 shadow-[0_18px_45px_rgba(15,23,42,0.06)]",
+  divider: "border-black/6",
+  search: "bg-[#fbfbfa] border-black/8 text-[#111111] placeholder:text-[#aaaaa7]",
+  railButton: "text-[#666663] hover:bg-[#f4f4f2] hover:text-black",
+  railButtonActive: "bg-[#f5f5f3] text-[hsl(var(--primary))] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.05)]",
+  item: "text-[#6d6d69] hover:bg-[#f4f4f2] hover:text-black",
+  itemActive: "bg-[#f5f5f3] text-[hsl(var(--primary))] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.04)]",
+  main: "bg-[#fafafa] text-[#111111]",
+  overlay: "bg-black/40",
 } as const;
 
-function getInitialTheme(): DashboardTheme {
-  return resolveDashboardTheme(undefined, false);
-}
-
 function isItemActive(item: DashboardSidebarItem, pathname: string): boolean {
-  // Sur /dashboard exact, seul l'item Dashboard (sans matchPrefixes) est actif
   if (pathname === "/dashboard") {
     return item.href === "/dashboard" && !item.matchPrefixes?.length;
   }
@@ -91,9 +57,7 @@ function isItemActive(item: DashboardSidebarItem, pathname: string): boolean {
   return item.href ? pathname === item.href : false;
 }
 
-function SidebarSearch({ theme }: { theme: DashboardTheme }) {
-  const styles = themeStyles[theme];
-
+function SidebarSearch() {
   return (
     <label
       className={`mt-6 flex h-11 items-center gap-3 rounded-2xl border px-4 text-sm ${styles.search}`}
@@ -113,18 +77,15 @@ function SidebarSearch({ theme }: { theme: DashboardTheme }) {
 function SidebarAction({
   item,
   active,
-  theme,
   compact = false,
   onSelect,
 }: {
   item: DashboardSidebarItem;
   active: boolean;
-  theme: DashboardTheme;
   compact?: boolean;
   onSelect?: () => void;
 }) {
   const Icon = iconMap[item.icon];
-  const styles = themeStyles[theme];
   const baseClass = compact
     ? `flex h-10 w-10 items-center justify-center rounded-2xl transition-colors ${
         active ? styles.railButtonActive : styles.railButton
@@ -157,17 +118,13 @@ function SidebarAction({
 
 function SidebarGroups({
   pathname,
-  theme,
   compact = false,
   onSelect,
 }: {
   pathname: string;
-  theme: DashboardTheme;
   compact?: boolean;
   onSelect?: () => void;
 }) {
-  const styles = themeStyles[theme];
-
   return (
     <>
       {dashboardSidebarGroups.map((group, index) => (
@@ -181,7 +138,6 @@ function SidebarGroups({
                 key={item.label}
                 item={item}
                 active={isItemActive(item, pathname)}
-                theme={theme}
                 compact={compact}
                 onSelect={onSelect}
               />
@@ -193,26 +149,13 @@ function SidebarGroups({
   );
 }
 
-function SidebarBottomActions({
-  theme,
-  onToggleTheme,
-  compact = false,
-}: {
-  theme: DashboardTheme;
-  onToggleTheme: () => void;
-  compact?: boolean;
-}) {
-  const styles = themeStyles[theme];
+function SidebarBottomActions({ compact = false }: { compact?: boolean }) {
   const buttonClass = compact
     ? `flex h-10 w-10 items-center justify-center rounded-2xl transition-colors ${styles.railButton}`
     : `flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium transition-colors ${styles.item}`;
 
   return (
     <div className={`${compact ? "mt-auto space-y-2 pt-5" : `mt-auto border-t pt-5 ${styles.divider}`}`}>
-      <button type="button" className={buttonClass} onClick={onToggleTheme} aria-label="Switch mode">
-        <SunMedium className={compact ? "h-[18px] w-[18px]" : "h-[17px] w-[17px]"} strokeWidth={1.8} />
-        {!compact && <span>Switch mode</span>}
-      </button>
       <button type="button" className={buttonClass} aria-label="Log out">
         <LogOut className={compact ? "h-[18px] w-[18px]" : "h-[17px] w-[17px]"} strokeWidth={1.8} />
         {!compact && <span>Log out</span>}
@@ -221,19 +164,7 @@ function SidebarBottomActions({
   );
 }
 
-function ExpandedSidebar({
-  pathname,
-  theme,
-  onToggleTheme,
-  onSelect,
-}: {
-  pathname: string;
-  theme: DashboardTheme;
-  onToggleTheme: () => void;
-  onSelect?: () => void;
-}) {
-  const styles = themeStyles[theme];
-
+function ExpandedSidebar({ pathname, onSelect }: { pathname: string; onSelect?: () => void }) {
   return (
     <div className={`flex h-full w-full flex-col rounded-[30px] border px-5 py-4 ${styles.panel}`}>
       <div className="flex items-center px-1 pb-2 pt-1">
@@ -247,36 +178,28 @@ function ExpandedSidebar({
         />
       </div>
 
-      <SidebarSearch theme={theme} />
-      <SidebarGroups pathname={pathname} theme={theme} onSelect={onSelect} />
-      <SidebarBottomActions theme={theme} onToggleTheme={onToggleTheme} />
+      <SidebarSearch />
+      <SidebarGroups pathname={pathname} onSelect={onSelect} />
+      <SidebarBottomActions />
     </div>
   );
 }
 
 function CompactSidebar({
   pathname,
-  theme,
   expanded,
-  onToggleTheme,
   onToggleExpanded,
 }: {
   pathname: string;
-  theme: DashboardTheme;
   expanded: boolean;
-  onToggleTheme: () => void;
   onToggleExpanded: () => void;
 }) {
-  const styles = themeStyles[theme];
-
   return (
     <div className={`flex h-full w-[76px] flex-col items-center rounded-[30px] border px-3 py-4 ${styles.rail}`}>
       <button
         type="button"
         onClick={onToggleExpanded}
-        className={`flex h-10 w-10 items-center justify-center rounded-2xl overflow-hidden transition-all duration-300 ${
-          expanded || theme === "light" ? "dashboard-logo-surface" : styles.railButtonActive
-        }`}
+        className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-2xl border border-black/5 bg-white transition-all duration-300"
         aria-label={expanded ? "Masquer le menu" : "Afficher le menu"}
       >
         <Image
@@ -297,8 +220,8 @@ function CompactSidebar({
         <Search className="h-[18px] w-[18px]" strokeWidth={1.8} />
       </button>
 
-      <SidebarGroups pathname={pathname} theme={theme} compact />
-      <SidebarBottomActions theme={theme} onToggleTheme={onToggleTheme} compact />
+      <SidebarGroups pathname={pathname} compact />
+      <SidebarBottomActions compact />
     </div>
   );
 }
@@ -308,33 +231,20 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [desktopExpanded, setDesktopExpanded] = useState(true);
   const [mounted, setMounted] = useState(false);
-  const [theme, setTheme] = useState<DashboardTheme>(getInitialTheme);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
   useEffect(() => {
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    const storedTheme = window.localStorage.getItem(DASHBOARD_THEME_STORAGE_KEY);
-    setTheme(resolveDashboardTheme(storedTheme, prefersDark));
-  }, []);
-
-  useEffect(() => {
-    window.localStorage.setItem(DASHBOARD_THEME_STORAGE_KEY, theme);
-    document.documentElement.style.colorScheme = theme;
-  }, [theme]);
-
-  useEffect(() => {
     setMobileOpen(false);
   }, [pathname]);
 
-  const styles = useMemo(() => themeStyles[theme], [theme]);
-  const cssVariables = useMemo(() => getDashboardThemeCssVariables(theme), [theme]);
+  const cssVariables = useMemo(() => getDashboardThemeCssVariables(), []);
 
   if (!mounted) {
     return (
-      <div className="flex min-h-screen bg-[#050506] text-white">
+      <div className="flex min-h-screen bg-[#fafafa] text-[#111111]">
         <main className="flex-1 overflow-auto">{children}</main>
       </div>
     );
@@ -343,15 +253,13 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   return (
     <div
       className={`dashboard-theme-root flex min-h-screen ${styles.shell}`}
-      data-dashboard-theme={theme}
+      data-dashboard-theme="light"
       style={cssVariables}
     >
       <aside className={`hidden lg:flex shrink-0 px-6 py-6 transition-[gap] duration-300 ${desktopExpanded ? "gap-5" : "gap-0"}`}>
         <CompactSidebar
           pathname={pathname}
-          theme={theme}
           expanded={desktopExpanded}
-          onToggleTheme={() => setTheme(toggleDashboardTheme(theme))}
           onToggleExpanded={() => setDesktopExpanded((current) => toggleDashboardSidebar(current))}
         />
         <div
@@ -362,11 +270,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           }`}
         >
           <div className="w-[262px]">
-          <ExpandedSidebar
-            pathname={pathname}
-            theme={theme}
-            onToggleTheme={() => setTheme(toggleDashboardTheme(theme))}
-          />
+            <ExpandedSidebar pathname={pathname} />
           </div>
         </div>
       </aside>
@@ -391,14 +295,6 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
               priority
             />
           </div>
-          <button
-            type="button"
-            onClick={() => setTheme(toggleDashboardTheme(theme))}
-            className={`flex h-11 w-11 items-center justify-center rounded-2xl transition-colors ${styles.railButton}`}
-            aria-label="Switch mode"
-          >
-            <SunMedium className="h-5 w-5" strokeWidth={1.8} />
-          </button>
         </div>
 
         {mobileOpen && (
@@ -408,12 +304,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
               onClick={() => setMobileOpen(false)}
             />
             <div className="fixed inset-y-4 left-4 z-50 w-[300px] lg:hidden">
-              <ExpandedSidebar
-                pathname={pathname}
-                theme={theme}
-                onToggleTheme={() => setTheme(toggleDashboardTheme(theme))}
-                onSelect={() => setMobileOpen(false)}
-              />
+              <ExpandedSidebar pathname={pathname} onSelect={() => setMobileOpen(false)} />
             </div>
           </>
         )}
