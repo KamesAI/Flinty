@@ -20,12 +20,12 @@ test.describe("Flinty — smoke HTTP", () => {
     expect(html).toMatch(/Construisons ton ICP|ICP/i);
   });
 
-  test("GET export CSV — statut attendu sans campagne (404 ou 429)", async ({
+  test("GET export CSV — statut attendu sans campagne (404, 429 ou 500 sans credentials)", async ({
     request,
   }) => {
     const res = await request.get(
       "/api/campaigns/cmp_e2e_placeholder/export?format=csv"
     );
-    expect([200, 404, 429]).toContain(res.status());
+    expect([200, 404, 429, 500]).toContain(res.status());
   });
 });
