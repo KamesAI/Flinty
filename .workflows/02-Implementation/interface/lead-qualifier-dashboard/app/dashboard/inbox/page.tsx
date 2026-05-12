@@ -56,6 +56,44 @@ const STATUS_BADGE: Record<InboxStatus, { label: string; classes: string }> = {
   bounced:     { label: "Bounced",      classes: "bg-red-100 text-red-800" },
 };
 
+async function readCampaignQualifiedLeads(campaign: IndexCampaign): Promise<LeadV3[]> {
+  if (!campaign.sheet_id) return [];
+
+  try {
+    const rows = await readChildQualifiedLeads(
+      campaign.sheet_id,
+      campaign.campaign_id,
+      QUALIFIED_SHEET_RANGE_WITH_HEADER
+    );
+    return parseQualifiedLeads(rows);
+  } catch (error) {
+    console.error("[InboxPage] Unable to read qualified leads", {
+      campaign_id: campaign.campaign_id,
+      sheet_id: campaign.sheet_id,
+      error,
+    });
+    return [];
+  }
+}
+
+async function readInboxEvents() {
+  try {
+    return await getAllEmailEvents();
+  } catch (error) {
+    console.error("[InboxPage] Unable to read email events", error);
+    return [];
+  }
+}
+
+async function readInboxMeetings() {
+  try {
+    return await getMeetings();
+  } catch (error) {
+    console.error("[InboxPage] Unable to read meetings", error);
+    return [];
+  }
+}
+
 function relativeDate(iso: string): string {
   if (!iso) return "";
   const diff = Date.now() - new Date(iso).getTime();
@@ -81,23 +119,12 @@ export default async function InboxPage({
   const indexRows = await readIndex();
   const campaigns: IndexCampaign[] = parseIndexCampaigns(indexRows);
 
-  const leadsPerCampaign = await Promise.all(
-    campaigns
-      .filter((c) => c.sheet_id)
-      .map(async (c) => {
-        const rows = await readChildQualifiedLeads(
-          c.sheet_id,
-          c.campaign_id,
-          QUALIFIED_SHEET_RANGE_WITH_HEADER
-        );
-        return parseQualifiedLeads(rows);
-      })
-  );
+  const leadsPerCampaign = await Promise.all(campaigns.map(readCampaignQualifiedLeads));
   const leads = leadsPerCampaign.flat();
 
   const [allEvents, allMeetings] = await Promise.all([
-    getAllEmailEvents(),
-    getMeetings(),
+    readInboxEvents(),
+    readInboxMeetings(),
   ]);
 
   // Build inbox items
