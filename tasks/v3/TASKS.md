@@ -18,7 +18,7 @@
 | 004 | API `/api/campaigns` GET/POST sur Index | 🤖 | P0 | ✅ Done | 002, 003 | 2h |
 | 005 | API `/api/campaigns/[id]` GET détail via Index→enfant | 🤖 | P0 | ✅ Done | 002 | 1.5h |
 | 006 | WF6 refonte — loop Index + update stats maître | 🤖 | P0 | ✅ Done | 003 | 2h |
-| 007 | WF2 — prompt Claude Opus 4.6 14 champs JSON + lecture Config.icp_md | 🤖 | P0 | ✅ Done | 003 | 3h |
+| 007 | WF2 — prompt Claude Sonnet 4.5 14 champs JSON + lecture Config.icp_md | 🤖 | P0 | ✅ Done | 003 | 3h |
 | 008 | WF2 — Code node Web Quality Score (post-Firecrawl) | 🤖 | P0 | ✅ Done | 007 | 1.5h |
 | 009 | WF2 — IF branche Qualified/Rejected + onglet Leads_Rejected | 🤖 | P0 | ✅ Done | 007 | 2h |
 | 010 | UI fiche lead enrichie (hook, buying_signal, growth, web_quality) | 🤖 | P0 | ✅ Done | 005, 007 | 3h |
@@ -71,7 +71,7 @@ Status Legend: ⬜ Todo | 🔄 In Progress | ✅ Done | ⏸️ Blocked
 - [x] WF6 met à jour les stats dans le maître
 
 ### Milestone S2 : BLOC 1 + BLOC 5 — Enrichissement + Export (Tasks 007–010, 020)
-- [x] Claude Opus 4.6 retourne 14 champs, scoring piloté par ICP
+- [x] Claude Sonnet 4.5 (OpenRouter) retourne 14 champs, scoring piloté par ICP
 - [x] Leads_Rejected tracés avec rejection_reason
 - [x] Export CSV / JSON / Instantly opérationnel
 

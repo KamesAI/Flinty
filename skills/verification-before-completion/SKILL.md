@@ -1,6 +1,6 @@
 ---
 name: verification-before-completion
-description: Use when about to claim workflow works, integration is complete, or deployment succeeded - requires running verification commands and confirming output before making any success claims; evidence before assertions always
+description: Use when you are about to say done, finished, ready to merge, or "you can test" for Flinty; when dashboard TypeScript, API routes, or Sheets integration changed; requires fresh npm run test (or explicit N/A) before success claims
 ---
 
 # Verification Before Completion (Kames AI Edition)
@@ -14,6 +14,13 @@ Claiming work is complete without verification is dishonesty, not efficiency.
 **For Thomas:** If I say "it works" without having tested it myself, I'm lying to you. This skill prevents that.
 
 **Violating the letter of this rule is violating the spirit of this rule.**
+
+## Gotchas (Flinty)
+
+- Le hook Stop du repo peut **relancer une fois** si la réponse finale sonne « livré » sans mention de `npm run test` ni exemption ; inclure une phrase du type : « Tests : `npm run test` — OK (résumé) » ou « Pas de tests TS pour ce changement (raison) ».
+- **Docs / config seulement** : indiquer clairement N/A pour Vitest pour éviter faux positifs.
+- **n8n** : la preuve = exécution + inspection sorties nœuds, pas l’icône verte seule.
+- Référence : [`references/flinty-dashboard.md`](references/flinty-dashboard.md).
 
 ## The Iron Law
 

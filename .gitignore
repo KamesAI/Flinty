@@ -36,6 +36,20 @@ next-env.d.ts
 02-Implementation/interface/lead-qualifier-dashboard/playwright-report/
 02-Implementation/interface/lead-qualifier-dashboard/test-results/
 
+# New dashboard location (post-restructure)
+.workflows/02-Implementation/interface/lead-qualifier-dashboard/node_modules/
+.workflows/02-Implementation/interface/lead-qualifier-dashboard/.next/
+.workflows/02-Implementation/interface/lead-qualifier-dashboard/.vercel/
+.workflows/02-Implementation/interface/lead-qualifier-dashboard/out/
+.workflows/02-Implementation/interface/lead-qualifier-dashboard/dist/
+.workflows/02-Implementation/interface/lead-qualifier-dashboard/*.tsbuildinfo
+.workflows/02-Implementation/interface/lead-qualifier-dashboard/playwright-report/
+.workflows/02-Implementation/interface/lead-qualifier-dashboard/test-results/
+.workflows/02-Implementation/interface/lead-qualifier-dashboard/tmp-*.png
+
+# Claude Code local-only settings (peut contenir tokens)
+.claude/settings.local.json
+
 # Editor / OS
 .idea/
 .vscode/

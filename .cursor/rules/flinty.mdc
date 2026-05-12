@@ -5,7 +5,7 @@ alwaysApply: true
 
 # Flinty — Règles projet
 
-**Référence complète** : `CLAUDE.md` à la racine du repo.
+**Référence** : hub [`CLAUDE.md`](CLAUDE.md) ; détails modulaires [`.claude/rules/`](.claude/rules/) (Claude Code charge aussi ces règles).
 
 ## Langue
 
@@ -24,14 +24,15 @@ Avant de répondre, vérifier si un skill du repo (`skills/`) ou mentionné dans
 | Architecture BLOC | create-architecture |
 | Découpage tâches | create-tasks |
 | Idée produit | brainstorming |
+| Copy, ICP, cold email, marketing (hors code) | flinty-product-marketing-context — puis sales-message-generator si messages ; vendor `external/marketingskills` selon skills/vendor/marketingskills-INDEX.md |
 | n8n | skills `n8n-*` + MCP n8n |
 
 ## Stack (vérité projet)
 
-- **UI** : Next.js 15 App Router, TypeScript, Tailwind thème dark custom — **pas de shadcn**.
+- **UI** : Next.js 15 App Router, TypeScript, Tailwind thème light custom — **pas de shadcn**.
 - **Tests** : Vitest, **TDD** : test avant code pour `lib/*.ts` et `app/**/*.ts` sous le dashboard.
 - **Données** : Google Sheets — 1 Index maître + 1 GSheet enfant par campagne ; isolation stricte ; dédup cross-campagnes via Contacts_Registry (BLOC 4) uniquement.
-- **IA** : Claude Opus via **OpenRouter** (`OPENROUTER_API_KEY`).
+- **IA** : Claude Sonnet 4.5 via **OpenRouter** (`OPENROUTER_API_KEY`).
 - **Automation** : n8n (staging puis prod). **Emails** : Resend.
 
 ## Interdits
@@ -61,7 +62,7 @@ Après une tâche réalisée : mettre à jour `tasks/v3/TASKS.md`, `tasks/v3/TAS
 
 ## UI
 
-Couleur accent Flinty : **`#FFA318`**.
+Couleur primaire Flinty : **`#006596`** (TrueHorizon blue — `hsl(var(--primary))` en CSS). Ne pas hardcoder l’ancienne orange.
 
 ## Variables d’environnement (noms)
 

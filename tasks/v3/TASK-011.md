@@ -2,7 +2,7 @@
 **Status**: ✅ Done
 
 ## Context
-Le chat ICP a besoin d'une route serveur qui synthétise 8 Q&A en un `ICP.md` structuré via Claude Opus 4.6.
+Le chat ICP a besoin d'une route serveur qui synthétise 8 Q&A en un `ICP.md` structuré via Claude Sonnet 4.5.
 **OpenRouter remplace l'API Anthropic directe** — on utilise le SDK `openai` avec `baseURL: openrouter.ai/api/v1`.
 
 **References**: PRD §3 F3 · ARCHI §Intégrations
@@ -17,7 +17,7 @@ Le chat ICP a besoin d'une route serveur qui synthétise 8 Q&A en un `ICP.md` st
 - [ ] Route `app/api/campaigns/generate-icp/route.ts` (POST only)
 - [ ] Valide `answers.length === 8` (sinon 400)
 - [ ] Prompt système fixe : structure ICP.md (profil cible / problème / offre / signaux+ / signaux- / exclusions / grille scoring / hook type)
-- [ ] Modèle : `anthropic/claude-opus-4-6`, `max_tokens: 2048`
+- [ ] Modèle : `anthropic/claude-sonnet-4-5`, `max_tokens: 2048`
 - [ ] Timeout 30s
 - [ ] Header `HTTP-Referer: https://flinty.kamesai.com` (requis par OpenRouter)
 
@@ -44,13 +44,13 @@ export function getOpenRouter(): OpenAI {
   }));
 }
 
-export const CLAUDE_OPUS = 'anthropic/claude-opus-4-6';
+export const CLAUDE_SONNET = 'anthropic/claude-sonnet-4-5';
 ```
 
 ### `app/api/campaigns/generate-icp/route.ts`
 ```ts
 import { NextResponse } from 'next/server';
-import { getOpenRouter, CLAUDE_OPUS } from '@/lib/openrouter';
+import { getOpenRouter, CLAUDE_SONNET } from '@/lib/openrouter';
 
 const ICP_SYSTEM_PROMPT = `Tu es un expert en stratégie commerciale B2B. 
 À partir des réponses d'un utilisateur, génère un ICP.md structuré avec exactement ces sections :
@@ -72,7 +72,7 @@ export async function POST(req: Request) {
   const userContent = answers.map((a, i) => `Q${i + 1}: ${a}`).join('\n');
   try {
     const completion = await getOpenRouter().chat.completions.create({
-      model: CLAUDE_OPUS,
+      model: CLAUDE_SONNET,
       max_tokens: 2048,
       messages: [
         { role: 'system', content: ICP_SYSTEM_PROMPT },

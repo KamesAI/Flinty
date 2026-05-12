@@ -1,0 +1,60 @@
+# Task v4-025 : WF10 LI Outreach — invitation perso IA + cold DM post-acceptance + pacing + checkHealth()
+**Status**: ⬜ À faire
+
+## Autonomie
+🤖 **Claude 100%** — via MCP n8n.
+
+## Context
+WF10 est le moteur outreach LinkedIn. Il tourne toutes les heures, boucle sur les leads `statut_li=new` de la campagne, vérifie le pacing + health, et envoie des invitations personnalisées. Sur `invitation.accepted`, envoie un cold DM généré par IA (réutilise `personalized_hook` v3).
+
+**Références** : PRD-v4 F8 · ARCHI-v4 §n8n WF10
+
+## Objective
+WF10 opérationnel en staging : boucle leads → vérif pacing → invitation Unipile → DM post-acceptation.
+
+## Requirements
+
+### Must Have
+- [ ] Trigger Schedule horaire
+- [ ] Node Sheets : lit Leads_Qualified de l'enfant actif où `statut_li=new` (cap 20 max par run selon CAPS_LI_DAILY_WARM)
+- [ ] Node : appel `GET /api/li-health` → si `allowed=false` → STOP (circuit breaker)
+- [ ] Node : appel `GET /api/pacing/li-status` → vérif cap daily + weekly avant chaque invitation
+- [ ] Node : génère note invitation via Claude Sonnet (≤300 chars) depuis `personalized_hook` v3 du lead
+- [ ] Node Unipile : `POST /api/v1/users/{account_id}/invitations` avec ou sans note (ratio 60/40)
+- [ ] Node Gauss delay entre chaque invitation (µ=360s)
+- [ ] Node : update Leads_Qualified `statut_li=invited`
+- [ ] Trigger Webhook Unipile `invitation.accepted` → Node DM : génère cold DM via Claude → send via Unipile DM → update `statut_li=accepted` puis `dm_sent`
+
+### Must NOT
+- Ne pas dépasser le cap weekly 100 — vérif AVANT chaque invitation (pas après)
+- Ne pas envoyer DM immédiatement — délai 0h→24h aléatoire post-acceptance (Gauss µ=4h)
+
+## Technical Approach
+
+WF10 nodes (batch horaire) :
+1. `Schedule Trigger` (toutes les heures)
+2. `HTTP Request` GET /api/li-health → circuit breaker
+3. `HTTP Request` GET /api/pacing/li-status → remaining today + this week
+4. `Google Sheets` read Leads_Qualified (statut_li=new, limite cap)
+5. `Loop` sur leads :
+   a. Génère note invitation (Code node, Claude via OpenRouter)
+   b. `shouldAddNote` code node → with/without note
+   c. `HTTP Request` Unipile sendInvitation
+   d. `Wait` Gauss delay
+   e. `Google Sheets` update statut_li=invited
+6. `Webhook` trigger sur invitation.accepted → DM flow
+
+Route `GET /api/pacing/li-status` : lit tab LI_Health (invits_sent_today, invits_sent_week) → retourne remaining.
+
+## Acceptance Criteria
+- [ ] WF10 run sur staging → 0 erreur n8n, invitations envoyées en respectant caps
+- [ ] Cap weekly 100 : si invits_sent_week=99 → 1 seule invitation par run puis STOP
+- [ ] lead.statut_li=invited après invitation réussie
+- [ ] Webhook acceptance → DM envoyé (délai Gauss respecté)
+- [ ] Circuit breaker : si LI_Health.status=paused → WF10 STOP sans invitation
+
+## Dependencies
+**Blocked By**: v4-024 (pacing LI), v4-024b (checkHealth), v4-022 (leads LI sourcés)
+
+## Complexity & Estimates
+High · 5h · Risk: High (critique anti-ban — tester d'abord avec 1 lead)

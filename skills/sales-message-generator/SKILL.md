@@ -6,6 +6,7 @@ description: Génère des messages de prospection ultra-personnalisés (LinkedIn
 
 ## AVANT DE GÉNÉRER QUOI QUE CE SOIT
 
+0. **Hub marketing** : si la tâche est large (positionnement, angle, ICP, ou combinaison avec d’autres besoins marketing), lire d’abord [flinty-product-marketing-context/SKILL.md](../flinty-product-marketing-context/SKILL.md) — il fixe l’isolation campagne, le RGPD et le lien vers les skills vendor (Corey Haines). Ne pas contredire ses règles.
 1. Lire `clients/lead-gen/00-Discovery/ICP.md` pour calibrer le contenu sur les segments réels.
 2. Lire `clients/lead-gen/00-Discovery/email-templates-library.md` — si une version validée existe pour le segment demandé, l'utiliser EN PRIORITÉ. Ne générer de nouveaux templates que si aucune version validée n'existe.
 3. Si `ICP.md` n'existe pas → lancer le brainstorming ICP (poser les 4 blocs de questions) avant de générer.
@@ -18,6 +19,16 @@ description: Génère des messages de prospection ultra-personnalisés (LinkedIn
 - Créer un message LinkedIn de prospection
 - Relancer un prospect qui n'a pas répondu
 - Produire du contenu directement collable dans Google Sheets `Email_Templates`
+
+---
+
+## Skills complémentaires (vendor)
+
+Frameworks et checklists supplémentaires (après le hub) — **ne remplacent pas** les tokens ni les longueurs imposées ci-dessus :
+
+- `external/marketingskills/skills/cold-email/SKILL.md` — angles, structure cold B2B.
+- `external/marketingskills/skills/email-sequence/SKILL.md` — logique de drips / relances.
+- Index et tiers : [skills/vendor/marketingskills-INDEX.md](../vendor/marketingskills-INDEX.md).
 
 ---
 

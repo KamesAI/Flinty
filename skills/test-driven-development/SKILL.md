@@ -1,6 +1,6 @@
 ---
 name: test-driven-development
-description: Utiliser AVANT d'écrire du code d'implémentation pour toute feature ou correction de bug
+description: Use BEFORE implementing or fixing any TypeScript in Flinty lead-qualifier-dashboard (lib/*.ts, app/**/*.ts); when user asks for a feature, route, or refactor under 02-Implementation/interface/lead-qualifier-dashboard
 ---
 
 # Test-Driven Development (TDD) - Adapté Kames AI
@@ -10,6 +10,14 @@ description: Utiliser AVANT d'écrire du code d'implémentation pour toute featu
 **Principe fondamental :** Écris le test d'abord. Regarde-le échouer. Écris le code minimal pour le faire passer.
 
 Si tu n'as pas vu le test échouer, tu ne sais pas s'il teste vraiment ce qu'il doit tester.
+
+## Gotchas (Flinty dashboard)
+
+- **Chemin** : tous les tests depuis `02-Implementation/interface/lead-qualifier-dashboard/` (`npm run test`).
+- **Fichiers `route.ts`** : même exigence TDD que `lib/*.ts` (Vitest sur les handlers).
+- **UI `.tsx`** : TDD ciblé (tests composant / logique) quand la logique n’est pas triviale ; ne pas « tester » uniquement le rendu pixel.
+- **n8n** : hors scope TDD classique — pas de `describe()` sur les graphes ; validation par exécution staging.
+- Référence : [`references/flinty-dashboard.md`](references/flinty-dashboard.md).
 
 ## Quand utiliser TDD
 

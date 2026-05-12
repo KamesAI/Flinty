@@ -1,0 +1,58 @@
+# Task v4-024b : WF12 NEW — Health monitor LI : polling Unipile + détecte signaux pré-ban → auto-pause + alerte
+**Status**: ⬜ À faire
+
+## Autonomie
+🤖 **Claude 100%** — via MCP n8n + route API.
+
+## Context
+Le circuit breaker LinkedIn. WF12 tourne toutes les 10 minutes et détecte les signaux pré-ban LinkedIn (captcha, warning email, acceptance_rate <20%, bouton "Suivre" remplaçant "Se connecter"). En cas de signal → pause automatique + alerte Thomas. Tab `LI_Health` dans Index.
+
+**Références** : PRD-v4 F14 · ARCHI-v4 §n8n WF12
+
+## Objective
+WF12 opérationnel en staging : polling Unipile + mise à jour LI_Health + auto-pause sur seuils dépassés.
+
+## Requirements
+
+### Must Have
+- [ ] Trigger cron n8n : toutes les 10 minutes
+- [ ] Node Unipile : `GET /api/v1/users/{account_id}` → statut compte (captcha ?, suspended ?)
+- [ ] Node Unipile : `GET /api/v1/users/{account_id}/invitations` → calcule `accept_rate_7d` sur 7j glissants
+- [ ] Logique pause :
+  - Captcha détecté → `status=paused_captcha`, pause 24h
+  - Email LI "activité inhabituelle" → `status=paused_warning`, pause 14j
+  - `accept_rate_7d < 20%` sur ≥10 invitations → `status=paused_low_accept`
+  - Bouton "Suivre" sur ≥3 profils → `status=paused_follow_mode`, pause 7j
+- [ ] Node Sheets : update tab LI_Health Index avec tous les champs
+- [ ] Node : si transition vers paused → envoie email Thomas (Resend) avec reason + ETA reprise
+- [ ] Node : update Campagnes Index — si LI_account_id paused → suspend campagnes LI actives
+- [ ] Route `GET /api/li-health?account_id=...` — lit LI_Health → retourne statut pour UI
+
+### Must NOT
+- Ne pas envoyer l'alerte email à chaque run cron — uniquement au changement de status
+- Ne pas relancer des invitations si status != active
+
+## Technical Approach
+
+Nodes WF12 :
+1. `Schedule Trigger` (toutes les 10 min)
+2. `Google Sheets` — read tab Accounts (tous les account_id LI actifs)
+3. `Loop` sur chaque account
+4. `HTTP Request` Unipile → statut + invitations 7j
+5. `Code` — calcul accept_rate_7d + détection signaux
+6. `IF` status changé → `HTTP Request` Resend alerte + update LI_Health
+7. `Google Sheets` update LI_Health
+
+Statuts possibles : `active | paused_captcha | paused_warning | paused_low_accept | paused_follow_mode | banned`
+
+## Acceptance Criteria
+- [ ] WF12 s'exécute sans erreur sur staging (compte Thomas connecté)
+- [ ] Tab LI_Health mis à jour à chaque run (last_health_check_at)
+- [ ] Simulation accept_rate=15% → status passe à paused_low_accept + email Thomas
+- [ ] WF10 (outreach) vérifie status avant chaque action et s'arrête si paused
+
+## Dependencies
+**Blocked By**: v4-024 (pacing LI), v4-021 (account_id connecté)
+
+## Complexity & Estimates
+High · 4h · Risk: High (signaux pré-ban subtils à détecter)

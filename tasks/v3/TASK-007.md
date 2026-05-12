@@ -1,20 +1,20 @@
-# Task 007: WF2 — prompt Claude Opus 4.6 via OpenRouter, 14 champs + lecture Config.icp_md
+# Task 007: WF2 — prompt Claude Sonnet 4.5 via OpenRouter, 14 champs + lecture Config.icp_md
 **Status**: ✅ Complété
 
 ## Context
 V1 scorait avec Haiku et 7 champs génériques. V3 doit s'appuyer sur l'ICP de la campagne et produire un enrichissement riche et actionnable.
-**OpenRouter remplace l'API Anthropic directe** — même modèle (`anthropic/claude-opus-4-6`), auth Bearer au lieu de `x-api-key`.
+**OpenRouter remplace l'API Anthropic directe** — modèle `anthropic/claude-sonnet-4-5` (remplace Opus 4.6 pour le coût), auth Bearer au lieu de `x-api-key`.
 
 **References**: PRD §3 F2 · ARCHI §Intégrations tierces
 
 ## Objective
-WF2 lit `Config.icp_md` + `Config.score_minimum` dans l'enfant, appelle Claude Opus 4.6 via OpenRouter, reçoit un JSON strict à 14 clés et le merge dans le flow.
+WF2 lit `Config.icp_md` + `Config.score_minimum` dans l'enfant, appelle Claude Sonnet 4.5 via OpenRouter, reçoit un JSON strict à 14 clés et le merge dans le flow.
 
 ## Requirements
 ### Must Have
 - [ ] Node Sheets en début de WF2 : lit `Config!A:B` de l'enfant → extrait `icp_md` et `score_minimum`
 - [ ] Node HTTP Request vers `https://openrouter.ai/api/v1/chat/completions` (OpenAI-compatible)
-- [ ] Modèle : `anthropic/claude-opus-4-6`
+- [ ] Modèle : `anthropic/claude-sonnet-4-5`
 - [ ] Headers HTTP :
   - `Authorization: Bearer {{$credentials.openrouterApiKey}}`
   - `Content-Type: application/json`
@@ -22,7 +22,7 @@ WF2 lit `Config.icp_md` + `Config.score_minimum` dans l'enfant, appelle Claude O
 - [ ] Body JSON (format OpenAI messages) :
   ```json
   {
-    "model": "anthropic/claude-opus-4-6",
+    "model": "anthropic/claude-sonnet-4-5",
     "max_tokens": 1024,
     "messages": [
       { "role": "system", "content": "RÉPONDS UNIQUEMENT LE JSON. 14 clés obligatoires." },

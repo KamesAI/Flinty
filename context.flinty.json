@@ -1,0 +1,544 @@
+{
+  "meta": {
+    "product": "Flinty",
+    "version": "v4",
+    "generated": "2026-05-06",
+    "owner": "Thomas Callendreau — Kames AI",
+    "description": "Context complet Flinty pour Claude Web — briefing sans historique de conversation",
+    "sources": [
+      ".workflows/00-Discovery/PRD-v4.md",
+      ".workflows/00-Discovery/ARCHI-v4.md",
+      ".workflows/01-Architecture/mimikflow-analysis-v4.md",
+      "tasks/v4/TASKS.md",
+      "CLAUDE.md"
+    ]
+  },
+
+  "product": {
+    "name": "Flinty",
+    "tagline": "La plateforme de prospection autonome multi-canal qui sélectionne, contacte, qualifie et book vos rendez-vous, sans que vous touchiez un message.",
+    "problem": "v3 fait du outbound email propre (sourcing Maps + scoring Claude 14 champs + Resend + relances J+3/J+7) mais s'arrête au reply. Thomas doit lire chaque réponse, juger l'intent, gérer les objections, booker manuellement → 1h/jour perdue sur 5–8 replies. v4 ferme la boucle avec un AI Setter inbound.",
+    "positioning_vs_mimikflow": "Mimikflow (concurrent) promet 15 RDV/mois mains libres via AI Setter LinkedIn uniquement — pas d'email, pas de CRM, banissement LI risqué, ICP auto-fill. Flinty v4 = multi-canal (email + LI), intent-driven sourcing, ICP profiling supérieur, pacing anti-ban, validation humaine configurable.",
+    "target_launch": {
+      "phase1_setter_email": "juin–juillet 2026",
+      "phase2_linkedin": "septembre–octobre 2026",
+      "phase3_polish": "novembre 2026"
+    }
+  },
+
+  "users": {
+    "primary": {
+      "name": "Thomas Callendreau",
+      "role": "Fondateur Kames AI — utilisateur et développeur Flinty",
+      "pain_v4": "5–8 replies/jour à trier manuellement, 1h perdue, goulot à >5 campagnes",
+      "goal_v4": "Lancer 10 campagnes en parallèle, recevoir uniquement les RDV bookés et les escalades"
+    },
+    "secondary": "Clients agence Kames — accès GSheet enfant lecture → v4 option Setter en leur nom",
+    "tertiary": "Prospects répondant — expérience naturelle <5 min, ton miroir, slot Calendly proposé"
+  },
+
+  "stack": {
+    "frontend": "Next.js 15.1.7 App Router, TypeScript, Tailwind CSS custom (pas shadcn — primitives @radix-ui/* OK)",
+    "tests": "Vitest — TDD obligatoire lib/*.ts et app/**/*.ts. Playwright pour E2E smoke.",
+    "database": "Google Sheets — 1 GSheet maître 'Flinty Index' + N GSheets enfants (1 par campagne). googleapis SDK.",
+    "automation": "n8n self-hosted Hetzner (staging: staging-n8n.kamesai.com / prod: agent.kamesai.com)",
+    "email": "Resend (domaine outreach.kamesai.com pour cold email, kamesai.com pour transactionnel)",
+    "linkedin": "Unipile API — hosted auth, multi-comptes, webhooks (message.received, invitation.accepted)",
+    "calendar": "Calendly v2 API + webhooks. PAT MVP Phase 1, OAuth Phase 3.",
+    "ai_setter": "Claude Sonnet 4.6 via @anthropic-ai/sdk direct (pas OpenRouter) avec prompt caching. Fallback Opus 4.6 sur objection_trust.",
+    "ai_scoring": "Claude Opus 4.6 via OpenRouter (inchangé v3) — 14 champs scoring + ICP generation",
+    "deploy": "Vercel (GitHub main → auto-deploy). Dashboard: lead-qualifier-dashboard/",
+    "ssh_hetzner": "ssh kames@<IP> (utilisateur kames) — n8n self-hosted"
+  },
+
+  "repo_structure": {
+    "root": "/Users/callendreau/Dev/Flinty/",
+    "dashboard_root": "02-Implementation/interface/lead-qualifier-dashboard/",
+    "tasks_v4": "tasks/v4/",
+    "tasks_v3": "tasks/v3/",
+    "workflows_docs": ".workflows/",
+    "skills": "skills/",
+    "commands": ".claude/commands/",
+    "rules": ".claude/rules/",
+    "dev_log": ".workflows/02-Implementation/Dev-Log.md",
+    "key_commands": {
+      "dev": "cd 02-Implementation/interface/lead-qualifier-dashboard && npm run dev",
+      "test": "cd 02-Implementation/interface/lead-qualifier-dashboard && npm run test",
+      "build": "cd 02-Implementation/interface/lead-qualifier-dashboard && npm run build"
+    }
+  },
+
+  "v3_status": {
+    "tasks_done": 22,
+    "all_tasks_complete": true,
+    "status": "staging validé — prod mai 2026 (smoke campagne + variables Vercel prod)",
+    "scope_v3": "outbound email uniquement : sourcing Maps → scoring 14 champs → Resend send → relances J+3/J+7 → kanban leads",
+    "n8n_workflows_v3": ["WF1 (sourcing Maps)", "WF2 (scoring Claude)", "WF3 (send J0)", "WF4 (relance J3)", "WF5 (relance J7)", "WF6 (stats)"]
+  },
+
+  "v4_phases": {
+    "phase1": {
+      "name": "AI Setter Email + Calendly + Inbox",
+      "duration": "4–6 semaines",
+      "target": "juin–juillet 2026",
+      "total_hours": "~61h",
+      "tasks": ["v4-000", "v4-001", "v4-002", "v4-002b", "v4-002c", "v4-003", "v4-004", "v4-005", "v4-006", "v4-007", "v4-008", "v4-009", "v4-009b", "v4-010", "v4-011", "v4-012", "v4-013", "v4-014", "v4-015", "v4-016", "v4-017", "v4-018", "v4-018b"],
+      "milestone_M1": {
+        "name": "Setter Email opérationnel (fin sem 6)",
+        "checklist": [
+          "outreach.kamesai.com Resend vérifié + mail-tester ≥8/10",
+          "Soft warm-up 2 sem complété (0 bounce, ≥3 replies positives)",
+          "WF13 Email Health Monitor opérationnel",
+          "WF7 classifie 100% replies <30s",
+          "Setter génère drafts validables (Voss + NoQuestions)",
+          "Calendly slots proposés dynamiquement",
+          "Inbox 3 tabs livrée",
+          "Validation mode toggle fonctionnel + EU AI Act compliance",
+          "Smoke E2E staging réussi"
+        ],
+        "kpi": "Setter intent accuracy >85% (50 threads test)"
+      }
+    },
+    "phase2": {
+      "name": "Canal LinkedIn",
+      "duration": "6–8 semaines",
+      "target": "septembre–octobre 2026",
+      "total_hours": "~42h",
+      "tasks": ["v4-019", "v4-020", "v4-021", "v4-022", "v4-023", "v4-024", "v4-024b", "v4-024c", "v4-025", "v4-025b", "v4-026", "v4-027", "v4-028"],
+      "milestone_M2": {
+        "name": "LinkedIn live (fin sem 14)",
+        "kpis": ["LI accept >35%", "LI reply >20%", "RDV/mois >12"]
+      }
+    },
+    "phase3": {
+      "name": "Polish & scale",
+      "duration": "4 semaines",
+      "target": "novembre 2026",
+      "total_hours": "~28h",
+      "tasks": ["v4-029", "v4-030", "v4-031", "v4-032", "v4-033", "v4-034", "v4-035"],
+      "milestone_M3": {
+        "name": "Scale & polish (fin sem 18)",
+        "kpis": ["Cost/meeting <$15", "marge tier Premium >70%"]
+      }
+    }
+  },
+
+  "features_v4": {
+    "F1_webhook_reply": {
+      "phase": 1,
+      "tasks": ["v4-009"],
+      "description": "WF7 reçoit webhook Resend email.replied → charge thread complet → Claude Sonnet 4.6 classifie intent → écrit reply_intent + reply_raw dans Leads_Qualified",
+      "latency_target": "<30 sec reply → intent classifié"
+    },
+    "F2_setter_response": {
+      "phase": 1,
+      "tasks": ["v4-004", "v4-005"],
+      "description": "Setter génère réponse ≤120 mots avec Voss mirroring + No-Oriented Questions. Draft (validation ON) ou envoi auto (validation OFF). Stockage tab Conversations."
+    },
+    "F3_calendly": {
+      "phase": 1,
+      "tasks": ["v4-006", "v4-007", "v4-008"],
+      "description": "Route /api/calendly/slots → 3 slots dispo. Setter insère slots naturellement quand intent=meeting_ready. Webhook invitee.created → tab Meetings."
+    },
+    "F4_inbox_unified": {
+      "phase": 1,
+      "tasks": ["v4-011", "v4-012", "v4-013", "v4-014"],
+      "description": "Refonte /dashboard/inbox : 3 tabs (À valider / À répondre / Bookings). ConversationThread timeline cross-canal. SetterDraftCard avec valider/éditer/escalader."
+    },
+    "F5_validation_mode": {
+      "phase": 1,
+      "tasks": ["v4-015", "v4-016"],
+      "description": "Toggle setter_validation par campagne (Config tab). Forced validation si prospect demande 'êtes-vous une IA ?' (EU AI Act art. 50)."
+    },
+    "F6_unipile_auth": {
+      "phase": 2,
+      "tasks": ["v4-019", "v4-020", "v4-021"],
+      "description": "Hosted auth flow Unipile → /dashboard/settings/linkedin/connect → callback /api/unipile/callback → store account_id tab Accounts."
+    },
+    "F7_li_sourcing": {
+      "phase": 2,
+      "tasks": ["v4-022", "v4-023"],
+      "description": "WF9 : 4 canaux (search ICP / post_engagers / profile_visitors / external_post) → Leads_Raw + dedupe Registry étendu (linkedin_url)."
+    },
+    "F8_li_outreach": {
+      "phase": 2,
+      "tasks": ["v4-024", "v4-025", "v4-025b"],
+      "description": "WF10 : invitation perso IA + cold DM post-acceptation. Pacing Gauss + caps + mix organique (1 like + 1 view per N invits)."
+    },
+    "F9_setter_li": {
+      "phase": 2,
+      "tasks": ["v4-026", "v4-027"],
+      "description": "WF11 webhook Unipile message.received → pipeline Setter identique Phase 1 (channel=linkedin). Inbox unifié email+LI."
+    },
+    "F14_health_monitor_li": {
+      "phase": 2,
+      "tasks": ["v4-024b", "v4-024c"],
+      "description": "WF12 polling Unipile status toutes 10 min. Détecte captcha/warning/accept<20%/bouton Suivre → auto-pause + bandeau rouge + email Thomas. Tab LI_Health Index."
+    },
+    "F15_email_health": {
+      "phase": 1,
+      "tasks": ["v4-000", "v4-002b", "v4-002c", "v4-018b"],
+      "description": "Domaine outreach.kamesai.com isolé (DNS MX/SPF/DKIM/DMARC). Soft warm-up 2 sem. WF13 surveille bounce/complaint → auto-pause + tab Email_Health."
+    }
+  },
+
+  "database_schema_v4": {
+    "index_sheet": {
+      "id_env": "GOOGLE_INDEX_SHEET_ID",
+      "tabs": {
+        "Campagnes": {
+          "v3_cols": 13,
+          "v4_new_cols": ["setter_enabled", "setter_validation", "li_account_id", "calendly_event_uri"],
+          "total": "17 colonnes"
+        },
+        "Contacts_Registry": {
+          "key": "domain OU linkedin_url",
+          "cols": ["key", "last_contacted_at", "campaign_id", "statut", "channel"]
+        },
+        "Accounts": {
+          "new_v4": true,
+          "cols": ["account_id", "type (linkedin|email|calendly)", "provider", "unipile_id", "status (connected|expired|banned|paused_warning|paused_captcha|paused_low_accept)", "connected_at", "workspace_id"]
+        },
+        "LI_Health": {
+          "new_v4": true,
+          "purpose": "anti-ban monitor",
+          "cols": ["account_id", "accept_rate_7d", "invits_sent_today", "invits_sent_week", "captcha_count", "last_warning_at", "last_health_check_at", "status"]
+        },
+        "Email_Health": {
+          "new_v4": true,
+          "purpose": "deliverability monitor",
+          "cols": ["domain", "sent_today", "bounce_rate_7d", "complaint_rate_7d", "last_mail_tester_score", "last_check_at", "status"],
+          "status_values": ["active", "paused_high_bounce", "paused_high_complaint"]
+        },
+        "Workspaces": {
+          "new_v4": true,
+          "phase": 3,
+          "cols": ["workspace_id", "name", "owner_email", "created_at"]
+        }
+      }
+    },
+    "child_sheet": {
+      "naming": "1 GSheet par campagne, créé par WF1",
+      "tabs": {
+        "Leads_Raw": "leads bruts avant scoring",
+        "Leads_Qualified": {
+          "v3_cols": 21,
+          "v4_new_cols": ["linkedin_url", "source_channel", "statut_li", "reply_intent", "reply_at"],
+          "statut_li_values": ["new", "invited", "accepted", "dm_sent", "dm_replied", "converted", "rejected"],
+          "source_channel_values": ["maps", "linkedin_search", "post_engagers", "profile_visitors", "external_post"]
+        },
+        "Conversations": {
+          "new_v4": true,
+          "cols": ["turn_id", "lead_id", "channel (email|linkedin)", "role (prospect|setter|human)", "content", "sent_at", "intent", "validated_by", "edited_from_draft"]
+        },
+        "Meetings": {
+          "new_v4": true,
+          "cols": ["meeting_id", "lead_id", "calendly_uri", "start_at", "event_type", "booked_via (setter|manual)", "status (booked|no_show|completed|cancelled)"]
+        },
+        "Config": {
+          "v4_new_rows": ["setter_enabled", "setter_validation", "setter_tone (formal|casual)", "setter_signature", "calendly_event_uri", "li_caps_daily"]
+        },
+        "Templates": "modèles email + v4 onglet LI"
+      }
+    }
+  },
+
+  "api_routes_v4": {
+    "replies": {
+      "GET /api/replies/[lead_id]": "Thread complet cross-canal (tab Conversations)",
+      "POST /api/replies/[lead_id]/send": "Envoie draft Setter validé → déclenche WF8",
+      "POST /api/replies/[lead_id]/escalate": "Marque escalated, retire de queue auto"
+    },
+    "setter": {
+      "POST /api/setter/classify": "Interne WF7 — classify intent Claude Sonnet 4.6 JSON mode",
+      "POST /api/setter/generate": "Interne WF7 — génère réponse Setter (Voss + NoQuestions)"
+    },
+    "calendly": {
+      "GET /api/calendly/slots": "3 prochains slots dispo (query: event_type_uri)",
+      "POST /api/calendly/webhook": "invitee.created → tab Meetings + lead.statut=booked"
+    },
+    "unipile": {
+      "GET /api/unipile/callback": "Callback hosted auth Unipile → store account_id",
+      "POST /api/unipile/webhook": "message.received + invitation.accepted",
+      "GET /api/unipile/status": "Health check connexion LI"
+    },
+    "linkedin": {
+      "POST /api/linkedin/source": "Déclenche WF9 sourcing (body: {campaign_id, channel, params})"
+    }
+  },
+
+  "n8n_workflows": {
+    "v3_unchanged": {
+      "WF1": "Sourcing Maps → Leads_Raw",
+      "WF2": "Scoring Claude Opus via OpenRouter → Leads_Qualified",
+      "WF3": "Send J0 via Resend",
+      "WF4": "Relance J+3",
+      "WF5": "Relance J+7",
+      "WF6": "Stats → Index Campagnes (étendu v4 : meetings_booked, setter_response_rate, li_accept_rate, cost_per_meeting)"
+    },
+    "v4_new": {
+      "WF7": {
+        "name": "Setter Email Inbound",
+        "trigger": "Webhook Resend email.replied",
+        "flow": "Résout sheet_id via Index → charge contexte (ICP + lead + thread) → POST /api/setter/classify → POST /api/setter/generate → écrit Conversations → si validation ON: draft inbox / si OFF: déclenche WF8"
+      },
+      "WF8": {
+        "name": "Setter Send",
+        "trigger": "Webhook /api/replies/[lead_id]/send (validé par Thomas)",
+        "flow": "Envoie draft via Resend → tag Conversations validated_by=human"
+      },
+      "WF9": {
+        "name": "LI Sourcing",
+        "trigger": "Webhook /api/linkedin/source",
+        "flow": "Unipile search/post_engagers/profile_visitors/external_post → Leads_Raw + dedupe Registry (linkedin_url)"
+      },
+      "WF10": {
+        "name": "LI Outreach",
+        "trigger": "Schedule horaire",
+        "flow": "Boucle Leads_Qualified (statut_li=new) → checkHealth() → invitation Unipile (perso IA) → webhook accepted → cold DM + mix organic (1 like + 1 view per N invits)"
+      },
+      "WF11": {
+        "name": "Setter LI Inbound",
+        "trigger": "Webhook Unipile message.received",
+        "flow": "Pipeline Setter identique WF7 — channel=linkedin — Conversations unifié"
+      },
+      "WF13": {
+        "name": "Email Health Monitor",
+        "trigger": "Webhook Resend email.bounced + email.complained + cron 1h",
+        "flow": "Update Email_Health → auto-pause si bounce>5% ou complaint>0.3% → bandeau UI rouge + email Thomas"
+      }
+    }
+  },
+
+  "ai_setter": {
+    "module": "lib/setter.ts",
+    "sdk": "@anthropic-ai/sdk direct (pas OpenRouter) — prompt caching activé",
+    "model_primary": "claude-sonnet-4-6",
+    "model_fallback": "claude-opus-4-6 (sur objection_trust uniquement)",
+    "pipeline": [
+      {
+        "step": 1,
+        "name": "buildContext",
+        "input": "lead, campaign",
+        "output": "ICP md + offre + ton + signature + lead enrichi 14 champs + thread historique",
+        "caching": "Cache sur ICP+offre par campaign_id (TTL Anthropic 5 min, ~70% tokens économisés)"
+      },
+      {
+        "step": 2,
+        "name": "classifyIntent",
+        "input": "thread",
+        "model": "claude-sonnet-4-6 JSON mode",
+        "output": "{ intent: enum, confidence: number, reasoning: string }",
+        "intent_enum": ["interested", "objection_price", "objection_timing", "objection_need", "objection_trust", "meeting_ready", "off_topic", "unsubscribe", "hostile"]
+      },
+      {
+        "step": 3,
+        "name": "routeAction",
+        "logic": "IF unsubscribe → opt-out + stop | IF hostile|off_topic → escalade humaine | ELSE → generateResponse"
+      },
+      {
+        "step": 4,
+        "name": "generateResponse",
+        "prompt": "Voss mirroring (reformule 1-3 mots clés prospect) + une No-Oriented Question si objection. ≤120 mots. Ton miroir prospect. Pas de templates.",
+        "tool_call": "get_calendly_slots(event_uri) si intent=meeting_ready → insère 3 slots format naturel",
+        "fallback": "Claude Opus 4.6 si objection_trust"
+      },
+      {
+        "step": 5,
+        "name": "persistTurn",
+        "logic": "Append tab Conversations {role: setter, validated_by: null} | SI setter_validation → draft UI | SI non → WF8 auto-send"
+      }
+    ],
+    "escalation_rules": [
+      "2x échecs Setter → escalade auto humaine",
+      "Prospect demande 'êtes-vous une IA ?' → forced validation + disclaimer (EU AI Act art. 50)",
+      "Intent confidence <0.7 → forced validation",
+      "Off-topic >3 messages → escalade"
+    ],
+    "prompt_caching_strategy": {
+      "cached": ["ICP md + offre + signature + ton (par campagne)", "techniques Voss + format response (system global)"],
+      "not_cached": ["thread historique + lead spécifique (varie chaque appel)"]
+    }
+  },
+
+  "pacing_engine": {
+    "module": "lib/pacing.ts",
+    "linkedin": {
+      "weekly_hard_cap": "100 invitations/semaine — HARD CAP LinkedIn (au-delà: bouton Se connecter désactivé → ban)",
+      "daily_warm": { "invitations": 20, "dms": 50, "profile_views": 200, "removals": 50 },
+      "daily_new_account": { "invitations": 5, "dms": 20, "profile_views": 50, "removals": 10 },
+      "ramp_up_new_account": "5 → 10 → 15 → 20 invitations/jour sur 4 semaines",
+      "human_hours": "9h–19h jours ouvrés uniquement",
+      "gauss_delay": "µ=360s σ=144s entre actions invitation",
+      "note_ratio": "60% avec note / 40% sans note (casser pattern bot)",
+      "removal_cap": "50 removals/jour max",
+      "ip": "IP résidentielle Unipile obligatoire",
+      "organic_mix": "1 like + 1 profile view tous les N invitations"
+    },
+    "email": {
+      "gauss_delay": "µ=8min (480s) σ=3min (180s) entre sends même campagne",
+      "cap_hourly": 50,
+      "human_hours": "9h–19h jours ouvrés",
+      "ramp_up_new_domain": "5 → 10 → 15 → 20 emails/jour sur 4 semaines",
+      "health_thresholds": {
+        "bounce_rate_7d_max": "5% → pause automatique",
+        "complaint_rate_7d_max": "0.3% → pause automatique"
+      }
+    },
+    "circuit_breaker": "checkHealth() consulte tab LI_Health avant chaque action LI → return {allowed: false, reason: 'paused_captcha'|'paused_warning'|'paused_low_accept'|'cap_reached'}"
+  },
+
+  "env_vars": {
+    "v3_existing": [
+      "GOOGLE_INDEX_SHEET_ID",
+      "GOOGLE_DRIVE_FOLDER_ID",
+      "GOOGLE_SERVICE_ACCOUNT_EMAIL",
+      "GOOGLE_PRIVATE_KEY",
+      "OPENROUTER_API_KEY",
+      "N8N_BASE_URL",
+      "N8N_STAGING_URL",
+      "N8N_WF1_WEBHOOK",
+      "N8N_WF2_WEBHOOK",
+      "N8N_WF3_WEBHOOK",
+      "N8N_WF4_WEBHOOK",
+      "N8N_WF5_WEBHOOK",
+      "N8N_WF6_WEBHOOK",
+      "RESEND_API_KEY",
+      "RESEND_FROM"
+    ],
+    "v4_new": [
+      "ANTHROPIC_API_KEY",
+      "SETTER_MODEL=claude-sonnet-4-6",
+      "SETTER_FALLBACK_MODEL=claude-opus-4-6",
+      "SETTER_VALIDATION_DEFAULT=true",
+      "UNIPILE_API_KEY",
+      "UNIPILE_DSN=https://api.unipile.com:13447",
+      "UNIPILE_WEBHOOK_SECRET",
+      "CALENDLY_TOKEN",
+      "CALENDLY_WEBHOOK_SECRET",
+      "N8N_WF7_WEBHOOK",
+      "N8N_WF8_WEBHOOK",
+      "N8N_WF9_WEBHOOK",
+      "N8N_WF10_WEBHOOK",
+      "N8N_WF11_WEBHOOK",
+      "N8N_WF13_WEBHOOK",
+      "RESEND_FROM=Thomas <thomas@outreach.kamesai.com>"
+    ],
+    "note": "Variables en .env.local (ne jamais committer). Valeurs prod via Vercel dashboard."
+  },
+
+  "lib_files_v4_new": {
+    "lib/setter.ts": "Module central AI Setter — buildContext + classifyIntent + generateResponse + persistTurn",
+    "lib/conversations.ts": "Helpers tab Conversations GSheet — read thread complet, append turn cross-canal",
+    "lib/calendly.ts": "Client Calendly v2 — get available slots, format naturel, verify webhook signature",
+    "lib/unipile.ts": "Client Unipile — retries + HMAC signature verify + rate limit handling",
+    "lib/pacing.ts": "Pacing engine — délais Gauss + caps daily/weekly + ramp-up + human hours + circuit breaker"
+  },
+
+  "rules_and_constraints": {
+    "tdd": "Test Vitest AVANT le code pour lib/*.ts et app/**/*.ts — jamais de code non testé",
+    "ui_color": "#006596 TrueHorizon blue — utiliser hsl(var(--primary)) en CSS. L'ancienne charte orange est ABOLIE.",
+    "no_shadcn_cli": "Ne pas installer shadcn via CLI. UI Tailwind custom. @radix-ui/* primitives OK.",
+    "no_docker_compose": "Non installé — ne pas utiliser",
+    "no_aws_supabase": "Ne pas référencer AWS EC2, RDS ou Supabase Pro comme stack vivante",
+    "isolation_campagne": "Chaque campagne = 1 GSheet enfant isolé. Jamais mélanger données entre campagnes hors Contacts_Registry.",
+    "staging_first": "staging → valider → prod pour tout changement sensible",
+    "one_change_at_a_time": "Bug : 1 changement à la fois. Après 3 échecs → STOP et impliquer Thomas.",
+    "never_commit_env": ".env.local ne jamais committer",
+    "eu_ai_act": "Article 50 — si prospect demande 'êtes-vous une IA ?' → réponse honnête + forced validation pour ce thread",
+    "webhook_signatures": "Vérifier HMAC sur Resend, Calendly, Unipile (hijack risk)",
+    "anthropic_sdk_json": "Forcer response_format JSON ou terminer le prompt par 'RÉPONDS UNIQUEMENT LE JSON' + retry parser si échec"
+  },
+
+  "frontend_pages_v4": {
+    "new": [
+      "app/dashboard/inbox/page.tsx — 3 tabs: À valider / À répondre / Bookings",
+      "app/dashboard/inbox/[thread_id]/page.tsx — Thread détail timeline cross-canal",
+      "app/dashboard/campaigns/[id]/settings/page.tsx — Toggle setter_validation, ton, signature",
+      "app/dashboard/settings/linkedin/connect/page.tsx — Connexion Unipile (Phase 2)"
+    ],
+    "new_components": [
+      "components/ConversationThread.tsx — Timeline unifiée email + LI avec channel badge",
+      "components/SetterDraftCard.tsx — Draft Setter + actions valider/éditer/escalader",
+      "components/CalendlyEmbed.tsx — Affichage slots proposés",
+      "components/LIHealthBanner.tsx — Bandeau rouge si LI status != active (Phase 2)"
+    ],
+    "modified": [
+      "app/dashboard/meetings/page.tsx — Étendu multi-canal + filtre source"
+    ]
+  },
+
+  "security_v4": {
+    "webhook_hmac": "Vérifier signatures Resend + Calendly + Unipile avant traitement",
+    "rate_limit_setter": "100 req/min max sur /api/setter/* (protège budget tokens)",
+    "pii_gdpr": "Conversations contient texte prospect → route DELETE /lead avec purge thread",
+    "calendly_token": "PAT en env serveur uniquement — jamais exposé côté client",
+    "linkedin_anti_ban": "Pacing strict dès J1, cap hebdo 100 hard, ramp-up 4 sem, human hours, IP résidentielle, circuit breaker WF12"
+  },
+
+  "kpis": [
+    { "metric": "Setter response time (reply → draft)", "target": "<30 sec", "phase": 1 },
+    { "metric": "Setter intent accuracy", "target": ">85%", "phase": 1 },
+    { "metric": "Reply→Meeting rate (Setter activé)", "target": ">15%", "phase": 1 },
+    { "metric": "Time saved/jour Thomas", "target": ">45 min", "phase": 1 },
+    { "metric": "LI connection accept rate", "target": ">35%", "phase": 2 },
+    { "metric": "LI reply rate", "target": ">20%", "phase": 2 },
+    { "metric": "Meetings booked/mois multi-canal", "target": ">12", "phase": 2 },
+    { "metric": "Cost per meeting (LLM + APIs)", "target": "<$15", "phase": 2 }
+  ],
+
+  "risks": [
+    { "risk": "Latence Setter >5s p95", "phase": 1, "mitigation": "Prompt caching + Sonnet 4.6 streaming inbox" },
+    { "risk": "Setter intent <85% accuracy", "phase": 1, "mitigation": "Forced validation 2 sem initial + fine-tune prompt" },
+    { "risk": "Hallucination Calendly slot", "phase": 1, "mitigation": "Tool call strict + vérif post-génération" },
+    { "risk": "Ban LI compte Thomas", "phase": 2, "mitigation": "Pacing strict J1 (cap 100/sem, ramp-up 4 sem, human hours, IP résidentielle) + circuit breaker WF12 + backup compte test" },
+    { "risk": "Coût LLM explose", "phase": "2-3", "mitigation": "Batch API non-urgent + cache agressif ICP" },
+    { "risk": "Domaine outreach blacklisté", "phase": 1, "mitigation": "Soft warm-up 2 sem obligatoire + pacing Gauss + auto-pause bounce>5%/complaint>0.3%" },
+    { "risk": "Webhook Unipile flaky", "phase": 2, "mitigation": "Polling fallback + retry queue n8n" },
+    { "risk": "Multi-tenant Workspaces data leak", "phase": 3, "mitigation": "Test E2E isolation + scope strict toutes routes" }
+  ],
+
+  "open_questions": [
+    "Calendly : 1 event type Thomas + N event types clients (multi-tenant) ? Workspace-level ?",
+    "Setter ton : 1 prompt master + variables ICP, ou prompt par campagne stocké dans Config ?",
+    "Fallback si Setter échoue 2x sur même thread → escalade auto humaine ?",
+    "Caps LI configurables par compte (Thomas vs client) ?",
+    "Monitoring tokens Anthropic/Unipile/Calendly temps réel + alertes seuil ?",
+    "Stockage drafts non validés : Conversations tab vs nouvelle tab Drafts séparée ?",
+    "Modèle latence Setter : appel direct Anthropic depuis n8n (HTTP) ou via route Next.js (cache ICP) ?"
+  ],
+
+  "lessons_v3": [
+    "Vitest TDD obligatoire sur lib/*.ts et routes API — les tests révèlent les edge cases avant déploiement",
+    "Anthropic SDK : forcer response_format JSON ou demander 'RÉPONDS UNIQUEMENT LE JSON' en fin de prompt + retry parser si parse fail",
+    "n8n MCP : tester chaque WF à vide avant d'ajouter logique externe — les webhooks silhouettes avant le contenu",
+    "Smoke prod : 1 campagne réelle de bout en bout avant déclarer milestone done",
+    "Couleur UI : hsl(var(--primary)) (#006596 TrueHorizon blue) — jamais hardcoder l'ancienne charte orange",
+    "Google Sheets cache : vérifier cache avant refetch un sheet_id déjà connu",
+    "n8n : chaque credential doit être testé à vide via le bouton 'Test Connection' avant de l'utiliser dans un WF"
+  ],
+
+  "competing_context": {
+    "competitor": "Mimikflow.com",
+    "founder": "Mohamed Alani (solo)",
+    "launch": "avril 2026",
+    "claim": "15 RDV/mois mains libres",
+    "pricing": { "pro": "$97/mois", "premium": "$147/mois" },
+    "weaknesses": [
+      "LinkedIn uniquement — pas d'email, pas de multi-canal",
+      "ICP auto-fill peu précis vs 14 champs Flinty",
+      "Risque ban LI élevé sans pacing enterprise",
+      "Pas de validation mode — tout part en auto",
+      "Pas de CRM / analytics avancé",
+      "Solo founder — support limité"
+    ],
+    "flinty_v4_advantages": [
+      "Multi-canal email + LinkedIn dans une seule plateforme",
+      "Pacing anti-ban enterprise (cap 100/sem, ramp-up, circuit breaker)",
+      "Validation mode configurable (compliance EU AI Act)",
+      "Scoring ICP 14 champs vs auto-fill",
+      "Inbox unifié cross-canal avec ConversationThread",
+      "Google Sheets comme DB → no-code pour Thomas"
+    ]
+  }
+}

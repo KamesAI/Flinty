@@ -1,6 +1,6 @@
 ---
 name: systematic-debugging
-description: Use when encountering any bug, workflow failure, or unexpected behavior, before proposing fixes
+description: Invoke when anything fails or behaves wrong (Flinty dashboard, Sheets, n8n, API, webhooks, Vercel) BEFORE suggesting code or config changes; use when user pastes an error, a stuck campaign status, or "ça ne marche pas"
 ---
 
 # Systematic Debugging (Kames AI Edition)
@@ -12,6 +12,14 @@ Random fixes waste time and create new bugs. Quick patches mask underlying issue
 **Core principle:** ALWAYS find root cause before attempting fixes. Symptom fixes are failure.
 
 **Violating the letter of this process is violating the spirit of debugging.**
+
+## Gotchas (Flinty)
+
+- **Campagne `generating` + métriques 0** : souvent WF1 / `N8N_WF1_WEBHOOK` ou callback `generation-complete` — pas un bug UI par défaut.
+- **Données "mélangées"** : vérifier l’onglet et le `sheet_id` ; isolation stricte par campagne hors `Contacts_Registry`.
+- **Cache `sheet_id`** : ne pas refetch si déjà en cache côté app (règle projet).
+- **Staging vs prod** : même symptôme, deux URLs n8n (`N8N_STAGING_URL` / `N8N_BASE_URL`) — ne pas corriger prod en lisant staging.
+- Référence courte : [`references/flinty-dashboard.md`](references/flinty-dashboard.md).
 
 ## The Iron Law
 
