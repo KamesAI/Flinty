@@ -28,7 +28,7 @@
     "framer-motion": "^12.35.2",
     "googleapis": "^144.0.0",
     "lucide-react": "^0.474.0",
-    "next": "15.1.7",
+    "next": "15.1.11",
     "openai": "^6.34.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
