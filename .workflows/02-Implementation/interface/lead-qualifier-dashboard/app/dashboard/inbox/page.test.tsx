@@ -48,9 +48,34 @@ vi.mock("@/lib/sheets", () => ({
 }));
 
 import InboxPage from "./page";
+import { parseIndexCampaigns, readIndex } from "@/lib/sheets";
 
 describe("InboxPage", () => {
   it("affiche une inbox vide sans crasher si les feuilles conversationnelles sont absentes", async () => {
+    const html = renderToStaticMarkup(
+      await InboxPage({ searchParams: Promise.resolve({}) })
+    );
+
+    expect(html).toContain("Conversations");
+    expect(html).toContain("Aucune réponse en attente.");
+  });
+
+  it("affiche une inbox vide sans crasher si l'index Google Sheets est inaccessible", async () => {
+    vi.mocked(readIndex).mockRejectedValueOnce(new Error("Invalid service account"));
+
+    const html = renderToStaticMarkup(
+      await InboxPage({ searchParams: Promise.resolve({}) })
+    );
+
+    expect(html).toContain("Conversations");
+    expect(html).toContain("Aucune réponse en attente.");
+  });
+
+  it("affiche une inbox vide sans crasher si l'index Google Sheets est malformé", async () => {
+    vi.mocked(parseIndexCampaigns).mockImplementationOnce(() => {
+      throw new Error("Malformed index");
+    });
+
     const html = renderToStaticMarkup(
       await InboxPage({ searchParams: Promise.resolve({}) })
     );

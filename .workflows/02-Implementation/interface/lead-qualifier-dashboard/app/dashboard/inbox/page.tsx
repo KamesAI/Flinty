@@ -56,6 +56,16 @@ const STATUS_BADGE: Record<InboxStatus, { label: string; classes: string }> = {
   bounced:     { label: "Bounced",      classes: "bg-red-100 text-red-800" },
 };
 
+async function readInboxCampaigns(): Promise<IndexCampaign[]> {
+  try {
+    const indexRows = await readIndex();
+    return parseIndexCampaigns(indexRows);
+  } catch (error) {
+    console.error("[InboxPage] Unable to read index campaigns", error);
+    return [];
+  }
+}
+
 async function readCampaignQualifiedLeads(campaign: IndexCampaign): Promise<LeadV3[]> {
   if (!campaign.sheet_id) return [];
 
@@ -94,6 +104,10 @@ async function readInboxMeetings() {
   }
 }
 
+function safeEventLabel(eventType: Parameters<typeof getEventLabel>[0]): string {
+  return getEventLabel(eventType) ?? "Email envoyé";
+}
+
 function relativeDate(iso: string): string {
   if (!iso) return "";
   const diff = Date.now() - new Date(iso).getTime();
@@ -116,8 +130,7 @@ export default async function InboxPage({
   const activeTab = (TABS.find((t) => t.key === tab)?.key ?? "needs_reply") as TabKey;
 
   // v3 — read campaigns from Index, leads from each child sheet
-  const indexRows = await readIndex();
-  const campaigns: IndexCampaign[] = parseIndexCampaigns(indexRows);
+  const campaigns = await readInboxCampaigns();
 
   const leadsPerCampaign = await Promise.all(campaigns.map(readCampaignQualifiedLeads));
   const leads = leadsPerCampaign.flat();
@@ -156,7 +169,7 @@ export default async function InboxPage({
         campaign_nom: campaign?.nom ?? "—",
         inbox_status,
         last_activity_at,
-        last_event_label: lastEvent ? getEventLabel(lastEvent.event_type) : "Email envoyé",
+        last_event_label: lastEvent ? safeEventLabel(lastEvent.event_type) : "Email envoyé",
         has_meeting: leadMeetings.length > 0,
       };
     })
