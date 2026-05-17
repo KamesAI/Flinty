@@ -1,5 +1,5 @@
 # Task v4-009b : WF7/WF8 — appel `checkEmailHealth(domain)` avant chaque send + respect délai Gauss + cap hourly
-**Status**: ⬜ À faire
+**Status**: 🚧 Partiel — 2026-05-17
 
 ## Autonomie
 🤖 **Claude 100%** — ajout nodes dans WF7 et WF8 n8n + route API health check.
@@ -9,16 +9,26 @@ Avant d'envoyer tout email via WF8 (réponse Setter validée), et avant de plani
 
 **Références** : PRD-v4 F15 · ARCHI-v4 §Pacing engine email
 
+## Avancement 2026-05-17
+- ✅ Route `GET /api/email-health` opérationnelle + testée (3 tests verts)
+- ✅ `lib/pacing.ts` : `checkEmailHealth()` + `sampleEmailDelay()` (Gauss µ=480s σ=180s) + `isWithinHumanHours()`
+- ✅ WF7 inclut `Check Email Health` node avant classify → IF health.allowed → sinon STOP + 503
+- ✅ WF8 créé/actif (`CiRWb7R8a6z20rOx`) avec `Check Email Health` avant Resend, alerte Thomas si bloqué, et `Wait` Gauss delay 60–840s.
+- ⬜ Test n8n : simuler `Email_Health.status=paused_high_bounce` → WF8 s'arrête sans envoyer.
+- Note : `sent_last_hour` non tracké dans Email_Health tab — la route retourne `sent_today` uniquement ; le cap horaire n'est pas implémenté côté route (MVP)
+
+**Reste à faire** : smoke WF8 health blocked + observation délai Gauss en execution log.
+
 ## Objective
 WF8 vérifie `checkEmailHealth` avant tout envoi. Délais Gauss respectés entre sends.
 
 ## Requirements
 
 ### Must Have
-- [ ] Route `GET /api/email-health?domain=outreach.kamesai.com` — lit Email_Health tab → retourne `{allowed, reason?, sent_today, sent_last_hour}`
-- [ ] WF7 (avant classify) : appel `GET /api/email-health` — si `allowed=false` → STOP + log reason
-- [ ] WF8 (avant Resend send) : appel `GET /api/email-health` — si `allowed=false` → STOP + alerte Thomas
-- [ ] WF8 : `Wait` node Gauss delay (calcul µ=480s σ=180s en JS Code node) avant envoi si cap hourly non atteint
+- [x] Route `GET /api/email-health?domain=outreach.kamesai.com` — lit Email_Health tab → retourne `{allowed, reason?, sent_today}` (sent_last_hour non tracké — MVP gap)
+- [x] WF7 (avant classify) : appel `GET /api/email-health` — si `allowed=false` → STOP + 503
+- [x] WF8 (avant Resend send) : appel `GET /api/email-health` — si `allowed=false` → STOP + alerte Thomas
+- [x] WF8 : `Wait` node Gauss delay (calcul µ=480s σ=180s en JS Code node) avant envoi si cap hourly non atteint
 - [ ] Test n8n : simuler `Email_Health.status=paused_high_bounce` → WF8 s'arrête sans envoyer
 
 ### Must NOT
@@ -39,8 +49,8 @@ const delaySeconds = gaussRandom(480, 180) // 8min ± 3min
 ```
 
 ## Acceptance Criteria
-- [ ] Route `/api/email-health` retourne `{allowed: false, reason: 'paused_high_bounce'}` si status paused
-- [ ] WF8 s'arrête proprement si health check retourne `allowed=false`
+- [x] Route `/api/email-health` retourne `{allowed: false, reason: 'paused_high_bounce'}` si status paused (testé)
+- [x] WF8 s'arrête proprement si health check retourne `allowed=false` (branche n8n validée ; smoke réel restant)
 - [ ] Délai Gauss entre 60s et ~840s (3 sigma) observé dans logs WF8
 
 ## Dependencies

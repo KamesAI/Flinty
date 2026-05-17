@@ -16,27 +16,27 @@
 | # | Task | Owner | Priority | Status | Deps | Est. |
 |---|------|-------|----------|--------|------|------|
 | v4-000 | **Provisioning `outreach.kamesai.com` Resend** — ✅ Domain verified Resend (Hostinger DNS), DMARC parent dédupliqué + DMARC outreach ajouté, mail-tester score 10/10 le 2026-05-06. `RESEND_FROM=Thomas <thomas@outreach.kamesai.com>` set local. Reste : Vercel staging+prod env vars + rotate API key compromise | 🧑 | P0 | ✅ | — | 1h |
-| v4-001 | Provision Calendly PAT + event types + env vars Vercel | 🧑 | P0 | ⬜ | — | 1h |
-| v4-002 | Étendre schéma GSheets : tab `Conversations` + tab `Email_Health` + colonnes `Leads_Qualified` v4 + `Config` v4 | 🤖 | P0 | ⬜ | v4-001 | 2h |
-| v4-002b | `lib/pacing.ts` — caps email daily new/warm + cap hourly + Gauss µ=8min σ=3min + ramp-up 5→20/4 sem + human hours 9–19 jour ouvré + helper `checkEmailHealth(domain)` + tests Vitest | 🤖 | P0 | ⬜ | v4-002 | 3h |
-| v4-002c | WF13 NEW — Email Health Monitor : webhooks Resend `email.bounced` + `email.complained` + cron 1h → update `Email_Health` → auto-pause si bounce>5% ou complaint>0.3% + bandeau UI rouge + alerte email Thomas | 🤖 | P0 | ⬜ | v4-002b, v4-000 | 3h |
-| v4-003 | `lib/conversations.ts` — read/append turn cross-canal | 🤖 | P0 | ⬜ | v4-002 | 2h |
-| v4-004 | `lib/setter.ts` — buildContext + classifyIntent (Claude Sonnet 4.6 JSON mode) | 🤖 | P0 | ⬜ | v4-003 | 4h |
-| v4-005 | `lib/setter.ts` — generateResponse + Voss/NoQuestions prompt + prompt caching | 🤖 | P0 | ⬜ | v4-004 | 5h |
-| v4-006 | `lib/calendly.ts` + route `/api/calendly/slots` (GET 3 slots) | 🤖 | P0 | ⬜ | v4-001 | 2h |
-| v4-007 | Setter tool call `get_calendly_slots` intégré dans generateResponse | 🤖 | P0 | ⬜ | v4-005, v4-006 | 2h |
-| v4-008 | Route `/api/calendly/webhook` — invitee.created → tab Meetings | 🤖 | P0 | ⬜ | v4-002, v4-006 | 2h |
-| v4-009 | WF7 n8n — webhook Resend `email.replied` → call `/api/setter/classify` + `/generate` → écrit Conversations | 🤖 | P0 | ⬜ | v4-004, v4-005 | 4h |
-| v4-009b | WF7/WF8 — appel `checkEmailHealth(domain)` avant chaque send + respect Gauss délai + cap hourly | 🤖 | P0 | ⬜ | v4-002b, v4-009 | 1h |
-| v4-010 | WF8 n8n — `/api/replies/.../send` → Resend send + tag validated | 🤖 | P0 | ⬜ | v4-002 | 2h |
-| v4-011 | Routes `/api/replies/[lead_id]` GET + `/send` + `/escalate` | 🤖 | P0 | ⬜ | v4-003 | 3h |
-| v4-012 | Refonte `/dashboard/inbox` — 3 tabs (à valider/répondre/bookings) | 🤖 | P0 | ⬜ | v4-011 | 4h |
-| v4-013 | Composant `<ConversationThread>` timeline cross-canal | 🤖 | P0 | ⬜ | v4-012 | 3h |
-| v4-014 | Composant `<SetterDraftCard>` + actions valider/éditer/escalader | 🤖 | P0 | ⬜ | v4-013 | 3h |
+| v4-001 | Provision Calendly PAT + event types + env vars Vercel | 🧑 | P0 | ✅ | — | 1h |
+| v4-002 | Étendre schéma GSheets : tab `Conversations` + tab `Email_Health` + colonnes `Leads_Qualified` v4 + `Config` v4 | 🤖 | P0 | ✅ | v4-001 | 2h |
+| v4-002b | `lib/pacing.ts` — caps email daily new/warm + cap hourly + Gauss µ=8min σ=3min + ramp-up 5→20/4 sem + human hours 9–19 jour ouvré + helper `checkEmailHealth(domain)` + tests Vitest | 🤖 | P0 | ✅ | v4-002 | 3h |
+| v4-002c | WF13 NEW — Email Health Monitor : webhooks Resend `email.bounced` + `email.complained` + cron 1h → update `Email_Health` → auto-pause si bounce>5% ou complaint>0.3% + bandeau UI rouge + alerte email Thomas. ✅ WF13 actif n8n, webhook Resend réel branché, alerte reçue par Thomas, route/API/UI livrés | 🤖 | P0 | ✅ | v4-002b, v4-000 | 3h |
+| v4-003 | `lib/conversations.ts` — read/append turn cross-canal | 🤖 | P0 | ✅ | v4-002 | 2h |
+| v4-004 | `lib/setter.ts` — buildContext + classifyIntent (Claude Sonnet 4.6 JSON mode) | 🤖 | P0 | ✅ | v4-003 | 4h |
+| v4-005 | `lib/setter.ts` — generateResponse + Voss/NoQuestions prompt + prompt caching | 🤖 | P0 | ✅ | v4-004 | 5h |
+| v4-006 | `lib/calendly.ts` + route `/api/calendly/slots` (GET 3 slots) | 🤖 | P0 | ✅ | v4-001 | 2h |
+| v4-007 | Setter tool call `get_calendly_slots` intégré dans generateResponse | 🤖 | P0 | ✅ | v4-005, v4-006 | 2h |
+| v4-008 | Cron polling Calendly `*/5min` → tab Meetings + lead.statut=booked (pas de webhook — plan gratuit) | 🤖 | P0 | 🚧 | v4-002, v4-006 | 2h |
+| v4-009 | WF7 n8n — webhook Resend `email.replied` → call `/api/setter/email-reply` → écrit Conversations → IF setter_validation → WF8 | 🤖 | P0 | 🚧 | v4-004, v4-005 | 4h |
+| v4-009b | WF7/WF8 — appel `checkEmailHealth(domain)` avant chaque send + respect Gauss délai + cap hourly | 🤖 | P0 | 🚧 | v4-002b, v4-009 | 1h |
+| v4-010 | WF8 n8n — `/api/replies/.../send` → Resend send + tag validated | 🤖 | P0 | 🚧 | v4-002 | 2h |
+| v4-011 | Routes `/api/replies/[lead_id]` GET + `/send` + `/escalate` | 🤖 | P0 | 🚧 | v4-003 | 3h |
+| v4-012 | Refonte `/dashboard/inbox` — 3 tabs (à valider/répondre/bookings) | 🤖 | P0 | ✅ | v4-011 | 4h |
+| v4-013 | Composant `<ConversationThread>` timeline cross-canal | 🤖 | P0 | ✅ | v4-012 | 3h |
+| v4-014 | Composant `<SetterDraftCard>` + actions valider/éditer/escalader | 🤖 | P0 | ✅ | v4-013 | 3h |
 | v4-015 | Page `/dashboard/campaigns/[id]/settings` — toggle setter_validation, ton, signature | 🤖 | P0 | ⬜ | v4-002 | 2h |
 | v4-016 | Validation mode forced sur question IA (Voss exception + EU AI Act) | 🤖 | P0 | ⬜ | v4-005, v4-015 | 2h |
 | v4-016b | **Auto-graduation Setter** — flip `setter_validation=false` post-warm-up si intent accuracy ≥85% sur 50 turns + cron quotidien + escalade email si <85% après 21j | 🤖 | P0 | ⬜ | v4-015, v4-016, v4-018b | 3h |
-| v4-017 | Tests Vitest : setter classify + generate + calendly slots formatter | 🤖 | P0 | ⬜ | v4-005, v4-006 | 4h |
+| v4-017 | Tests Vitest : setter classify + generate + calendly slots formatter | 🤖 | P0 | ✅ | v4-005, v4-006 | 4h |
 | v4-018 | E2E smoke Phase 1 : reply test → Setter draft → validation → send → Calendly slot → tab Meetings | 🤝 | P0 | ⬜ | v4-009→016 | 3h |
 | v4-018b | Mode `warmup_campaign` UI + flag campagne (bypass scoring + cap volume + tag positive replies) + soft warm-up flow 2 sem (5→20 emails/jour vers contacts amis) | 🤖 | P1 | ⬜ | v4-015, v4-000 | 3h |
 

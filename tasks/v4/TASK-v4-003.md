@@ -1,5 +1,5 @@
 # Task v4-003 : `lib/conversations.ts` — read/append turn cross-canal
-**Status**: ⬜ À faire
+**Status**: ✅ Done — 2026-05-14
 
 ## Autonomie
 🤖 **Claude 100%** — code TypeScript + tests Vitest (TDD).
@@ -15,11 +15,11 @@ Module `lib/conversations.ts` avec helpers typés pour lire le thread complet d'
 ## Requirements
 
 ### Must Have
-- [ ] Type `Turn` : `{ turn_id: string, lead_id: string, channel: 'email'|'linkedin', role: 'prospect'|'setter'|'human', content: string, sent_at: string, intent?: string, validated_by?: string, edited_from_draft?: boolean }`
-- [ ] `getThread(sheetId: string, leadId: string): Promise<Turn[]>` — lit tab Conversations, filtre par lead_id, retourne turns ordonnés par sent_at
-- [ ] `appendTurn(sheetId: string, turn: Omit<Turn, 'turn_id'>): Promise<Turn>` — génère turn_id (uuid), append row dans Conversations, retourne Turn complet
-- [ ] `updateTurn(sheetId: string, turnId: string, updates: Partial<Turn>): Promise<void>` — met à jour validated_by ou edited_from_draft sur un turn existant
-- [ ] Tests Vitest : getThread (mock sheets, filter par lead_id), appendTurn (vérifie row ajoutée), updateTurn (vérifie col modifiée)
+- [x] Type `Turn` : `{ turn_id: string, lead_id: string, channel: 'email'|'linkedin', role: 'prospect'|'setter'|'human', content: string, sent_at: string, intent?: string, validated_by?: string, edited_from_draft?: boolean }`
+- [x] `getThread(sheetId: string, leadId: string): Promise<Turn[]>` — lit tab Conversations, filtre par lead_id, retourne turns ordonnés par sent_at
+- [x] `appendTurn(sheetId: string, turn: Omit<Turn, 'turn_id'>): Promise<Turn>` — génère turn_id (uuid), append row dans Conversations, retourne Turn complet
+- [x] `updateTurn(sheetId: string, turnId: string, updates: Partial<Turn>): Promise<void>` — met à jour validated_by ou edited_from_draft sur un turn existant
+- [x] Tests Vitest : getThread (mock sheets, filter par lead_id), appendTurn (vérifie row ajoutée), updateTurn (vérifie col modifiée)
 
 ### Must NOT
 - Ne pas exposer la logique GSheets ailleurs — ce module est l'unique point d'accès à tab Conversations
@@ -55,10 +55,10 @@ export async function appendTurn(
 ```
 
 ## Acceptance Criteria
-- [ ] `npm run test` — tous les tests conversations.ts passent
-- [ ] `getThread` retourne uniquement les turns du lead_id demandé, ordonnés chronologiquement
-- [ ] `appendTurn` génère un turn_id unique et append la row correctement
-- [ ] `updateTurn` modifie uniquement les colonnes spécifiées sans écraser le reste
+- [x] `npm run test` — tous les tests conversations.ts passent
+- [x] `getThread` retourne uniquement les turns du lead_id demandé, ordonnés chronologiquement
+- [x] `appendTurn` génère un turn_id unique et append la row correctement
+- [x] `updateTurn` modifie uniquement les colonnes spécifiées sans écraser le reste
 
 ## Dependencies
 **Blocked By**: v4-002 (tab Conversations doit exister dans le schéma)

@@ -1,5 +1,5 @@
 # Task v4-017 : Tests Vitest — setter classify + generate + calendly slots formatter
-**Status**: ⬜ À faire
+**Status**: ✅ Done — 2026-05-14
 
 ## Autonomie
 🤖 **Claude 100%** — suite de tests Vitest.
@@ -16,23 +16,23 @@ Suite Vitest complète couvrant les chemins critiques de lib/setter.ts et lib/ca
 
 ### Must Have
 **`lib/__tests__/setter.classify.test.ts`** :
-- [ ] `buildContext` : vérifie que ICP md et thread sont bien inclus dans le contexte retourné
-- [ ] `buildContext` : thread > 10 turns → seulement les 10 derniers inclus
-- [ ] `classifyIntent` : mock Anthropic retourne JSON valide → IntentResult bien typé
-- [ ] `classifyIntent` : mock retourne JSON invalide → retry → succès au 2ème appel
-- [ ] `classifyIntent` : mock retourne JSON invalide 2x → throw
+- [x] `buildContext` : vérifie que ICP md et thread sont bien inclus dans le contexte retourné
+- [x] `buildContext` : thread > 10 turns → seulement les 10 derniers inclus
+- [x] `classifyIntent` : mock Anthropic retourne JSON valide → IntentResult bien typé
+- [x] `classifyIntent` : mock retourne JSON invalide → retry → succès au 2ème appel
+- [x] `classifyIntent` : mock retourne JSON invalide 2x → throw
 
 **`lib/__tests__/setter.generate.test.ts`** :
-- [ ] `routeAction` : chacun des 9 intents → action correcte
-- [ ] `generateResponse` : mock Anthropic → réponse ≤120 mots
-- [ ] `generateResponse` : intent=meeting_ready → tool call déclenché + slots dans réponse
-- [ ] `generateResponse` : intent=objection_trust → modèle fallback Opus utilisé
-- [ ] `detectsAIQuestion` : 5 patterns testés (fr + en)
+- [x] `routeAction` : chacun des 9 intents → action correcte
+- [x] `generateResponse` : mock Anthropic → réponse ≤120 mots
+- [x] `generateResponse` : intent=meeting_ready → tool call déclenché + slots dans réponse
+- [x] `generateResponse` : intent=objection_trust → modèle fallback Opus utilisé
+- [x] `detectsAIQuestion` : 5 patterns testés (fr + en)
 
 **`lib/__tests__/calendly.test.ts`** :
-- [ ] `formatSlotsNatural` : 3 slots fixtures → string fr-FR correct
-- [ ] `formatSlotsNatural` : 0 slots → chaîne vide ou message fallback
-- [ ] `verifyWebhookSignature` : HMAC valide → true, invalide → false
+- [x] `formatSlotsNatural` : 3 slots fixtures → string fr-FR correct
+- [x] `formatSlotsNatural` : 0 slots → chaîne vide ou message fallback
+- [x] `verifyWebhookSignature` : HMAC valide → true, invalide → false
 
 ### Must NOT
 - Ne pas appeler Anthropic ou Calendly en réel dans les tests (tout mocké)
@@ -56,10 +56,10 @@ vi.mock('@anthropic-ai/sdk', () => ({
 ```
 
 ## Acceptance Criteria
-- [ ] `npm run test` — 0 failing tests sur les fichiers setter + calendly
-- [ ] Couverture setter.ts > 80% (vérifiable via `npm run test -- --coverage`)
-- [ ] Cas retry JSON documenté et testé
-- [ ] Tous les 9 intents couverts dans `routeAction`
+- [x] `npm run test` — 0 failing tests sur les fichiers setter + calendly
+- [x] Couverture setter.ts > 80% (vérifiable via `npm run test -- --coverage`)
+- [x] Cas retry JSON documenté et testé
+- [x] Tous les 9 intents couverts dans `routeAction`
 
 ## Dependencies
 **Blocked By**: v4-005 (generateResponse), v4-006 (calendly formatSlotsNatural), v4-016 (detectsAIQuestion)

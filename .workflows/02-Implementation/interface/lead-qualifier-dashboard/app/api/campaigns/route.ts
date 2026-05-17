@@ -76,7 +76,7 @@ export async function POST(req: Request) {
   const wf1Url = process.env.N8N_WF1_WEBHOOK;
 
   try {
-    // 1. Créer les onglets de la campagne dans GOOGLE_CAMPAIGNS_SHEET_ID
+    // 1. Créer un nouveau GSheet dédié à la campagne (1 fichier par campagne)
     const { spreadsheetId, sheetUrl } = await createChildGSheet(sheet_name, {
       campaign_id,
       icp_md,

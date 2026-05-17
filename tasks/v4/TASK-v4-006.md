@@ -1,5 +1,5 @@
 # Task v4-006 : `lib/calendly.ts` + route `/api/calendly/slots` (GET 3 slots)
-**Status**: ⬜ À faire
+**Status**: ✅ Done — 2026-05-14
 
 ## Autonomie
 🤖 **Claude 100%** — code TypeScript + route Next.js + tests Vitest (TDD).
@@ -15,11 +15,11 @@ Le Setter doit proposer 3 créneaux Calendly réels quand un prospect est `meeti
 ## Requirements
 
 ### Must Have
-- [ ] `getAvailableSlots(eventTypeUri: string, count?: number): Promise<CalendlySlot[]>` — appel API `GET /event_type_available_times`, retourne N slots
-- [ ] `formatSlotsNatural(slots: CalendlySlot[]): string` — ex: `"Mardi 14 mai à 14h, mercredi 15 mai à 10h, ou jeudi 16 mai à 16h ?"` (locale fr-FR)
-- [ ] `verifyWebhookSignature(body: string, signature: string, secret: string): boolean` — HMAC-SHA256 pour Calendly webhook
-- [ ] Route `GET /api/calendly/slots?event_type_uri=...&count=3` — appelle `getAvailableSlots`, retourne JSON
-- [ ] Tests Vitest : `formatSlotsNatural` (fixtures de slots), `verifyWebhookSignature` (valid + invalid)
+- [x] `getAvailableSlots(eventTypeUri: string, count?: number): Promise<CalendlySlot[]>` — appel API `GET /event_type_available_times`, retourne N slots
+- [x] `formatSlotsNatural(slots: CalendlySlot[]): string` — ex: `"Mardi 14 mai à 14h, mercredi 15 mai à 10h, ou jeudi 16 mai à 16h ?"` (locale fr-FR)
+- [x] `verifyWebhookSignature(body: string, signature: string, secret: string): boolean` — HMAC-SHA256 pour Calendly webhook
+- [x] Route `GET /api/calendly/slots?event_type_uri=...&count=3` — appelle `getAvailableSlots`, retourne JSON
+- [x] Tests Vitest : `formatSlotsNatural` (fixtures de slots), `verifyWebhookSignature` (valid + invalid)
 
 ### Must NOT
 - Token Calendly côté serveur uniquement — ne jamais le passer au client
@@ -79,10 +79,10 @@ export async function GET(request: Request) {
 ```
 
 ## Acceptance Criteria
-- [ ] `npm run test` — tests formatSlotsNatural + verifyWebhookSignature passent
-- [ ] `GET /api/calendly/slots?event_type_uri=...&count=3` retourne 3 slots (avec vrai token)
-- [ ] Slots formatés en français naturel (pas "2026-05-14T14:00:00Z", mais "mardi 14 mai à 14h")
-- [ ] `verifyWebhookSignature` retourne false sur signature invalide
+- [x] `npm run test` — tests formatSlotsNatural + verifyWebhookSignature passent
+- [x] `GET /api/calendly/slots?event_type_uri=...&count=3` retourne 3 slots (avec vrai token)
+- [x] Slots formatés en français naturel (pas "2026-05-14T14:00:00Z", mais "mardi 14 mai à 14h")
+- [x] `verifyWebhookSignature` retourne false sur signature invalide
 
 ## Dependencies
 **Blocked By**: v4-001 (CALENDLY_TOKEN doit être configuré)

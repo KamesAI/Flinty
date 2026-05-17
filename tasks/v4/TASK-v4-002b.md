@@ -1,5 +1,5 @@
 # Task v4-002b : `lib/pacing.ts` — caps email daily/hourly + Gauss µ=8min σ=3min + ramp-up + human hours + `checkEmailHealth(domain)` + tests Vitest
-**Status**: ⬜ À faire
+**Status**: ✅ Done — 2026-05-14
 
 ## Autonomie
 🤖 **Claude 100%** — code TypeScript + tests Vitest.
@@ -15,13 +15,13 @@ Module `lib/pacing.ts` avec pacing email complet et tests unitaires Vitest couvr
 ## Requirements
 
 ### Must Have
-- [ ] `gaussRandom(mu: number, sigma: number): number` — Box-Muller transform
-- [ ] `nextEmailDelayMs(): number` — µ=480s (8min) σ=180s (3min), min 60s
-- [ ] `checkEmailDailyCap(domain: string, sentToday: number): boolean` — retourne false si cap atteint (20/j domaine neuf <2sem, 200/j domaine warm)
-- [ ] `checkEmailHourlyCap(domain: string, sentLastHour: number): boolean` — 50/h max
-- [ ] `isHumanHour(): boolean` — 9h–19h jours ouvrés uniquement (Europe/Paris TZ)
-- [ ] `checkEmailHealth(domain: string): Promise<{allowed: boolean, reason?: string}>` — lit tab `Email_Health` Index, retourne false si `status != 'active'`
-- [ ] Tests Vitest : distribution gaussRandom (mean ≈ µ, std ≈ σ sur 1000 samples), caps daily, caps hourly, human hours (mock Date), checkEmailHealth (mock sheets)
+- [x] `gaussRandom(mu: number, sigma: number): number` — Box-Muller transform
+- [x] `nextEmailDelayMs(): number` — µ=480s (8min) σ=180s (3min), min 60s
+- [x] `checkEmailDailyCap(domain: string, sentToday: number): boolean` — retourne false si cap atteint (20/j domaine neuf <2sem, 200/j domaine warm)
+- [x] `checkEmailHourlyCap(domain: string, sentLastHour: number): boolean` — 50/h max
+- [x] `isHumanHour(): boolean` — 9h–19h jours ouvrés uniquement (Europe/Paris TZ)
+- [x] `checkEmailHealth(domain: string): Promise<{allowed: boolean, reason?: string}>` — lit tab `Email_Health` Index, retourne false si `status != 'active'`
+- [x] Tests Vitest : distribution gaussRandom (mean ≈ µ, std ≈ σ sur 1000 samples), caps daily, caps hourly, human hours (mock Date), checkEmailHealth (mock sheets)
 
 ### Must NOT
 - Ne pas lire GSheets dans les fonctions de calcul pur (séparation concerns)
@@ -77,11 +77,11 @@ test('gaussRandom distribution', () => {
 ```
 
 ## Acceptance Criteria
-- [ ] `npm run test` — tous les tests pacing email passent
-- [ ] Distribution gaussRandom : mean ≈ 480s ± 30s sur 1000 samples
-- [ ] `isHumanHour` retourne false pour samedi 15h et lundi 8h
-- [ ] `checkEmailDailyCap` retourne false si sentToday >= 20 (domaine neuf)
-- [ ] `checkEmailHealth` retourne `{allowed: false, reason: 'paused_high_bounce'}` si status=paused_high_bounce
+- [x] `npm run test` — tous les tests pacing email passent
+- [x] Distribution gaussRandom : mean ≈ 480s ± 30s sur 1000 samples
+- [x] `isHumanHour` retourne false pour samedi 15h et lundi 8h
+- [x] `checkEmailDailyCap` retourne false si sentToday >= 20 (domaine neuf)
+- [x] `checkEmailHealth` retourne `{allowed: false, reason: 'paused_high_bounce'}` si status=paused_high_bounce
 
 ## Dependencies
 **Blocked By**: v4-002 (tab Email_Health doit exister pour checkEmailHealth)

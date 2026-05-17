@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/calendly/poll",
+      "schedule": "*/5 * * * *"
+    }
+  ]
+}

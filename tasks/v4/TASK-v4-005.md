@@ -1,5 +1,5 @@
 # Task v4-005 : `lib/setter.ts` — generateResponse + Voss/NoQuestions prompt + prompt caching + persistTurn
-**Status**: ⬜ À faire
+**Status**: ✅ Done — 2026-05-14
 
 ## Autonomie
 🤖 **Claude 100%** — code TypeScript + tests Vitest (TDD).
@@ -15,13 +15,13 @@ Seconde moitié du Setter. Sur intent ≠ unsubscribe/hostile/off_topic, génèr
 ## Requirements
 
 ### Must Have
-- [ ] `generateResponse(ctx: SetterContext, intent: IntentResult): Promise<GeneratedResponse>` — appel Sonnet 4.6 avec system prompt Voss + ton miroir + ≤120 mots
-- [ ] Fallback Opus 4.6 si `intent.intent === 'objection_trust'` (lire `SETTER_FALLBACK_MODEL`)
-- [ ] Tool call `get_calendly_slots` défini dans le schema Anthropic SDK — appelé si `intent=meeting_ready`
-- [ ] `persistTurn(sheetId: string, content: string, validationRequired: boolean): Promise<Turn>` — appelle `conversations.appendTurn` avec role='setter', validated_by=null
-- [ ] `routeAction(intent: Intent): 'respond'|'escalate'|'stop'` — mapping intent → action
-- [ ] System prompt Setter (cacheable) : techniques Voss + No-Oriented Questions + format + ton
-- [ ] Tests Vitest : generateResponse (mock Anthropic), routeAction (tous les intents), persistTurn (mock sheets)
+- [x] `generateResponse(ctx: SetterContext, intent: IntentResult): Promise<GeneratedResponse>` — appel Sonnet 4.6 avec system prompt Voss + ton miroir + ≤120 mots
+- [x] Fallback Opus 4.6 si `intent.intent === 'objection_trust'` (lire `SETTER_FALLBACK_MODEL`)
+- [x] Tool call `get_calendly_slots` défini dans le schema Anthropic SDK — appelé si `intent=meeting_ready`
+- [x] `persistTurn(sheetId: string, content: string, validationRequired: boolean): Promise<Turn>` — appelle `conversations.appendTurn` avec role='setter', validated_by=null
+- [x] `routeAction(intent: Intent): 'respond'|'escalate'|'stop'` — mapping intent → action
+- [x] System prompt Setter (cacheable) : techniques Voss + No-Oriented Questions + format + ton
+- [x] Tests Vitest : generateResponse (mock Anthropic), routeAction (tous les intents), persistTurn (mock sheets)
 
 ### Must NOT
 - Pas de templates détectables dans les réponses
@@ -54,12 +54,12 @@ const tools = [{
 ```
 
 ## Acceptance Criteria
-- [ ] `npm run test` — tous les tests generateResponse passent
-- [ ] Réponse générée ≤120 mots sur prompt test "C'est trop cher"
-- [ ] Réponse `meeting_ready` contient 3 slots formatés
-- [ ] Fallback Opus déclenché sur `objection_trust`
-- [ ] `persistTurn` écrit un turn avec role=setter et validated_by=null
-- [ ] `routeAction('unsubscribe')` retourne 'stop', `routeAction('interested')` retourne 'respond'
+- [x] `npm run test` — tous les tests generateResponse passent
+- [x] Réponse générée ≤120 mots sur prompt test "C'est trop cher"
+- [x] Réponse `meeting_ready` contient 3 slots formatés
+- [x] Fallback Opus déclenché sur `objection_trust`
+- [x] `persistTurn` écrit un turn avec role=setter et validated_by=null
+- [x] `routeAction('unsubscribe')` retourne 'stop', `routeAction('interested')` retourne 'respond'
 
 ## Dependencies
 **Blocked By**: v4-004 (buildContext + classifyIntent), v4-006 (lib/calendly.ts pour tool call)

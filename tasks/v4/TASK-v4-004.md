@@ -1,5 +1,5 @@
 # Task v4-004 : `lib/setter.ts` — buildContext + classifyIntent (Claude Sonnet 4.6 JSON mode)
-**Status**: ⬜ À faire
+**Status**: ✅ Done — 2026-05-14
 
 ## Autonomie
 🤖 **Claude 100%** — code TypeScript + tests Vitest (TDD).
@@ -15,12 +15,12 @@ Première moitié du module AI Setter. `buildContext` construit le prompt avec I
 ## Requirements
 
 ### Must Have
-- [ ] Types : `Intent` enum (9 valeurs), `IntentResult`, `SetterContext`, `Turn`
-- [ ] `buildContext(lead: Lead, campaign: Campaign, thread: Turn[]): SetterContext` — assemble ICP md + offre + ton + signature + lead 14 champs + thread formaté en string
-- [ ] `classifyIntent(ctx: SetterContext): Promise<IntentResult>` — appel `@anthropic-ai/sdk` Sonnet 4.6 JSON mode, retourne `{intent, confidence, reasoning}`
-- [ ] Prompt caching : ICP md + offre (cacheable\_content) marqué avec `cache_control: {type: 'ephemeral'}` pour TTL Anthropic 5 min
-- [ ] Retry 1x si JSON parse échoue (same pattern v3)
-- [ ] Tests Vitest : buildContext (vérifie contenu prompt), classifyIntent avec mock Anthropic (vérifie intent parsé)
+- [x] Types : `Intent` enum (9 valeurs), `IntentResult`, `SetterContext`, `Turn`
+- [x] `buildContext(lead: Lead, campaign: Campaign, thread: Turn[]): SetterContext` — assemble ICP md + offre + ton + signature + lead 14 champs + thread formaté en string
+- [x] `classifyIntent(ctx: SetterContext): Promise<IntentResult>` — appel `@anthropic-ai/sdk` Sonnet 4.6 JSON mode, retourne `{intent, confidence, reasoning}`
+- [x] Prompt caching : ICP md + offre (cacheable\_content) marqué avec `cache_control: {type: 'ephemeral'}` pour TTL Anthropic 5 min
+- [x] Retry 1x si JSON parse échoue (same pattern v3)
+- [x] Tests Vitest : buildContext (vérifie contenu prompt), classifyIntent avec mock Anthropic (vérifie intent parsé)
 
 ### Must NOT
 - Ne pas appeler Anthropic via OpenRouter pour le Setter — utiliser `@anthropic-ai/sdk` directement avec `ANTHROPIC_API_KEY`
@@ -82,11 +82,11 @@ export async function classifyIntent(ctx: SetterContext): Promise<IntentResult> 
 ```
 
 ## Acceptance Criteria
-- [ ] `npm run test` — tests setter buildContext + classifyIntent passent
-- [ ] `buildContext` inclut les 10 derniers turns max
-- [ ] `classifyIntent` avec mock retourne IntentResult bien typé
-- [ ] Cache headers Anthropic présents dans le payload (vérifiable via sdk debug)
-- [ ] Retry 1x si JSON invalide avant de throw
+- [x] `npm run test` — tests setter buildContext + classifyIntent passent
+- [x] `buildContext` inclut les 10 derniers turns max
+- [x] `classifyIntent` avec mock retourne IntentResult bien typé
+- [x] Cache headers Anthropic présents dans le payload (vérifiable via sdk debug)
+- [x] Retry 1x si JSON invalide avant de throw
 
 ## Dependencies
 **Blocked By**: v4-003 (lib/conversations.ts pour le type Turn)

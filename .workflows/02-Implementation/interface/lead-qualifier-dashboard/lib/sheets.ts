@@ -27,6 +27,12 @@ import {
   parseMeetingRows,
   type Meeting,
 } from "@/lib/meetings";
+import {
+  EMAIL_HEALTH_HEADER,
+  EMAIL_HEALTH_SHEET_NAME,
+  parseEmailHealthRows,
+  type EmailHealthRow,
+} from "@/lib/pacing";
 
 const SPREADSHEET_ID = process.env.GOOGLE_INDEX_SHEET_ID!;
 
@@ -114,13 +120,21 @@ function getAuth() {
       client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
       private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
     },
-    scopes: ["https://www.googleapis.com/auth/spreadsheets"],
+    scopes: [
+      "https://www.googleapis.com/auth/spreadsheets",
+      "https://www.googleapis.com/auth/drive.file",
+    ],
   });
 }
 
 export async function getSheets() {
   const auth = await getAuth().getClient();
   return google.sheets({ version: "v4", auth: auth as never });
+}
+
+export async function getDrive() {
+  const auth = await getAuth().getClient();
+  return google.drive({ version: "v3", auth: auth as never });
 }
 
 export async function getSheetData(range: string) {
@@ -243,6 +257,25 @@ export async function ensureAnalyticsDailySheet() {
 
 export async function ensureEmailEventsSheet() {
   await ensureSheetExists(EMAIL_EVENTS_SHEET_NAME, EMAIL_EVENTS_HEADER);
+}
+
+export async function ensureEmailHealthSheet() {
+  await ensureSheetExists(EMAIL_HEALTH_SHEET_NAME, EMAIL_HEALTH_HEADER);
+}
+
+/** Ajoute une ligne dans un GSheet enfant (spreadsheetId = fichier campagne). */
+export async function appendToChildSheet(
+  spreadsheetId: string,
+  range: string,
+  values: string[]
+): Promise<void> {
+  const sheets = await getSheets();
+  await sheets.spreadsheets.values.append({
+    spreadsheetId,
+    range,
+    valueInputOption: "USER_ENTERED",
+    requestBody: { values: [values] },
+  });
 }
 
 // ——— Types ———
@@ -465,6 +498,18 @@ export async function getAnalyticsDailySnapshots() {
   const lastColumn = getColumnLetter(ANALYTICS_DAILY_HEADER.length);
   const rows = await getSheetData(`${ANALYTICS_DAILY_SHEET_NAME}!A:${lastColumn}`);
   return parseAnalyticsDaily(rows);
+}
+
+export async function getEmailHealthRows(): Promise<EmailHealthRow[]> {
+  await ensureEmailHealthSheet();
+  const lastColumn = getColumnLetter(EMAIL_HEALTH_HEADER.length);
+  const rows = await getSheetData(`${EMAIL_HEALTH_SHEET_NAME}!A:${lastColumn}`);
+  return parseEmailHealthRows(rows);
+}
+
+export async function getEmailHealth(domain = "outreach.kamesai.com"): Promise<EmailHealthRow | null> {
+  const rows = await getEmailHealthRows();
+  return rows.find((row) => row.domain === domain) ?? null;
 }
 
 export async function getLeadEmailEvents(leadId: string): Promise<EmailEvent[]> {
@@ -733,7 +778,7 @@ export async function updateChildSheetValues(
   });
 }
 
-// ——— Création GSheet enfant (v3 — Option A : onglets dans spreadsheet partagé) ———
+// ——— Création GSheet enfant (v4 — 1 fichier dédié par campagne) ———
 
 export interface ChildSheetConfig {
   campaign_id: string;
@@ -753,85 +798,121 @@ export interface ChildSheetConfig {
   search_locations: string;
 }
 
+export const CHILD_QUALIFIED_HEADER = [
+  "lead_id", "campaign_id", "nom", "site", "ville", "score", "score_reason",
+  "email", "téléphone", "prénom", "poste", "secteur", "taille_equipe",
+  "has_ia_services", "hiring_signals", "growth_stage", "buying_signal",
+  "personalized_hook", "statut_email", "web_quality_score", "web_quality_signals",
+  "societe", "prenom_gerant", "nom_gerant", "email_gerant", "email_type",
+  "email_confidence",
+  // v4
+  "linkedin_url", "source_channel", "statut_li", "reply_intent", "reply_at",
+] as const;
+
+export const CHILD_CONVERSATIONS_HEADER = [
+  "turn_id", "lead_id", "channel", "role", "content",
+  "sent_at", "intent", "validated_by", "edited_from_draft",
+] as const;
+
 /**
- * Crée les 4 onglets d'une campagne dans GOOGLE_CAMPAIGNS_SHEET_ID (spreadsheet partagé).
- * Onglets : {campaign_id}_Raw, {campaign_id}_Qualified, {campaign_id}_Rejected, {campaign_id}_Config
- * Retourne spreadsheetId = GOOGLE_CAMPAIGNS_SHEET_ID et un sheetUrl ancré sur l'onglet Raw.
+ * Crée un nouveau fichier GSheet dédié à la campagne (1 fichier par campagne).
+ * Onglets : Leads_Raw, Leads_Qualified (v4), Leads_Rejected, Config (v4), Conversations
+ * Déplace le fichier dans GOOGLE_DRIVE_FOLDER_ID si configuré.
  */
 export async function createChildGSheet(
   _sheetName: string,
   config: ChildSheetConfig
 ): Promise<{ spreadsheetId: string; sheetUrl: string }> {
   const sheets = await getSheets();
-  const spreadsheetId = process.env.GOOGLE_CAMPAIGNS_SHEET_ID!;
-  const p = config.campaign_id; // préfixe onglets
 
-  // 1. Créer les 4 onglets
-  const batchRes = await sheets.spreadsheets.batchUpdate({
-    spreadsheetId,
+  // 1. Créer un fichier GSheet dédié avec les 5 onglets
+  const newSheet = await sheets.spreadsheets.create({
     requestBody: {
-      requests: [
-        { addSheet: { properties: { title: `${p}_Raw` } } },
-        { addSheet: { properties: { title: `${p}_Qualified` } } },
-        { addSheet: { properties: { title: `${p}_Rejected` } } },
-        { addSheet: { properties: { title: `${p}_Config` } } },
+      properties: { title: `Flinty — ${config.campaign_id}` },
+      sheets: [
+        { properties: { title: "Leads_Raw", index: 0 } },
+        { properties: { title: "Leads_Qualified", index: 1 } },
+        { properties: { title: "Leads_Rejected", index: 2 } },
+        { properties: { title: "Config", index: 3 } },
+        { properties: { title: "Conversations", index: 4 } },
       ],
     },
   });
 
-  // Récupérer le gid de l'onglet Raw pour l'URL d'ancrage
-  const rawGid = batchRes.data.replies?.[0]?.addSheet?.properties?.sheetId;
-  const sheetUrl = rawGid != null
-    ? `https://docs.google.com/spreadsheets/d/${spreadsheetId}#gid=${rawGid}`
-    : `https://docs.google.com/spreadsheets/d/${spreadsheetId}`;
+  const spreadsheetId = newSheet.data.spreadsheetId!;
+  const sheetUrl = `https://docs.google.com/spreadsheets/d/${spreadsheetId}`;
 
-  // 2. Headers v4 sur chaque onglet
+  // 2. Déplacer dans le dossier Drive si GOOGLE_DRIVE_FOLDER_ID est configuré
+  const folderId = process.env.GOOGLE_DRIVE_FOLDER_ID;
+  if (folderId) {
+    const drive = await getDrive();
+    await drive.files.update({
+      fileId: spreadsheetId,
+      addParents: folderId,
+      removeParents: "root",
+      fields: "id, parents",
+    });
+  }
+
+  // 3. Headers sur chaque onglet
+  const qualifiedLastCol = getColumnLetter(CHILD_QUALIFIED_HEADER.length);
   await sheets.spreadsheets.values.batchUpdate({
     spreadsheetId,
     requestBody: {
       valueInputOption: "USER_ENTERED",
       data: [
         {
-          range: `${p}_Raw!A1:J1`,
+          range: "Leads_Raw!A1:J1",
           values: [["lead_id", "campaign_id", "nom", "site", "ville", "téléphone", "rating", "reviews_count", "maps_url", "found_at"]],
         },
         {
-          range: `${p}_Qualified!A1:AB1`,
-          values: [["lead_id", "campaign_id", "nom", "site", "ville", "score", "score_reason", "email", "téléphone", "prénom", "poste", "secteur", "taille_equipe", "has_ia_services", "hiring_signals", "growth_stage", "buying_signal", "personalized_hook", "statut_email", "web_quality_score", "web_quality_signals", "societe", "prenom_gerant", "nom_gerant", "email_gerant", "email_type", "email_confidence"]],
+          range: `Leads_Qualified!A1:${qualifiedLastCol}1`,
+          values: [[...CHILD_QUALIFIED_HEADER]],
         },
         {
-          range: `${p}_Rejected!A1:G1`,
+          range: "Leads_Rejected!A1:G1",
           values: [["lead_id", "campaign_id", "nom", "site", "score", "rejection_reason", "processed_at"]],
         },
         {
-          range: `${p}_Config!A1:C1`,
+          range: "Config!A1:C1",
           values: [["param_key", "param_value", "description"]],
+        },
+        {
+          range: "Conversations!A1:I1",
+          values: [[...CHILD_CONVERSATIONS_HEADER]],
         },
       ],
     },
   });
 
-  // 3. Lignes Config
+  // 4. Lignes Config (v3 + v4)
   await sheets.spreadsheets.values.append({
     spreadsheetId,
-    range: `${p}_Config!A2:C`,
+    range: "Config!A2:C",
     valueInputOption: "USER_ENTERED",
     requestBody: {
       values: [
-        ["icp_md", config.icp_md, "ICP généré par Claude"],
-        ["secteur", config.secteur, "Secteur cible"],
-        ["villes", config.villes, "Villes (séparées virgule)"],
-        ["taille_equipe", config.taille_equipe, "Taille équipe cible"],
-        ["poste_cible", config.poste_cible, "Poste décideur"],
-        ["offre_kames", config.offre_kames, "Offre proposée"],
-        ["template_email", config.template_email, "Template email J0"],
-        ["score_minimum", config.score_minimum, "Seuil qualification (%)"],
-        ["target_qualified_leads", config.target_qualified_leads, "Objectif de leads qualifiés"],
-        ["target_raw_leads", config.target_raw_leads, "Volume raw estimé pour atteindre l'objectif"],
-        ["target_tolerance_percent", config.target_tolerance_percent, "Tolérance autour de l'objectif qualifié"],
-        ["estimated_qualification_rate", config.estimated_qualification_rate, "Taux qualif estimé pour calculer le raw"],
-        ["search_terms", config.search_terms, "Métiers à scraper (séparés virgule)"],
-        ["search_locations", config.search_locations, "Villes à scraper (séparées virgule)"],
+        ["icp_md",                      config.icp_md,                      "ICP généré par Claude"],
+        ["secteur",                      config.secteur,                     "Secteur cible"],
+        ["villes",                       config.villes,                      "Villes (séparées virgule)"],
+        ["taille_equipe",               config.taille_equipe,               "Taille équipe cible"],
+        ["poste_cible",                 config.poste_cible,                 "Poste décideur"],
+        ["offre_kames",                 config.offre_kames,                 "Offre proposée"],
+        ["template_email",              config.template_email,              "Template email J0"],
+        ["score_minimum",               config.score_minimum,               "Seuil qualification (%)"],
+        ["target_qualified_leads",      config.target_qualified_leads,      "Objectif de leads qualifiés"],
+        ["target_raw_leads",            config.target_raw_leads,            "Volume raw estimé pour atteindre l'objectif"],
+        ["target_tolerance_percent",    config.target_tolerance_percent,    "Tolérance autour de l'objectif qualifié"],
+        ["estimated_qualification_rate",config.estimated_qualification_rate,"Taux qualif estimé pour calculer le raw"],
+        ["search_terms",                config.search_terms,                "Métiers à scraper (séparés virgule)"],
+        ["search_locations",            config.search_locations,            "Villes à scraper (séparées virgule)"],
+        // v4
+        ["setter_enabled",      "FALSE",   "Activer le Setter IA"],
+        ["setter_validation",   "TRUE",    "Validation humaine obligatoire avant envoi"],
+        ["setter_tone",         "formal",  "Ton du Setter (formal|casual)"],
+        ["setter_signature",    "Thomas",  "Nom de signature"],
+        ["calendly_event_uri",  "",        "URI Calendly pour réservation"],
+        ["li_caps_daily",       "20",      "Cap quotidien invitations LinkedIn"],
       ],
     },
   });
@@ -840,8 +921,9 @@ export async function createChildGSheet(
 }
 
 /**
- * Met à jour la valeur d'un param_key dans l'onglet {campaign_id}_Config.
- * Utilisé pour re-synchroniser icp_md après (re)génération de l'ICP.
+ * Met à jour la valeur d'un param_key dans l'onglet Config du GSheet enfant.
+ * Essaie "Config" (v4 — 1 fichier par campagne) en premier,
+ * puis "{campaign_id}_Config" (v3 legacy — onglets dans fichier partagé).
  */
 export async function updateConfigValue(
   spreadsheetId: string,
@@ -850,23 +932,31 @@ export async function updateConfigValue(
   param_value: string
 ): Promise<void> {
   const sheets = await getSheets();
-  const configTab = `${campaign_id}_Config`;
+  const tabNames = ["Config", `${campaign_id}_Config`];
 
-  const response = await sheets.spreadsheets.values.get({
-    spreadsheetId,
-    range: `${configTab}!A:B`,
-  });
+  for (const configTab of tabNames) {
+    let rows: string[][];
+    try {
+      const response = await sheets.spreadsheets.values.get({
+        spreadsheetId,
+        range: `${configTab}!A:B`,
+      });
+      rows = (response.data.values ?? []) as string[][];
+    } catch (e) {
+      if (e instanceof Error && e.message.includes("Unable to parse range")) continue;
+      throw e;
+    }
 
-  const rows = (response.data.values ?? []) as string[][];
-  const rowIndex = rows.findIndex((r) => r[0] === param_key);
-  if (rowIndex === -1) return; // clé introuvable, rien à faire
+    const rowIndex = rows.findIndex((r) => r[0] === param_key);
+    if (rowIndex === -1) continue;
 
-  // +1 car Sheets est 1-indexed, +1 pour le header → rowIndex 0 = ligne 1 (header)
-  const sheetRow = rowIndex + 1;
-  await sheets.spreadsheets.values.update({
-    spreadsheetId,
-    range: `${configTab}!B${sheetRow}`,
-    valueInputOption: "USER_ENTERED",
-    requestBody: { values: [[param_value]] },
-  });
+    const sheetRow = rowIndex + 1;
+    await sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range: `${configTab}!B${sheetRow}`,
+      valueInputOption: "USER_ENTERED",
+      requestBody: { values: [[param_value]] },
+    });
+    return;
+  }
 }

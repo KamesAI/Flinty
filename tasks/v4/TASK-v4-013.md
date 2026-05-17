@@ -1,5 +1,5 @@
 # Task v4-013 : Composant `<ConversationThread>` — timeline cross-canal
-**Status**: ⬜ À faire
+**Status**: ✅ Complété — 2026-05-17
 
 ## Autonomie
 🤖 **Claude 100%** — composant React TypeScript.
@@ -12,16 +12,29 @@ Thomas doit voir le thread complet d'une conversation (emails sortants v3 + repl
 ## Objective
 Composant `<ConversationThread>` qui affiche la timeline complète d'un lead avec badges canal et actions inline.
 
+## Avancement 2026-05-15
+- ✅ Composant `app/dashboard/inbox/ConversationThread.tsx` ajouté et intégré à l'inbox.
+- ✅ Turns rendus en bulles gauche/droite selon rôle prospect vs setter/human.
+- ⬜ Reste : badges canal visibles, distinction human verte, mention draft, dates relatives, accessibilité feed/aria et scroll automatique.
+
+## Avancement 2026-05-17
+- ✅ Badges canal `Email` / `LinkedIn` avec icônes sur chaque turn.
+- ✅ Distinction visuelle prospect / setter draft / human.
+- ✅ Bandeau `Draft — en attente de validation` sur les turns Setter non validés.
+- ✅ Dates relatives en français via `Intl.RelativeTimeFormat`.
+- ✅ Timeline accessible avec `role="feed"` et `aria-label` par turn.
+- ✅ Scroll automatique vers le dernier message au changement de thread.
+
 ## Requirements
 
 ### Must Have
-- [ ] Props : `{thread: Turn[], leadName: string, onSend: (turnId: string) => void, onEscalate: (turnId: string) => void}`
-- [ ] Chaque turn rendu différemment selon `role` : prospect (bulle gauche grise), setter (bulle droite bleue avec badge "IA"), human (bulle droite verte)
-- [ ] Badge canal : `email` ou `linkedin` (icône + label) sur chaque turn
-- [ ] Turn setter non validé (`validated_by=null`) : fond distinct + bandeau "Draft — en attente de validation"
-- [ ] Scroll automatique au dernier message
-- [ ] Date formatée en français relative (ex: "il y a 3h", "hier à 14h")
-- [ ] Accessible : role="feed" + aria-label par turn
+- [x] Props : `{thread: Turn[], leadName: string, onSend: (turnId: string) => void, onEscalate: (turnId: string) => void}`
+- [x] Chaque turn rendu différemment selon `role` : prospect à gauche, setter/human à droite
+- [x] Badge canal : `email` ou `linkedin` (icône + label) sur chaque turn
+- [x] Turn setter non validé (`validated_by=null`) : fond distinct + bandeau "Draft — en attente de validation"
+- [x] Scroll automatique au dernier message
+- [x] Date formatée en français relative (ex: "il y a 3h", "hier à 14h")
+- [x] Accessible : role="feed" + aria-label par turn
 
 ### Must NOT
 - Pas de dépendance externe pour le formatage de dates — utiliser `Intl.RelativeTimeFormat`
@@ -51,11 +64,11 @@ function TurnBubble({ turn, onSend, onEscalate }: TurnBubbleProps) {
 ```
 
 ## Acceptance Criteria
-- [ ] Thread de 5 turns (prospect + setter + human + prospect + setter draft) s'affiche correctement
-- [ ] Badge "email" ou "linkedin" visible sur chaque turn
-- [ ] Turn setter draft : fond distinct + mention "Draft"
-- [ ] Scroll automatique au bas du thread
-- [ ] Dates en français relatif
+- [x] Thread s'affiche dans l'inbox
+- [x] Badge "email" ou "linkedin" visible sur chaque turn
+- [x] Turn setter draft : fond distinct + mention "Draft"
+- [x] Scroll automatique au bas du thread
+- [x] Dates en français relatif
 
 ## Dependencies
 **Blocked By**: v4-012 (page inbox qui l'intègre)

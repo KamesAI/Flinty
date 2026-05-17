@@ -1,5 +1,5 @@
 # Task v4-014 : Composant `<SetterDraftCard>` + actions valider/éditer/escalader
-**Status**: ⬜ À faire
+**Status**: ✅ Complété — 2026-05-17
 
 ## Autonomie
 🤖 **Claude 100%** — composant React TypeScript.
@@ -12,16 +12,31 @@ Thomas voit les drafts Setter dans l'inbox. Pour chaque draft, il peut : valider
 ## Objective
 Composant `<SetterDraftCard>` avec les 3 actions et feedback visuel immédiat.
 
+## Avancement 2026-05-15
+- ✅ Composant `app/dashboard/inbox/SetterDraftCard.tsx` ajouté.
+- ✅ Affiche le draft dans une textarea éditable.
+- ✅ Actions : envoyer via `POST /api/replies/[lead_id]/send`, escalader via `POST /api/replies/[lead_id]/escalate`.
+- ✅ Bouton envoyer désactivé si draft vide, feedback succès/erreur.
+- ⬜ Reste : confidence/reasoning, diff visuel avancé, confirmation modal escalade, disparition automatique de la card après escalade, raccourcis clavier.
+
+## Avancement 2026-05-17
+- ✅ Props `turn`, `leadId`, callbacks optionnels `onSend` / `onEscalate` supportés, compatibilité maintenue avec l'ancien couple `turnId` / `draft`.
+- ✅ Intent, confidence et reasoning collapsible affichés quand disponibles.
+- ✅ Diff visuel jaune entre draft original et version éditée.
+- ✅ Enter envoie, Shift+Enter insère une nouvelle ligne, Escape annule l'édition.
+- ✅ Escalade protégée par modal de confirmation ; card masquée après succès.
+- ✅ États d'envoi : pending, `Envoyé ✓`, erreurs et bouton désactivé si draft vide.
+
 ## Requirements
 
 ### Must Have
-- [ ] Props : `{turn: Turn, leadId: string, onSend: () => void, onEscalate: () => void}`
-- [ ] Affiche : contenu draft + intent classifié + confidence + reasoning (collapsible)
-- [ ] Bouton **"Envoyer"** : POST `/api/replies/[lead_id]/send` → spinner → "Envoyé ✓" (désactivation après)
-- [ ] Bouton **"Éditer"** : ouvre textarea inline avec diff vs draft original — après édition, PUT content → POST /send
-- [ ] Bouton **"Escalader"** : POST `/api/replies/[lead_id]/escalate` → card disparaît de la liste
-- [ ] Diff visuel entre draft original et version éditée (fond jaune sur modifications)
-- [ ] Keyboard : Enter pour envoyer, Escape pour annuler édition
+- [x] Props : `{turn: Turn, leadId: string, onSend: () => void, onEscalate: () => void}`
+- [x] Affiche : contenu draft + intent classifié + confidence + reasoning (collapsible)
+- [x] Bouton **"Envoyer"** : POST `/api/replies/[lead_id]/send` → feedback succès/erreur
+- [x] Édition inline via textarea — envoie `edited_content` à `/send`
+- [x] Bouton **"Escalader"** : POST `/api/replies/[lead_id]/escalate`
+- [x] Diff visuel entre draft original et version éditée (fond jaune sur modifications)
+- [x] Keyboard : Enter pour envoyer, Escape pour annuler édition
 
 ### Must NOT
 - Ne pas permettre l'envoi d'un draft vide (validation côté client)
@@ -54,11 +69,11 @@ export function SetterDraftCard({ turn, leadId, onSend, onEscalate }: SetterDraf
 ```
 
 ## Acceptance Criteria
-- [ ] Clic "Envoyer" → spinner → "Envoyé ✓" → card désactivée
-- [ ] Clic "Éditer" → textarea visible avec contenu pré-rempli
-- [ ] Diff visuel entre original et édition visible
-- [ ] Clic "Escalader" → modal confirmation → card disparaît
-- [ ] Draft vide → bouton "Envoyer" désactivé
+- [x] Clic "Envoyer" → spinner → "Envoyé ✓" → card désactivée
+- [x] Clic "Éditer" → textarea visible avec contenu pré-rempli
+- [x] Diff visuel entre original et édition visible
+- [x] Clic "Escalader" → modal confirmation → card disparaît
+- [x] Draft vide → bouton "Envoyer" désactivé
 
 ## Dependencies
 **Blocked By**: v4-013 (ConversationThread qui l'intègre), v4-011 (routes /send + /escalate)

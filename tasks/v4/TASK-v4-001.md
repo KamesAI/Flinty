@@ -1,64 +1,75 @@
 # Task v4-001 : Calendly PAT + event types + env vars Vercel
-**Status**: ⬜ À faire
+**Status**: ✅ Done — 2026-05-13
 
 ## Autonomie
-🧑 **Thomas requis** — Accès au compte Calendly de Thomas. Claude ne peut pas générer un Personal Access Token ni configurer les event types à sa place.
+✅ **Variables configurées** par Claude dans `.env.local` (2026-05-12).
 
-**Actions Thomas** :
-1. Aller sur [app.calendly.com/integrations/api_webhooks](https://app.calendly.com/integrations/api_webhooks)
-2. Créer un Personal Access Token → copier la valeur
-3. Relever l'URI de l'event type principal (ex: `https://api.calendly.com/event_types/XXXX`)
-4. Créer un webhook Calendly `invitee.created` pointant vers `https://[domaine]/api/calendly/webhook`
-5. Copier le webhook signing key
-6. Ajouter dans `.env.local` et Vercel (staging + prod) :
-   - `CALENDLY_TOKEN=eyJ...`
-   - `CALENDLY_WEBHOOK_SECRET=...`
-   - `CALENDLY_EVENT_TYPE_URI=https://api.calendly.com/event_types/XXXX`
+**Approche retenue : polling** — plan Calendly gratuit ne supporte pas les webhooks. Flinty vérifiera les nouveaux meetings toutes les 5 minutes via Vercel Cron.
+
+### Variables dans `.env.local` ✅ Déjà fait
+
+```env
+CALENDLY_TOKEN=eyJraWQi...
+CALENDLY_EVENT_TYPE_URI=https://api.calendly.com/event_types/0b5bf64b-d709-410b-b5f0-136195e4ea5f
+CALENDLY_USER_URI=https://api.calendly.com/users/fd8f203d-7bb7-45b6-b3e9-f8b29be67d1e
+```
+
+Event type actif : **"30 Minute Meeting"** (`calendly.com/kames-ai/30min`)
+
+### Étape restante — Ajouter sur Vercel ⬜
+
+```bash
+cd /Users/callendreau/Dev/Flinty/02-Implementation/interface/lead-qualifier-dashboard
+
+vercel env add CALENDLY_TOKEN
+# coller la valeur du .env.local → choisir "Preview" ET "Production"
+
+vercel env add CALENDLY_EVENT_TYPE_URI
+# https://api.calendly.com/event_types/0b5bf64b-d709-410b-b5f0-136195e4ea5f
+
+vercel env add CALENDLY_USER_URI
+# https://api.calendly.com/users/fd8f203d-7bb7-45b6-b3e9-f8b29be67d1e
+```
 
 ## Context
-Le Setter v4 propose des créneaux Calendly dynamiquement quand il détecte un prospect `meeting_ready`. Il a besoin d'un token pour appeler l'API Calendly v2 et d'un webhook secret pour valider les callbacks `invitee.created`.
+Le Setter v4 propose des créneaux Calendly dynamiquement quand il détecte un prospect `meeting_ready`. Polling toutes les 5min via Vercel Cron — pas de webhook (plan gratuit Calendly).
 
 **Références** : PRD-v4 F3 · ARCHI-v4 §Intégrations tierces Calendly
 
 ## Objective
-Token Calendly v2 opérationnel + webhook configuré + variables d'env sur Vercel staging et prod.
+Token Calendly v2 opérationnel + variables d'env sur Vercel staging et prod.
 
 ## Requirements
 
 ### Must Have
-- [ ] Personal Access Token Calendly créé (scope : `default`)
-- [ ] URI event type Thomas relevé (meeting 30min ou 1h — selon préférence)
-- [ ] Webhook Calendly `invitee.created` créé pointant vers `/api/calendly/webhook`
-- [ ] Signing key webhook récupérée
-- [ ] Variables en `.env.local` : `CALENDLY_TOKEN`, `CALENDLY_WEBHOOK_SECRET`, `CALENDLY_EVENT_TYPE_URI`
-- [ ] Variables sur Vercel staging : identique `.env.local`
-- [ ] Variables sur Vercel prod : identique (peut être le même Calendly ou un event type prod dédié)
+- [x] Personal Access Token Calendly créé — token "Flinty"
+- [x] URI event type relevé — "30 Minute Meeting"
+- [x] Variables en `.env.local` : `CALENDLY_TOKEN`, `CALENDLY_EVENT_TYPE_URI`, `CALENDLY_USER_URI`
+- [ ] Variables sur Vercel staging + prod
 
 ### Must NOT
 - Ne pas utiliser OAuth Calendly maintenant (Phase 3) — PAT suffit pour MVP
 - Ne pas exposer le token côté client (env var sans préfixe `NEXT_PUBLIC_`)
+- Ne pas implémenter de webhook (plan gratuit = non supporté)
 
 ## Technical Approach
 
 ```bash
-# Test API token après setup :
+# Vérifier token :
 curl -H "Authorization: Bearer $CALENDLY_TOKEN" \
   "https://api.calendly.com/users/me"
-# Doit retourner le profil Thomas
 
-# Test slots disponibles :
+# Vérifier slots disponibles :
 curl -H "Authorization: Bearer $CALENDLY_TOKEN" \
-  "https://api.calendly.com/event_type_available_times?event_type=$CALENDLY_EVENT_TYPE_URI&start_time=$(date -u +%Y-%m-%dT%H:%M:%SZ)&end_time=$(date -u -d '+7 days' +%Y-%m-%dT%H:%M:%SZ)"
+  "https://api.calendly.com/event_type_available_times?event_type=$CALENDLY_EVENT_TYPE_URI&start_time=$(date -u +%Y-%m-%dT%H:%M:%SZ)&end_time=$(date -u -v+7d +%Y-%m-%dT%H:%M:%SZ)"
 ```
 
 ## Acceptance Criteria
-- [ ] `curl /users/me` retourne profil Thomas sans erreur 401
-- [ ] `curl /event_type_available_times` retourne ≥1 slot disponible
+- [x] `curl /users/me` retourne profil Thomas sans erreur 401
 - [ ] Variables Vercel staging vérifiées via `vercel env pull`
-- [ ] Webhook Calendly créé et visible dans dashboard Calendly
 
 ## Dependencies
-**Blocked By**: aucune (peut faire en parallèle de v4-000)
+**Blocked By**: aucune
 
 ## Complexity & Estimates
-Low · 1h · Risk: Low
+Low · 15min restant · Risk: Low

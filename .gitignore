@@ -50,6 +50,9 @@ next-env.d.ts
 # Claude Code local-only settings (peut contenir tokens)
 .claude/settings.local.json
 
+# Codex local MCP installs
+.codex/mcp/
+
 # Editor / OS
 .idea/
 .vscode/

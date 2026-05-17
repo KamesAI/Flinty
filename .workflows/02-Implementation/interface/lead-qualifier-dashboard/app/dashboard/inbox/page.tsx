@@ -1,117 +1,23 @@
 import Link from "next/link";
-import {
-  getAllEmailEvents,
-  getMeetings,
-  readIndex,
-  readChildQualifiedLeads,
-  parseIndexCampaigns,
-  QUALIFIED_SHEET_RANGE_WITH_HEADER,
-  type IndexCampaign,
-} from "@/lib/sheets";
-import { getEventLabel } from "@/lib/email-events";
+import { Bot, CalendarCheck, Inbox, MessageSquareReply } from "lucide-react";
+import { getMeetings } from "@/lib/sheets";
+import { listEscalatedSetterThreads, listSetterDraftQueue } from "@/lib/replies";
+import { ConversationThread } from "./ConversationThread";
+import { SetterDraftCard } from "./SetterDraftCard";
+import { InboxSummaryCounters } from "./InboxSummaryCounters";
 
-type InboxStatus = "needs_reply" | "booked" | "waiting" | "new" | "bounced";
-type TabKey = "needs_reply" | "booked" | "waiting" | "all";
-
-interface LeadV3 {
-  lead_id: string;
-  campaign_id: string;
-  nom: string;
-  prénom: string;
-  poste: string;
-  ville: string;
-  statut_email: string;
-  last_email_sent_at: string;
-}
-
-function parseQualifiedLeads(rows: string[][]): LeadV3[] {
-  if (!rows.length) return [];
-  const [, ...data] = rows;
-  return data
-    .filter((r) => r[0])
-    .map((r) => ({
-      lead_id:            r[0]  ?? "",
-      campaign_id:        r[1]  ?? "",
-      nom:                r[21] ?? r[2] ?? "",
-      prénom:             r[22] ?? r[9] ?? "",
-      poste:              r[10] ?? "",
-      ville:              r[4]  ?? "",
-      statut_email:       r[18] ?? "new",
-      last_email_sent_at: "",
-    }));
-}
+type TabKey = "validate" | "reply" | "bookings";
 
 const TABS: { key: TabKey; label: string; emptyLabel: string }[] = [
-  { key: "needs_reply", label: "À répondre",       emptyLabel: "Aucune réponse en attente." },
-  { key: "booked",      label: "Meeting planifié", emptyLabel: "Aucun meeting planifié." },
-  { key: "waiting",     label: "En attente",       emptyLabel: "Aucun lead en attente." },
-  { key: "all",         label: "Tout",             emptyLabel: "Aucune conversation." },
+  { key: "validate", label: "À valider", emptyLabel: "Aucun draft Setter à valider." },
+  { key: "reply", label: "À répondre", emptyLabel: "Aucun thread en réponse manuelle." },
+  { key: "bookings", label: "Bookings", emptyLabel: "Aucun booking à afficher." },
 ];
-
-const STATUS_BADGE: Record<InboxStatus, { label: string; classes: string }> = {
-  needs_reply: { label: "À répondre",   classes: "bg-emerald-100 text-emerald-800" },
-  booked:      { label: "Meeting",      classes: "bg-blue-100 text-blue-800" },
-  waiting:     { label: "En attente",   classes: "bg-slate-100 text-slate-700" },
-  new:         { label: "Nouveau",      classes: "bg-zinc-100 text-zinc-600" },
-  bounced:     { label: "Bounced",      classes: "bg-red-100 text-red-800" },
-};
-
-async function readInboxCampaigns(): Promise<IndexCampaign[]> {
-  try {
-    const indexRows = await readIndex();
-    return parseIndexCampaigns(indexRows);
-  } catch (error) {
-    console.error("[InboxPage] Unable to read index campaigns", error);
-    return [];
-  }
-}
-
-async function readCampaignQualifiedLeads(campaign: IndexCampaign): Promise<LeadV3[]> {
-  if (!campaign.sheet_id) return [];
-
-  try {
-    const rows = await readChildQualifiedLeads(
-      campaign.sheet_id,
-      campaign.campaign_id,
-      QUALIFIED_SHEET_RANGE_WITH_HEADER
-    );
-    return parseQualifiedLeads(rows);
-  } catch (error) {
-    console.error("[InboxPage] Unable to read qualified leads", {
-      campaign_id: campaign.campaign_id,
-      sheet_id: campaign.sheet_id,
-      error,
-    });
-    return [];
-  }
-}
-
-async function readInboxEvents() {
-  try {
-    return await getAllEmailEvents();
-  } catch (error) {
-    console.error("[InboxPage] Unable to read email events", error);
-    return [];
-  }
-}
-
-async function readInboxMeetings() {
-  try {
-    return await getMeetings();
-  } catch (error) {
-    console.error("[InboxPage] Unable to read meetings", error);
-    return [];
-  }
-}
-
-function safeEventLabel(eventType: Parameters<typeof getEventLabel>[0]): string {
-  return getEventLabel(eventType) ?? "Email envoyé";
-}
 
 function relativeDate(iso: string): string {
   if (!iso) return "";
   const diff = Date.now() - new Date(iso).getTime();
-  const mins = Math.floor(diff / 60000);
+  const mins = Math.max(0, Math.floor(diff / 60000));
   if (mins < 60) return `il y a ${mins}min`;
   const hrs = Math.floor(mins / 60);
   if (hrs < 24) return `il y a ${hrs}h`;
@@ -121,113 +27,139 @@ function relativeDate(iso: string): string {
   return new Date(iso).toLocaleDateString("fr-FR", { day: "2-digit", month: "short" });
 }
 
+async function readDraftQueue() {
+  try {
+    return await listSetterDraftQueue();
+  } catch (error) {
+    console.error("[InboxPage] Unable to read Setter drafts", error);
+    return [];
+  }
+}
+
+async function readBookings() {
+  try {
+    return await getMeetings();
+  } catch (error) {
+    console.error("[InboxPage] Unable to read meetings", error);
+    return [];
+  }
+}
+
+async function readEscalatedThreads() {
+  try {
+    return await listEscalatedSetterThreads();
+  } catch (error) {
+    console.error("[InboxPage] Unable to read escalated Setter threads", error);
+    return [];
+  }
+}
+
+function getLeadName(lead: { prénom?: string; nom?: string }) {
+  return `${lead.prénom ? `${lead.prénom} ` : ""}${lead.nom ?? ""}`.trim() || "Lead";
+}
+
+function getEscalationReason(value: string) {
+  const [, , reason] = value.split(":");
+  return reason || "Escalade manuelle";
+}
+
+function getWeekStart(dateInput: string) {
+  const date = new Date(dateInput);
+  const day = date.getDay() || 7;
+  const start = new Date(date);
+  start.setDate(date.getDate() - day + 1);
+  start.setHours(0, 0, 0, 0);
+  return start;
+}
+
+function formatWeekLabel(dateInput: string) {
+  const start = getWeekStart(dateInput);
+  return `Semaine du ${start.toLocaleDateString("fr-FR", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  })}`;
+}
+
+function groupBookingsByWeek<T extends { start_at: string }>(bookings: T[]) {
+  const groups = new Map<string, { label: string; items: T[] }>();
+  for (const booking of bookings) {
+    const key = getWeekStart(booking.start_at).toISOString().slice(0, 10);
+    const group = groups.get(key) ?? { label: formatWeekLabel(booking.start_at), items: [] };
+    group.items.push(booking);
+    groups.set(key, group);
+  }
+  return Array.from(groups.entries())
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([, group]) => ({
+      ...group,
+      items: group.items.sort((a, b) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime()),
+    }));
+}
+
 export default async function InboxPage({
   searchParams,
 }: {
   searchParams: Promise<{ tab?: string; campaign_id?: string }>;
 }) {
-  const { tab = "needs_reply", campaign_id } = await searchParams;
-  const activeTab = (TABS.find((t) => t.key === tab)?.key ?? "needs_reply") as TabKey;
+  const { tab = "validate", campaign_id } = await searchParams;
+  const activeTab = (TABS.find((candidate) => candidate.key === tab)?.key ?? "validate") as TabKey;
 
-  // v3 — read campaigns from Index, leads from each child sheet
-  const campaigns = await readInboxCampaigns();
-
-  const leadsPerCampaign = await Promise.all(campaigns.map(readCampaignQualifiedLeads));
-  const leads = leadsPerCampaign.flat();
-
-  const [allEvents, allMeetings] = await Promise.all([
-    readInboxEvents(),
-    readInboxMeetings(),
+  const [drafts, escalatedThreads, bookings] = await Promise.all([
+    readDraftQueue(),
+    readEscalatedThreads(),
+    readBookings(),
   ]);
+  const filteredDrafts = campaign_id
+    ? drafts.filter((item) => item.campaign.campaign_id === campaign_id)
+    : drafts;
+  const filteredEscalatedThreads = campaign_id
+    ? escalatedThreads.filter((item) => item.campaign.campaign_id === campaign_id)
+    : escalatedThreads;
+  const filteredBookings = campaign_id
+    ? bookings.filter((meeting) => meeting.campaign_id === campaign_id)
+    : bookings.filter((meeting) => ["booked", "scheduled"].includes(String(meeting.status)));
+  const bookingWeeks = groupBookingsByWeek(filteredBookings);
 
-  // Build inbox items
-  const inboxItems = leads
-    .filter((l) => l.statut_email !== "new")
-    .map((lead) => {
-      const campaign = campaigns.find((c) => c.campaign_id === lead.campaign_id);
-      const leadEvents = allEvents.filter((e) => e.lead_id === lead.lead_id);
-      const lastEvent = leadEvents[0];
-      const leadMeetings = allMeetings.filter((m) => m.lead_id === lead.lead_id);
-      const scheduledMeeting = leadMeetings.find((m) => m.status === "scheduled");
-
-      let inbox_status: InboxStatus;
-      if (lead.statut_email === "replied") {
-        inbox_status = "needs_reply";
-      } else if (scheduledMeeting) {
-        inbox_status = "booked";
-      } else if (lead.statut_email === "bounced") {
-        inbox_status = "bounced";
-      } else {
-        inbox_status = "waiting";
-      }
-
-      const last_activity_at =
-        lastEvent?.timestamp || lead.last_email_sent_at || "";
-
-      return {
-        ...lead,
-        campaign_nom: campaign?.nom ?? "—",
-        inbox_status,
-        last_activity_at,
-        last_event_label: lastEvent ? safeEventLabel(lastEvent.event_type) : "Email envoyé",
-        has_meeting: leadMeetings.length > 0,
-      };
-    })
-    .sort(
-      (a, b) =>
-        new Date(b.last_activity_at).getTime() -
-        new Date(a.last_activity_at).getTime()
-    );
+  const campaignFilters = Array.from(
+    new Map(
+      [...drafts, ...escalatedThreads].map((item) => [item.campaign.campaign_id, item.campaign])
+    ).values()
+  );
 
   const counts: Record<TabKey, number> = {
-    needs_reply: inboxItems.filter((i) => i.inbox_status === "needs_reply").length,
-    booked:      inboxItems.filter((i) => i.inbox_status === "booked").length,
-    waiting:     inboxItems.filter((i) => i.inbox_status === "waiting").length,
-    all:         inboxItems.length,
+    validate: filteredDrafts.length,
+    reply: filteredEscalatedThreads.length,
+    bookings: filteredBookings.length,
   };
-
-  let filtered = inboxItems;
-  if (activeTab !== "all") {
-    filtered = filtered.filter((i) => i.inbox_status === activeTab);
-  }
-  if (campaign_id) {
-    filtered = filtered.filter((i) => i.campaign_id === campaign_id);
-  }
-
-  const activeCampaigns = campaigns.filter(
-    (c) => c.statut === "active" || c.statut === "generating"
-  );
-  const currentTab = TABS.find((t) => t.key === activeTab)!;
+  const currentTab = TABS.find((candidate) => candidate.key === activeTab)!;
 
   return (
-    <div className="max-w-4xl px-1 py-2 sm:px-2 sm:py-3">
-      {/* Header — thème clair (lisible sur fond AppShell) */}
-      <div className="mb-8">
+    <div className="max-w-6xl px-1 py-2 sm:px-2 sm:py-3">
+      <div className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="max-w-2xl">
           <p className="mb-2 text-xs font-semibold uppercase tracking-[0.22em] text-[#006596]">
-            Inbox
+            Inbox Setter
           </p>
           <h1 className="font-flinty text-3xl font-extrabold tracking-tight text-black">
             Conversations
           </h1>
-        </div>
-        <div className="mt-3">
-          <p className="text-sm text-muted-foreground sm:text-base">
-            Vue centralisée de toutes les interactions leads.
+          <p className="mt-3 text-sm text-muted-foreground sm:text-base">
+            Validation des réponses email générées par le Setter avant passage à WF8.
           </p>
         </div>
+        <InboxSummaryCounters initialCounts={counts} campaignId={campaign_id} />
       </div>
 
-      {/* Tabs */}
-      <div className="mb-4 flex items-center gap-1 border-b border-border pb-0">
-        {TABS.map((t) => {
-          const isActive = t.key === activeTab;
+      <div className="mb-4 flex items-center gap-1 border-b border-border">
+        {TABS.map((item) => {
+          const isActive = item.key === activeTab;
           const params = new URLSearchParams();
-          params.set("tab", t.key);
+          params.set("tab", item.key);
           if (campaign_id) params.set("campaign_id", campaign_id);
           return (
             <Link
-              key={t.key}
+              key={item.key}
               href={`/dashboard/inbox?${params.toString()}`}
               className={`relative flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-colors ${
                 isActive
@@ -235,109 +167,178 @@ export default async function InboxPage({
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              {t.label}
-              {counts[t.key] > 0 && (
-                <span
-                  className={`min-w-[18px] rounded-full px-1.5 py-0.5 text-center text-xs font-bold leading-none ${
-                    isActive
-                      ? "bg-[#006596] text-white"
-                      : "bg-muted text-muted-foreground"
-                  }`}
-                >
-                  {counts[t.key]}
+              {item.key === "validate" ? <Bot className="size-4" /> : null}
+              {item.key === "reply" ? <MessageSquareReply className="size-4" /> : null}
+              {item.key === "bookings" ? <CalendarCheck className="size-4" /> : null}
+              {item.label}
+              {counts[item.key] > 0 ? (
+                <span className={isActive ? "rounded-full bg-[#006596] px-1.5 py-0.5 text-xs font-bold leading-none text-white" : "rounded-full bg-muted px-1.5 py-0.5 text-xs font-bold leading-none text-muted-foreground"}>
+                  {counts[item.key]}
                 </span>
-              )}
+              ) : null}
             </Link>
           );
         })}
       </div>
 
-      {/* Campaign filter */}
-      {activeCampaigns.length > 1 && (
+      {campaignFilters.length > 1 ? (
         <div className="mb-5 flex flex-wrap items-center gap-2">
           <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-            Campagne :
+            Campagne
           </span>
-          {[{ campaign_id: "", nom: "Toutes" }, ...activeCampaigns].map((c) => {
-            const isSelected = (campaign_id ?? "") === c.campaign_id;
+          {[{ campaign_id: "", nom: "Toutes" }, ...campaignFilters].map((campaign) => {
+            const selected = (campaign_id ?? "") === campaign.campaign_id;
             const params = new URLSearchParams();
             params.set("tab", activeTab);
-            if (c.campaign_id) params.set("campaign_id", c.campaign_id);
+            if (campaign.campaign_id) params.set("campaign_id", campaign.campaign_id);
             return (
               <Link
-                key={c.campaign_id || "all"}
+                key={campaign.campaign_id || "all"}
                 href={`/dashboard/inbox?${params.toString()}`}
-                className={`rounded-full border px-3 py-1 text-xs transition-colors ${
-                  isSelected
+                className={`rounded-md border px-3 py-1 text-xs transition-colors ${
+                  selected
                     ? "border-[#006596] bg-[#006596]/10 text-[#006596]"
                     : "border-border text-muted-foreground hover:border-[#006596]/40 hover:text-foreground"
                 }`}
               >
-                {c.nom}
+                {campaign.nom}
               </Link>
             );
           })}
         </div>
+      ) : null}
+
+      {activeTab === "validate" && (
+        filteredDrafts.length === 0 ? (
+          <EmptyState label={currentTab.emptyLabel} />
+        ) : (
+          <div className="space-y-4">
+            {filteredDrafts.map((item) => (
+              <section
+                key={item.draft.turn_id}
+                className="grid gap-4 rounded-lg border border-border bg-slate-50 p-4 shadow-sm lg:grid-cols-[minmax(0,1fr)_380px]"
+              >
+                <div className="min-w-0">
+                  <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h2 className="text-base font-bold text-slate-950">
+                          {item.lead.prénom ? `${item.lead.prénom} ` : ""}{item.lead.nom}
+                        </h2>
+                        <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-800">
+                          {item.draft.intent || "intent inconnu"}
+                        </span>
+                      </div>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {item.lead.poste || "Lead"} · {item.campaign.nom} · {relativeDate(item.draft.sent_at)}
+                      </p>
+                    </div>
+                    <Link
+                      href={`/dashboard/campaigns/${item.campaign.campaign_id}/leads/${item.lead.lead_id}`}
+                      className="text-xs font-semibold text-[#006596] hover:underline"
+                    >
+                      Fiche lead
+                    </Link>
+                  </div>
+                  {item.lastProspectTurn ? (
+                    <div className="mb-4 rounded-lg border border-border bg-white p-4">
+                      <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                        Dernier message prospect
+                      </p>
+                      <p className="whitespace-pre-wrap text-sm leading-6 text-slate-900">
+                        {item.lastProspectTurn.content}
+                      </p>
+                    </div>
+                  ) : null}
+                  <ConversationThread turns={item.thread} leadName={getLeadName(item.lead)} />
+                </div>
+                <SetterDraftCard
+                  leadId={item.lead.lead_id}
+                  turn={item.draft}
+                />
+              </section>
+            ))}
+          </div>
+        )
       )}
 
-      {/* List */}
-      {filtered.length === 0 ? (
-        <div className="rounded-xl border border-border bg-card p-8 text-center shadow-sm">
-          <p className="text-sm text-muted-foreground">{currentTab.emptyLabel}</p>
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {filtered.map((item) => {
-            const badge = STATUS_BADGE[item.inbox_status];
-            return (
-              <Link
-                key={item.lead_id}
-                href={`/dashboard/campaigns/${item.campaign_id}/leads/${item.lead_id}`}
-                className="group flex items-center justify-between rounded-xl border border-border bg-card px-5 py-4 shadow-sm transition-colors hover:border-[#006596]/35"
-              >
-                {/* Left */}
-                <div className="flex min-w-0 items-center gap-4">
-                  <span className="shrink-0 text-lg">✉️</span>
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="text-sm font-medium text-foreground transition-colors group-hover:text-[#006596]">
-                        {item.prénom ? `${item.prénom} · ` : ""}{item.nom}
-                      </p>
-                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${badge.classes}`}>
-                        {badge.label}
-                      </span>
-                      {item.has_meeting && (
-                        <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs text-blue-800">
-                          📅 Meeting
-                        </span>
-                      )}
-                    </div>
-                    <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                      {item.poste && `${item.poste} · `}{item.ville}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Right */}
-                <div className="ml-4 flex shrink-0 items-center gap-6 text-right">
+      {activeTab === "reply" && (
+        filteredEscalatedThreads.length === 0 ? (
+          <EmptyState label={currentTab.emptyLabel} />
+        ) : (
+          <div className="space-y-4">
+            {filteredEscalatedThreads.map((item) => (
+              <section key={item.escalatedTurn.turn_id} className="rounded-lg border border-border bg-white p-4 shadow-sm">
+                <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <p className="text-xs text-foreground">{item.last_event_label}</p>
-                    <p className="mt-0.5 text-xs text-muted-foreground">
-                      {relativeDate(item.last_activity_at)}
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h2 className="text-base font-bold text-slate-950">
+                        {getLeadName(item.lead)}
+                      </h2>
+                      <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">
+                        {item.escalatedTurn.intent || "intent inconnu"}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {item.lead.poste || "Lead"} · {item.campaign.nom} · {relativeDate(item.escalatedTurn.sent_at)}
                     </p>
                   </div>
-                  <div className="hidden sm:block">
-                    <p className="text-xs text-muted-foreground">{item.campaign_nom}</p>
-                  </div>
-                  <span className="text-xs text-muted-foreground transition-colors group-hover:text-foreground">
-                    →
+                  <span className="rounded-md border border-amber-200 bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-800">
+                    {getEscalationReason(item.escalatedTurn.validated_by)}
                   </span>
                 </div>
-              </Link>
-            );
-          })}
-        </div>
+                {item.lastProspectTurn ? (
+                  <div className="mb-4 rounded-lg border border-border bg-slate-50 p-4">
+                    <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      Dernier message prospect
+                    </p>
+                    <p className="whitespace-pre-wrap text-sm leading-6 text-slate-900">
+                      {item.lastProspectTurn.content}
+                    </p>
+                  </div>
+                ) : null}
+                <ConversationThread turns={item.thread} leadName={getLeadName(item.lead)} />
+              </section>
+            ))}
+          </div>
+        )
       )}
+
+      {activeTab === "bookings" && (
+        filteredBookings.length === 0 ? (
+          <EmptyState label={currentTab.emptyLabel} />
+        ) : (
+          <div className="space-y-5">
+            {bookingWeeks.map((week) => (
+              <section key={week.label} className="space-y-2">
+                <h2 className="text-sm font-bold text-slate-950">{week.label}</h2>
+                {week.items.map((meeting) => (
+                  <div key={meeting.meeting_id} className="rounded-lg border border-border bg-white px-4 py-3 shadow-sm">
+                    <div className="flex items-center justify-between gap-4">
+                      <div>
+                        <p className="text-sm font-semibold text-slate-950">{meeting.title || "Meeting"}</p>
+                        <p className="text-xs text-muted-foreground">{meeting.attendee_name || meeting.attendee_email}</p>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(meeting.start_at).toLocaleString("fr-FR", { dateStyle: "medium", timeStyle: "short" })}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </section>
+            ))}
+          </div>
+        )
+      )}
+    </div>
+  );
+}
+
+function EmptyState({ label }: { label: string }) {
+  return (
+    <div className="rounded-lg border border-border bg-white p-8 text-center shadow-sm">
+      <Inbox className="mx-auto mb-3 size-5 text-muted-foreground" />
+      <p className="text-sm text-muted-foreground">{label}</p>
     </div>
   );
 }

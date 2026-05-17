@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { PanelLeftClose, PanelLeftOpen, Bell } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { AppSidebar, useSidebarState } from "./AppSidebar";
+import { EmailHealthBanner } from "./EmailHealthBanner";
 import { Button } from "@/components/ui/button";
 
 interface AppShellProps {
@@ -127,6 +128,7 @@ export function AppShell({ title, eyebrow, description, actions, children }: App
 
         {/* Scroll area */}
         <main className="relative flex-1 overflow-y-auto">
+          <EmailHealthBanner />
           <div className="pointer-events-none absolute inset-x-0 top-0 h-64 bg-gradient-glow opacity-60" />
           <motion.div
             key={meta.title}

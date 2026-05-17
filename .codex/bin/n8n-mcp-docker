@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+PROJECT_ROOT="/Users/callendreau/Dev/Flinty"
+ENV_FILE="$PROJECT_ROOT/.env.local"
+N8N_MCP_BIN="$PROJECT_ROOT/.codex/mcp/n8n/node_modules/.bin/n8n-mcp"
+
+if [[ -f "$ENV_FILE" ]]; then
+  set -a
+  # shellcheck disable=SC1090
+  source "$ENV_FILE"
+  set +a
+fi
+
+if [[ -z "${N8N_API_KEY:-}" ]]; then
+  echo "N8N_API_KEY is missing. Add it to $ENV_FILE or export it before starting Codex." >&2
+  exit 1
+fi
+
+export N8N_API_URL="${N8N_API_URL:-${N8N_STAGING_URL:-https://staging-n8n.kamesai.com}}"
+export N8N_API_KEY
+
+if [[ ! -x "$N8N_MCP_BIN" ]]; then
+  echo "n8n-mcp is missing. Run: npm install n8n-mcp@2.51.3 --prefix $PROJECT_ROOT/.codex/mcp/n8n" >&2
+  exit 1
+fi
+
+exec "$N8N_MCP_BIN"

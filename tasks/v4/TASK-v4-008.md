@@ -1,65 +1,84 @@
-# Task v4-008 : Route `/api/calendly/webhook` — invitee.created → tab Meetings
-**Status**: ⬜ À faire
+# Task v4-008 : Cron polling Calendly → tab Meetings
+**Status**: 🚧 Partiel — 2026-05-17 (code + tests + build OK ; smoke Calendly/Sheets réel restant)
 
 ## Autonomie
-🤖 **Claude 100%** — route Next.js + tests Vitest (TDD).
+🤖 **Claude 100%** — route Next.js cron + tests Vitest (TDD).
 
 ## Context
-Quand un prospect cliqueun créneau Calendly et confirme la réunion, Calendly envoie un webhook `invitee.created`. Ce webhook doit écrire dans le tab `Meetings` du GSheet enfant et passer le lead en statut `booked`.
+Plan Calendly gratuit = pas de webhooks. Approche retenue : **polling toutes les 5 minutes** via Vercel Cron.
+La route vérifie les `scheduled_events` récents, détecte les nouveaux meetings, écrit dans tab `Meetings` + passe lead en `booked`.
 
-**Références** : PRD-v4 F3 · ARCHI-v4 §API Routes v4
+**Références** : PRD-v4 F3 · ARCHI-v4 §API Routes v4 · v4-001 (décision polling 2026-05-13)
 
 ## Objective
-Route `/api/calendly/webhook` POST qui reçoit, valide et traite `invitee.created` → tab Meetings + lead.statut=booked.
+Cron `/api/calendly/poll` qui détecte nouveaux meetings Calendly (fenêtre glissante 10min) → tab Meetings + lead.statut=booked.
 
 ## Requirements
 
 ### Must Have
-- [ ] `POST /api/calendly/webhook` — vérifie signature HMAC-SHA256 Calendly (`calendly-webhook-signature` header)
-- [ ] Parse event : `event_type`, `payload.invitee.email`, `payload.event.start_time`, `payload.event.uri`
-- [ ] Résout `lead_id` via Index (cherche email dans Leads_Qualified des enfants actifs)
-- [ ] Écrit row dans tab `Meetings` de l'enfant : `{meeting_id: uuid, lead_id, calendly_uri, start_at, event_type, booked_via: 'setter', status: 'booked'}`
-- [ ] Update `Leads_Qualified` : `statut = booked`
-- [ ] Retourne 200 OK immédiatement (Calendly attend réponse < 5s)
-- [ ] Idempotent : si `calendly_uri` déjà en base → no-op (évite double-write si retry)
-- [ ] Tests Vitest : payload valide (vérifie écriture Meetings), signature invalide (403), duplicate (no-op)
+- [x] `GET /api/calendly/poll` sécurisée par `CRON_SECRET` header (Vercel Cron l'envoie automatiquement)
+- [x] Appel `GET /scheduled_events` avec `min_start_time = now-10min`, `max_start_time = now+30days`, `status=active`, `user=$CALENDLY_USER_URI`
+- [x] Pour chaque event : récupérer invitees via `GET /scheduled_events/{uuid}/invitees`
+- [x] Résout `lead_id` via Index (cherche email invitee dans Leads_Qualified des enfants actifs)
+- [x] Écrit row dans tab `Meetings` de l'enfant : `{meeting_id, lead_id, calendly_uri, start_at, event_type, booked_via: 'setter', status: 'booked'}`
+- [x] Update `Leads_Qualified` : `statut = booked` (implémenté sur colonne existante `statut_email`, fallback header `statut` si présent)
+- [x] Idempotent : si `calendly_uri` déjà en base → no-op
+- [x] `vercel.json` ou `vercel.ts` : cron `*/5 * * * *` → `/api/calendly/poll`
+- [x] Tests Vitest : nouvel event (écrit Meetings), event déjà connu (no-op), 0 event (pas d'erreur)
 
 ### Must NOT
-- Ne pas faire de lourds appels GSheets synchrones avant de répondre 200 — écrire en background si nécessaire
-- Ne pas logger le contenu du payload invitee en clair (PII)
+- Ne pas logger email invitee en clair (PII)
+- Ne pas exposer la route sans vérification `CRON_SECRET`
 
 ## Technical Approach
 
 ```typescript
-// app/api/calendly/webhook/route.ts
-import { verifyWebhookSignature } from '@/lib/calendly'
-
-export async function POST(request: Request) {
-  const body = await request.text()
-  const sig = request.headers.get('calendly-webhook-signature') ?? ''
-
-  if (!verifyWebhookSignature(body, sig, process.env.CALENDLY_WEBHOOK_SECRET!)) {
-    return new Response('Unauthorized', { status: 403 })
+// app/api/calendly/poll/route.ts
+export async function GET(request: Request) {
+  if (request.headers.get('authorization') !== `Bearer ${process.env.CRON_SECRET}`) {
+    return new Response('Unauthorized', { status: 401 })
   }
 
-  const event = JSON.parse(body)
-  if (event.event !== 'invitee.created') return new Response('OK') // ignore autres events
+  const since = new Date(Date.now() - 10 * 60 * 1000).toISOString()
+  const events = await fetchCalendlyEvents(since)
 
-  // Process async
-  void processCalendlyBooking(event.payload)
-  return new Response('OK')
+  for (const event of events) {
+    await processBookingIfNew(event) // idempotent
+  }
+
+  return Response.json({ processed: events.length })
 }
 ```
 
+```json
+// vercel.json
+{
+  "crons": [{ "path": "/api/calendly/poll", "schedule": "*/5 * * * *" }]
+}
+```
+
+Variable à ajouter : `CRON_SECRET` (Vercel l'injecte automatiquement sur les projets liés).
+
 ## Acceptance Criteria
-- [ ] `npm run test` — tests route webhook passent
-- [ ] Signature invalide → 403 immédiat
-- [ ] Payload `invitee.created` → row écrite dans Meetings + lead.statut=booked
-- [ ] Deuxième envoi même `calendly_uri` → no-op (idempotent)
-- [ ] Route répond 200 en <500ms
+- [x] `npm run test` — tests polling passent
+- [ ] Cron déclenché → row écrite dans Meetings + lead.statut=booked
+- [x] Deuxième déclenchement même event → no-op
+- [x] Route répond 401 sans `CRON_SECRET`
+
+## Avancement
+
+### 2026-05-17 — Code cron polling livré
+
+- ✅ Ajout `lib/calendly-poll.ts` : fenêtre glissante 10 min, résolution invitee email → lead actif via Index, idempotence `calendly_uri`, écriture `Meetings!A:G`, update statut lead.
+- ✅ Extension `lib/calendly.ts` : `fetchCalendlyScheduledEvents()`, `fetchCalendlyEventInvitees()`, extraction UUID event.
+- ✅ Ajout route `GET /api/calendly/poll` sécurisée par `Authorization: Bearer $CRON_SECRET`.
+- ✅ Ajout `vercel.json` cron `*/5 * * * *`.
+- ✅ Tests ajoutés : route 401/OK, nouvel event, event déjà connu, 0 event, récupération invitees.
+- ✅ Preuves : `npm run test` → 67 fichiers / 345 tests passés ; `npm run build` → OK.
+- ⬜ Reste : smoke réel staging avec Calendly + GSheet enfant pour valider l'écriture live et la valeur de statut attendue côté feuille.
 
 ## Dependencies
-**Blocked By**: v4-002 (tab Meetings doit exister), v4-006 (verifyWebhookSignature)
+**Blocked By**: v4-002 (tab Meetings), v4-006 (`lib/calendly.ts`)
 
 ## Complexity & Estimates
 Medium · 2h · Risk: Low

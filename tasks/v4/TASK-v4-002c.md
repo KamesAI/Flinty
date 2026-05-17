@@ -1,5 +1,5 @@
 # Task v4-002c : WF13 NEW — Email Health Monitor (Resend webhooks + cron 1h + auto-pause + bandeau UI)
-**Status**: ⬜ À faire
+**Status**: ✅ Complété — 2026-05-17
 
 ## Autonomie
 🤖 **Claude 100%** — n8n via MCP + code route Next.js + composant UI.
@@ -16,22 +16,22 @@ WF13 opérationnel sur n8n staging : reçoit bounced/complained → update Email
 
 ### Must Have
 **WF13 n8n** :
-- [ ] Trigger 1 : Webhook `POST /flinty-wf13-email-health` — reçoit events Resend `email.bounced` + `email.complained`
-- [ ] Trigger 2 : Cron toutes les heures
-- [ ] Node : lit tab `Email_Health` pour le domaine `outreach.kamesai.com`
-- [ ] Node : calcule `bounce_rate_7d` et `complaint_rate_7d` sur fenêtre glissante 7j
-- [ ] Node : si `bounce_rate_7d > 0.05` → update status `paused_high_bounce`
-- [ ] Node : si `complaint_rate_7d > 0.003` → update status `paused_high_complaint`
-- [ ] Node : si pause → envoie email Thomas (Resend template simple) avec reason + date
-- [ ] Node : update `last_check_at` à chaque run
+- [x] Trigger 1 : Webhook `POST /flinty-wf13-email-health` — reçoit events Resend `email.bounced` + `email.complained`
+- [x] Trigger 2 : Cron toutes les heures
+- [x] Node : lit tab `Email_Health` pour le domaine `outreach.kamesai.com`
+- [x] Node : calcule `bounce_rate_7d` et `complaint_rate_7d` sur fenêtre glissante 7j
+- [x] Node : si `bounce_rate_7d > 0.05` → update status `paused_high_bounce`
+- [x] Node : si `complaint_rate_7d > 0.003` → update status `paused_high_complaint`
+- [x] Node : si pause → envoie email Thomas (Resend template simple) avec reason + date
+- [x] Node : update `last_check_at` à chaque run
 
 **Dashboard UI** :
-- [ ] Composant `<EmailHealthBanner>` : bandeau rouge en haut du dashboard si `email_health.status != 'active'`
-- [ ] Affiche reason + date pause + lien vers Email_Health tab
-- [ ] Disparaît automatiquement si status repasse à `active`
+- [x] Composant `<EmailHealthBanner>` : bandeau rouge en haut du dashboard si `email_health.status != 'active'`
+- [x] Affiche reason + date pause + lien vers Email_Health tab
+- [x] Disparaît automatiquement si status repasse à `active`
 
 **Route API** :
-- [ ] `GET /api/email-health` — lit tab Email_Health Index → retourne status courant (pour polling UI)
+- [x] `GET /api/email-health` — lit tab Email_Health Index → retourne status courant (pour polling UI)
 
 ### Must NOT
 - Ne pas envoyer l'alerte Thomas à chaque run cron — seulement au moment du passage en pause
@@ -52,11 +52,28 @@ WF13 n8n nodes :
 5. `IF` status changed to paused → `HTTP Request` POST /email (Resend alerte Thomas)
 
 ## Acceptance Criteria
-- [ ] WF13 déclenchable manuellement en staging (test avec faux payload bounce)
-- [ ] Tab Email_Health mis à jour après déclenchement
-- [ ] Si status=paused_high_bounce simulé → email reçu par Thomas
-- [ ] Bandeau `<EmailHealthBanner>` visible sur dashboard quand status paused
-- [ ] Bandeau absent quand status=active
+- [x] WF13 déclenchable manuellement en staging (test avec faux payload bounce)
+- [x] Tab Email_Health mis à jour après déclenchement
+- [x] Si status=paused_high_bounce simulé → email reçu par Thomas
+- [x] Bandeau `<EmailHealthBanner>` visible sur dashboard quand status paused
+- [x] Bandeau absent quand status=active
+
+## Avancement
+
+### 2026-05-17 — Partiel livré via MCP n8n
+- WF13 créé et activé sur n8n staging : `[FLINTY] WF13 - Email Health Monitor` (`ADTlRSIMEKdUR2ls`), webhook `POST /webhook/flinty-wf13-email-health`, cron horaire, read/update `Email_Health`, calcul 7j, auto-pause, alerte Resend seulement sur transition `active` → `paused_*`.
+- Smoke MCP n8n : payload `email.bounced` simulé → exécution `5303` success, `Email_Health` amorcé/pausé en `paused_high_bounce`, Resend a accepté l'alerte (`id` retourné). Exécution `5304` success confirme qu'un second run met à jour sans renvoyer d'alerte.
+- Dashboard : route `GET /api/email-health`, helper Sheets, composant `EmailHealthBanner` pollé toutes les 60s dans `AppShell`.
+- Vérifications : `npm run test` (338 tests), `npm run build`, Playwright local `/dashboard` → bandeau visible quand `status=paused_high_bounce`.
+
+**Reste à confirmer avant ✅** :
+- Confirmé par Thomas le 2026-05-17 : email reçu sur `thomas@kamesai.com` avec objet `Domaine email en pause - paused_high_bounce`.
+- Confirmé par Thomas le 2026-05-17 : webhook Resend réel enregistré vers `https://staging-n8n.kamesai.com/webhook/flinty-wf13-email-health`.
+
+### 2026-05-17 — Done confirmé
+- Réception inbox Thomas confirmée pour l'alerte `paused_high_bounce`.
+- Webhook réel Resend branché sur l'URL WF13 n8n staging.
+- Tous les critères applicables sont cochés ; tâche passée en ✅.
 
 ## Dependencies
 **Blocked By**: v4-002b (pacing email doit exister), v4-000 (domaine Resend prêt)

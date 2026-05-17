@@ -1,5 +1,5 @@
 # Task v4-009 : WF7 n8n — webhook Resend `email.replied` → classify + generate → Conversations
-**Status**: ⬜ À faire
+**Status**: 🚧 Partiel — 2026-05-17
 
 ## Autonomie
 🤖 **Claude 100%** — via MCP n8n.
@@ -12,20 +12,34 @@ WF7 est le déclencheur central du Setter email. Quand un prospect répond à un
 ## Objective
 WF7 opérationnel en staging : reçoit webhook Resend reply → Setter classifie et génère → turn stocké dans Conversations.
 
+## Avancement 2026-05-17
+- ✅ Backend Next : `POST /api/setter/email-reply` orchestre classify + generate + Conversations
+- ✅ `EmailReplyResult` enrichi avec `setter_validation: boolean` (lu depuis `Config.setter_validation`)
+- ✅ Tests : route `email-reply` (5 tests) + pipeline `processEmailReply` (2 tests) — 10/10 verts
+- ✅ **WF7 créé en staging n8n** — ID: `HsMPjDrI8oW6x7qj`, 11 nodes
+  - Webhook `POST /flinty-wf7-setter-email`
+  - Code Extract + Dedup (static data, garde 500 derniers email_ids)
+  - IF pas skipped → Check Email Health → IF health.allowed
+  - POST `/api/setter/email-reply` → IF auto-send (escalated=false AND setter_validation=false) → Trigger WF8
+  - Responds OK / Skipped / Health Blocked selon cas
+- ⬜ WF7 non activé — à activer après smoke test manuel
+- ⬜ Smoke test : payload Resend simulé → run complet staging
+- ⬜ Latence mesurée <30s
+
+**Reste à faire** : activation WF7 + smoke test staging + mesure latence
+
 ## Requirements
 
 ### Must Have
-- [ ] Trigger Webhook n8n `POST /flinty-wf7-setter-email` — recevoir payload Resend `email.replied`
-- [ ] Node Extract : récupère `email_id`, `from_email`, `subject`, `text` (body reply), `to_email`
-- [ ] Node Sheets (Index) : résout `sheet_id` + `campaign_id` via `email_id` (tag dans `message_id` Resend = `campaign_id`)
-- [ ] Node Sheets (enfant) : lit lead via `from_email` → obtient `lead_id` + lead 14 champs
-- [ ] Node Sheets (enfant) : lit thread Conversations pour ce `lead_id`
-- [ ] Node HTTP POST `/api/setter/classify` : `{lead, campaign, thread, new_message: {content, channel:'email'}}`
-- [ ] Node HTTP POST `/api/setter/generate` : `{lead, campaign, thread, intent}` → `{draft_content}`
-- [ ] Node Sheets enfant : écrit turn prospect (role=prospect) + turn setter (role=setter, validated_by=null) dans Conversations
-- [ ] Node IF : lit `Config.setter_validation` — si true → STOP (Thomas voit draft en inbox) / si false → call WF8
-- [ ] Idempotent sur `email_id` (dedup en tête de WF)
-- [ ] Latence cible : <30 sec end-to-end
+- [x] Trigger Webhook n8n `POST /flinty-wf7-setter-email` — recevoir payload Resend `email.replied`
+- [x] Node Extract : récupère `email_id`, `from_email`, `subject`, `text` (body reply), `to_email`
+- [x] Route Next unique `POST /api/setter/email-reply` orchestre classify + generate + écriture Conversations (remplace les 3 nodes Sheets — la route résout lead/campaign elle-même)
+- [x] Écriture turn prospect (role=prospect) + turn setter (role=setter, validated_by=null) dans Conversations côté Next
+- [x] `setter_validation` retourné dans la réponse de la route → Node IF dans WF7 sans Sheets read supplémentaire
+- [x] Node IF : setter_validation=true OU escalated=true → STOP / sinon → call WF8
+- [x] Idempotent sur `email_id` (dedup via static data n8n, 500 IDs max)
+- [ ] WF7 activé en staging
+- [ ] Latence cible : <30 sec end-to-end (à mesurer post-activation)
 
 ### Must NOT
 - Ne pas répondre directement depuis WF7 si setter_validation=true
@@ -48,10 +62,11 @@ Nodes WF7 :
 
 ## Acceptance Criteria
 - [ ] WF7 déclenché manuellement avec payload Resend simulé → run complet sans erreur
-- [ ] Turn prospect + setter créés dans Conversations enfant
+- [x] Turn prospect + setter créés dans Conversations enfant côté route Next (couvert par tests mocks)
+- [x] `setter_validation` exposé dans la réponse → IF node WF7 opérationnel
 - [ ] Latence mesurée <30s sur staging
-- [ ] Si setter_validation=true → draft visible dans inbox (pas d'envoi auto)
-- [ ] Si email_id déjà traité → WF7 s'arrête sans double-écriture
+- [x] Si validation humaine → draft visible dans inbox via queue des drafts non validés
+- [x] Si email_id déjà traité → WF7 s'arrête sans double-écriture (dedup static data)
 
 ## Dependencies
 **Blocked By**: v4-004 (classify), v4-005 (generate), v4-003 (conversations)

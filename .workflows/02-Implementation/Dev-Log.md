@@ -6,7 +6,203 @@
 
 ---
 
+## Session 2026-05-17 — TASK-v4-010 WF8 Setter Send
+
+**Tâches v4 concernées** :
+- `v4-010` 🚧 partiel : WF8 staging créé et actif ; reste smoke réel avec draft staging + email reçu + no-op retry.
+- `v4-009b` 🚧 partiel : health check et délai Gauss intégrés dans WF8 ; reste test réel du blocage health + observation délai en logs.
+
+**n8n staging** :
+- Créé et activé via MCP : `[FLINTY] WF8 - Setter Send` (`CiRWb7R8a6z20rOx`).
+- Webhook : `POST /webhook/flinty-wf8-setter-send`.
+- Flow : normalize payload → read `Conversations` → garde idempotence `validated_by` → read `Leads_Qualified` → `GET /api/email-health` → délai Gauss → Resend send → update `Conversations.validated_by/content/edited_from_draft` → update lead `last_email_sent_at/statut_email`.
+- Branche blocked : si email health `allowed=false`, alerte Thomas via Resend puis réponse 503.
+- `.env.local` local mis à jour avec `N8N_WF8_WEBHOOK` (non committé).
+
+**Vérification** :
+- `n8n_validate_workflow` sur `CiRWb7R8a6z20rOx` → valid=true, 0 erreur.
+- `n8n_get_workflow` minimal → active=true.
+- `npm run test -- 'app/api/replies/[lead_id]/send/route.test.ts'` → 2/2 ✅.
+
+**Reste** :
+- Ajouter/valider `N8N_WF8_WEBHOOK` côté Vercel staging/prod.
+- Smoke réel staging : déclencher avec un vrai `lead_id + turn_id + sheet_id`, vérifier réception email, update `Conversations.validated_by='human'`, puis retry même `turn_id` → no-op.
+
+---
+
+## Session 2026-05-17 — TASK-v4-009 + v4-009b : WF7 Setter Email Reply + Email Health
+
+**Tâches v4 concernées** :
+- `v4-009` 🚧 Partiel : WF7 créé en staging n8n (ID `HsMPjDrI8oW6x7qj`), backend complet ; reste activation + smoke test
+- `v4-009b` 🚧 Partiel : health check WF7 intégré, route `/api/email-health` testée ; WF8 encore à créer
+
+**Changements** :
+- `lib/replies.ts` : ajout `setter_validation: boolean` dans `EmailReplyResult` ; `processEmailReply` retourne `context.config.setter_validation === "true"`
+- `app/api/setter/email-reply/route.test.ts` : mock mis à jour + test `setter_validation: true` ajouté (10/10 tests verts)
+- **n8n WF7** `[FLINTY] WF7 - Setter Email Reply` créé — 11 nodes :
+  1. Webhook `POST /flinty-wf7-setter-email`
+  2. Code Extract + Dedup (static data, 500 IDs max)
+  3. IF pas skipped → Check Email Health `GET /api/email-health`
+  4. IF health.allowed → POST `/api/setter/email-reply`
+  5. IF `escalated=false AND setter_validation=false` → Trigger WF8
+  6. Respond OK / Skipped / Health Blocked selon chemin
+
+**Tests** : `npm run test -- --run app/api/setter/email-reply app/api/email-health lib/replies-pipeline` → 10/10 verts
+
+**Reste** : activer WF7 + smoke test payload Resend simulé + mesurer latence + créer WF8 (v4-010)
+
+---
+
+## Session 2026-05-17 — TASK-v4-008 Cron polling Calendly
+
+**Tâche v4 concernée** :
+- `v4-008` 🚧 partiel : code polling, route cron, cron Vercel et tests livrés ; reste smoke réel Calendly/Sheets staging.
+
+**Changements** :
+- Extension `lib/calendly.ts` : endpoints Calendly `scheduled_events` et `scheduled_events/{uuid}/invitees`, avec fenêtre pilotée par `lib/calendly-poll.ts`.
+- Ajout `lib/calendly-poll.ts` : résolution lead par email invitee dans les enfants actifs, idempotence `calendly_uri`, création/normalisation de l'onglet enfant `Meetings`, append booking v4, passage du statut lead à `booked`.
+- Ajout `app/api/calendly/poll/route.ts` : `GET` sécurisé par `Authorization: Bearer $CRON_SECRET`, réponse JSON de synthèse.
+- Ajout `vercel.json` : cron `*/5 * * * *` vers `/api/calendly/poll`.
+- Ajout tests `lib/calendly-poll.test.ts` et `app/api/calendly/poll/route.test.ts`.
+
+**Vérification** :
+- `npm run test -- lib/calendly-poll.test.ts app/api/calendly/poll/route.test.ts` → 7/7 ✅.
+- `npm run test` → 67 fichiers, 345 tests passés ✅.
+- `npm run build` → OK ✅.
+
+**Reste** :
+- Smoke réel staging : déclencher le cron ou appeler la route avec `CRON_SECRET`, vérifier row `Meetings` enfant et statut lead `booked` dans Sheets.
+
+---
+
 ## Historique
+
+### 2026-05-17 — TASK-v4-002c WF13 Email Health Monitor ✅
+
+**n8n staging**
+- Créé et activé via MCP : `[FLINTY] WF13 - Email Health Monitor` (`ADTlRSIMEKdUR2ls`).
+- Triggers : webhook `POST /webhook/flinty-wf13-email-health` + cron horaire.
+- Flow : read `Email_Events` + `Email_Health`, calcul taux 7j, update `Email_Health`, alerte Resend uniquement sur transition `active` → `paused_*`.
+- Smoke faux bounce : exécutions `5303` et `5304` success ; `Email_Health` mis à jour en `paused_high_bounce`; première alerte acceptée par Resend, second run sans double alerte.
+
+**Dashboard/API**
+| Fichier | Changement |
+|---------|------------|
+| `lib/sheets.ts` | Helpers `getEmailHealthRows()` et `getEmailHealth()` sur tab Index `Email_Health`. |
+| `app/api/email-health/route.ts` | `GET /api/email-health` dynamique, retourne status + `allowed`/`reason`. |
+| `components/layout/EmailHealthBanner.tsx` | Bandeau rouge pollé toutes les 60s, raison + date + lien `Email_Health`. |
+| `components/layout/AppShell.tsx` | Montage global du bandeau en haut du dashboard. |
+| `*.test.ts(x)` | Tests API + helpers du bandeau. |
+
+**Preuves**
+- `npm run test` : 65 fichiers, 338 tests passés.
+- `npm run build` : OK.
+- Playwright local `/dashboard` : bandeau visible pour `paused_high_bounce`; API locale retourne `allowed:false`, `reason:"paused_high_bounce"`.
+
+**Confirmation finale**
+- Thomas a confirmé la réception sur `thomas@kamesai.com` de l'email `Domaine email en pause - paused_high_bounce`.
+- Thomas a confirmé l'enregistrement du webhook réel Resend vers l'URL WF13 n8n staging.
+- `tasks/v4/TASK-v4-002c.md` et `tasks/v4/TASKS.md` passés en ✅.
+
+### 2026-05-17 — Cohérence suivi tâches done
+
+**Tâches v4 concernées** :
+- `v4-002b`, `v4-003`, `v4-004`, `v4-005`, `v4-006`, `v4-007`, `v4-017` : correction documentaire des checkboxes `Requirements` et `Acceptance Criteria` déjà livrés.
+
+**Changements** :
+- Renforcement de la règle dans `AGENTS.md` et `CLAUDE.md` : une tâche en `✅` doit avoir toutes les cases applicables cochées ; sinon elle reste `🚧 Partiel`.
+- Mise en cohérence des fichiers unitaires des tâches déjà marquées done mais avec 0 requirement coché.
+
+**Vérification** :
+- Relecture documentaire ciblée ; aucun changement code.
+
+---
+
+### 2026-05-17 — Migration GSheets v4 exécutée — TASK-v4-002 ✅
+
+**Script** : `scripts/migrate-sheets-v4.ts` — idempotent, exécuté sur 5 feuilles enfant.
+
+#### Résultat
+- Index : `Email_Health` + `Accounts` présents, `Campagnes` +4 colonnes v4 confirmées
+- 5 enfants : `Conversations`, `Meetings`, cols `Leads_Qualified` v4, clés `Config` v4 — tous ✓ no-op (déjà en place)
+- Script idempotent validé : 2e run = zéro doublon
+
+#### Attention
+Les 5 feuilles enfant pointent vers le **même** `sheet_id` dans l'Index — probable données de staging/test. À vérifier dans GSheet avant création campagnes réelles.
+
+---
+
+### 2026-05-17 — Architecture GSheets corrigée + TASK-v4-002 recalibré (🚧)
+
+**328 tests Vitest — zéro régression.**
+
+#### Problème résolu
+`createChildGSheet()` ajoutait des onglets préfixés (`cmp_xxx_Raw/Qualified/…`) dans un fichier GSheet partagé (`GOOGLE_CAMPAIGNS_SHEET_ID`), rendant la structure ingérable dès plusieurs campagnes volumineuses. L'ARCHI-v4 prévoit 1 fichier GSheet dédié par campagne.
+
+#### Fichiers modifiés
+| Fichier | Changement |
+|---------|------------|
+| `lib/sheets.ts` | `createChildGSheet()` : crée un nouveau fichier via `sheets.spreadsheets.create()` (6 onglets sans préfixe : `Leads_Raw`, `Leads_Qualified` 32 cols, `Leads_Rejected`, `Config` v4, `Conversations`). Drive scope `drive.file` ajouté. `getDrive()` exporté. `updateConfigValue()` : try `Config` d'abord, fallback `{id}_Config` legacy. Export `CHILD_QUALIFIED_HEADER` (32 cols) et `CHILD_CONVERSATIONS_HEADER`. |
+| `lib/sheets.test.ts` | **Créé** — 22 tests sur parsers purs, constantes v4, helpers A1, `isUnableToParseRangeError`. |
+| `tasks/v4/TASK-v4-002.md` | Status ✅ → 🚧 Partiel. Cases cochées : Leads_Qualified v4, Conversations, Config v4, Meetings. Reste : Index tabs Email_Health/Accounts/+4 cols Campagnes + script migration campagnes existantes. |
+| `tasks/v4/TASKS.md` | v4-002 : ✅ → 🚧 |
+
+#### Ce qui reste pour clore v4-002
+- Script migration `scripts/migrate-sheets-v4.ts` (idempotent) pour campagnes existantes
+- Index : tab `Email_Health` + tab `Accounts` + +4 colonnes sur `Campagnes`
+
+#### Onglets orphelins
+Les onglets `cmp_abjpc93l_Raw/Qualified/Rejected/Config` dans "Campaigns Data" sont des artefacts de l'ancienne impl. Non utilisés par le nouveau code. À nettoyer manuellement si besoin.
+
+---
+
+### 2026-05-14 — Goal 1 : Setter Engine complet ✅ (v4-002 → v4-007 + v4-017)
+
+**290 tests Vitest — zéro régression.**
+
+#### Fichiers créés
+| Fichier | Description |
+|---------|-------------|
+| `lib/conversations.ts` | Read/append turns cross-canal (tab Conversations GSheet enfant). `getConversationThread`, `appendConversationTurn`, `validateConversationTurn`. Lazy ensure de l'onglet. |
+| `lib/conversations.test.ts` | 6 tests — parse, format, edge cases |
+| `lib/pacing.ts` | Engine pacing email : Gauss Box-Muller (µ=8min σ=3min), `isWithinHumanHours` (Paris CEST), ramp-up 5→10→15→20, `checkEmailHealth`, `computeEmailHealthStatus`. Types `EmailHealthRow`. |
+| `lib/pacing.test.ts` | 19 tests — human hours, Gauss, ramp-up, email health parse/check |
+| `lib/calendly.ts` | Client Calendly v2 : `getAvailableSlots` (+14j), `parseCalendlySlots`, `formatSlotsNatural` (fr-FR), `verifyCalendlyWebhookSignature` (HMAC SHA-256). |
+| `lib/calendly.test.ts` | 5 tests — parse slots, format naturel |
+| `lib/setter.ts` | Module central AI Setter : `buildConversationContext`, `buildSystemPrompt` (Voss mirroring + No-Oriented Questions + ≤120 mots), `classifyIntent` (Sonnet 4.6 JSON + prompt caching), `generateResponse` (Opus 4.6 fallback sur objection_trust, tool call `get_calendly_slots` si meeting_ready), `runSetterPipeline`, détection `isAiQuestion` (EU AI Act art. 50). |
+| `lib/setter.test.ts` | 26 tests — parse intent, shouldEscalate, isAiQuestion, routeIntent, buildContext, buildSystemPrompt |
+| `app/api/setter/classify/route.ts` | `POST /api/setter/classify` — Zod validation, classifyIntent, EU AI Act flag |
+| `app/api/setter/generate/route.ts` | `POST /api/setter/generate` — Zod validation, generateResponse |
+| `app/api/calendly/slots/route.ts` | `GET /api/calendly/slots?event_type_uri=...&format=natural&count=3` |
+| `scripts/migrate-sheets-v4.ts` | Script idempotent : ajoute onglets Email_Health, Accounts, Conversations, Meetings + colonnes Campagnes v4 + colonnes Leads_Qualified v4 + clés Config. `npx tsx scripts/migrate-sheets-v4.ts` |
+
+#### Extend lib/types.ts
+Ajout types v4 : `IntentLabel`, `ConversationTurn`, `ConversationChannel`, `ConversationRole`, `EmailHealth`, `MeetingV4`, `CampaignConfig`, `CampaignV4`, `IntentResult`, `CalendlySlot`, `PacingCheckResult`.
+
+#### Extend lib/sheets.ts
+`ensureEmailHealthSheet()` + `appendToChildSheet(spreadsheetId, range, values)`.
+
+#### Install
+`@anthropic-ai/sdk@^0.96.0` ajouté (SDK Anthropic direct — pas OpenRouter pour le Setter).
+
+#### Prompt caching Setter
+System prompt + contexte campagne cachés (`cache_control: ephemeral`) → ~70% tokens économisés sur appels classify + generate répétés pour une même campagne.
+
+#### Choix architecturaux
+- Setter utilise `@anthropic-ai/sdk` direct (pas AI SDK Vercel) — spécifié dans ARCHI-v4
+- Fallback Opus 4.6 uniquement sur `objection_trust` (confiance la plus coûteuse à regagner)
+- `isAiQuestion` détecte patterns FR/EN avant classify — forced escalade si match (EU AI Act art. 50)
+- `checkEmailHealth` retourne `{ allowed, reason }` — WF7/WF8 consultent avant chaque envoi
+
+---
+
+### 2026-05-13 — v4-001 : Calendly PAT + env vars ✅
+
+- PAT Calendly créé (token "Flinty", scopes complets)
+- Event type : "30 Minute Meeting" (`calendly.com/kames-ai/30min`)
+- URIs récupérées via API : `event_types/0b5bf64b...`, `users/fd8f203d...`
+- **Approche polling** retenue (webhooks = plan Standard payant) — Vercel Cron toutes les 5min (implémenté en v4-008)
+- Variables ajoutées dans `.env.local` + Vercel staging + prod : `CALENDLY_TOKEN`, `CALENDLY_EVENT_TYPE_URI`, `CALENDLY_USER_URI`
 
 ### 2026-05-04 — Intégration marketingskills (vendor + hub)
 
@@ -342,3 +538,54 @@ curl -X POST https://staging-n8n.kamesai.com/webhook/flinty-wf1-launch \
 | `oCViFcjPo2nNUjlR` | WF4 - Webhooks Resend | ✅ Actif staging |
 | `7re2WS3ghacqHsLE` | WF5 - Relances Auto | ✅ Actif staging |
 | `oWm8alnIlzS9UCTd` | WF6 - Stats | ✅ Actif staging |
+## Session 2026-05-15 — Setter Email MVP backend + inbox
+
+**Tâches v4 concernées** :
+- `v4-009` 🚧 partiel : route Next `POST /api/setter/email-reply` prête pour WF7 ; workflow n8n non créé.
+- `v4-010` 🚧 partiel : route `/api/replies/[lead_id]/send` déclenche `N8N_WF8_WEBHOOK` ; workflow n8n WF8 non créé.
+- `v4-011` 🚧 partiel : routes replies GET/send/escalate + tests ; reste update `Leads_Qualified.setter_action`.
+- `v4-012` 🚧 partiel : inbox 3 tabs + queue drafts + bookings ; reste vraie tab escalades/polling/groupement semaine.
+- `v4-013` 🚧 partiel : `ConversationThread` intégré ; reste badges canal/dates/accessibilité complète.
+- `v4-014` 🚧 partiel : `SetterDraftCard` éditer/envoyer/escalader ; reste diff avancé/modal/raccourcis.
+
+**Changements** :
+- Ajout `lib/replies.ts` : résolution lead/campagne, lecture Config, process reply → turn prospect + turn Setter, queue drafts, send/escalate.
+- Ajout routes :
+  - `POST /api/setter/email-reply`
+  - `GET /api/inbox/summary`
+  - `GET /api/replies/[lead_id]`
+  - `POST /api/replies/[lead_id]/send`
+  - `POST /api/replies/[lead_id]/escalate`
+- Refonte `app/dashboard/inbox/page.tsx` + nouveaux composants `ConversationThread` et `SetterDraftCard`.
+- Ajout tests Vitest routes replies, route email-reply, helpers replies, pipeline reply→draft mocké, inbox.
+
+**Vérification** :
+- `npm run test` → 60 fichiers, 307 tests passés.
+- `npm run build` → OK.
+- `HEAD /dashboard/inbox` en local → 200 OK.
+
+---
+
+## Session 2026-05-17 — Inbox Setter frontend finalisée
+
+**Tâches v4 concernées** :
+- `v4-012` ✅ : tabs inbox finalisés avec escalades, bookings par semaine et polling compteurs 60s.
+- `v4-013` ✅ : timeline cross-canal accessible avec badges email/linkedin, dates relatives et auto-scroll.
+- `v4-014` ✅ : card draft Setter avec diff, raccourcis clavier, reasoning/confidence et confirmation escalade.
+
+**Changements** :
+- Ajout `listEscalatedSetterThreads()` dans `lib/replies.ts` pour alimenter l'onglet `À répondre`.
+- Mise à jour `app/api/inbox/summary/route.ts` : compte `to_validate`, `to_reply`, `bookings`, filtre `campaign_id`.
+- Mise à jour `app/dashboard/inbox/page.tsx` : rendu des escalades, raison d'escalade, groupement weekly bookings, couleurs `hsl(var(--primary))`.
+- Ajout `app/dashboard/inbox/InboxSummaryCounters.tsx` : polling client-side toutes les 60s.
+- Enrichissement `ConversationThread.tsx` : `role="feed"`, aria labels, badges canal, human/draft styling, dates relatives, scroll automatique.
+- Enrichissement `SetterDraftCard.tsx` : props `turn`, intent/confidence/reasoning, diff jaune, Enter/Escape, modal confirmation escalade, état `Envoyé ✓`.
+- Ajout tests `ConversationThread.test.tsx` et `SetterDraftCard.test.tsx`; extension `page.test.tsx` pour reply/bookings.
+
+**Vérification** :
+- `npm run test -- app/dashboard/inbox/page.test.tsx app/dashboard/inbox/ConversationThread.test.tsx app/dashboard/inbox/SetterDraftCard.test.tsx` → 7/7 ✅.
+- `npm run test` → 63 fichiers, 332 tests passés ✅.
+- `npm run build` → OK ✅.
+- Playwright headless local : `/dashboard/inbox`, `/dashboard/inbox?tab=reply`, `/dashboard/inbox?tab=bookings` → 200 OK ✅.
+
+---
