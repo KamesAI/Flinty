@@ -6,6 +6,7 @@ import { PanelLeftClose, PanelLeftOpen, Bell } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { AppSidebar, useSidebarState } from "./AppSidebar";
 import { EmailHealthBanner } from "./EmailHealthBanner";
+import { LIHealthBanner } from "./LIHealthBanner";
 import { Button } from "@/components/ui/button";
 
 interface AppShellProps {
@@ -55,6 +56,22 @@ export function resolveShellMeta(pathname: string, title?: string, eyebrow?: str
   if (pathname.startsWith("/dashboard/templates")) {
     return {
       title: "Studio emailing",
+      eyebrow: "Configuration",
+      showPageHeader: false,
+    };
+  }
+
+  if (pathname.startsWith("/dashboard/settings/calendly")) {
+    return {
+      title: "Calendly",
+      eyebrow: "Configuration",
+      showPageHeader: false,
+    };
+  }
+
+  if (pathname.startsWith("/dashboard/settings/linkedin")) {
+    return {
+      title: "LinkedIn",
       eyebrow: "Configuration",
       showPageHeader: false,
     };
@@ -129,6 +146,7 @@ export function AppShell({ title, eyebrow, description, actions, children }: App
         {/* Scroll area */}
         <main className="relative flex-1 overflow-y-auto">
           <EmailHealthBanner />
+          <LIHealthBanner />
           <div className="pointer-events-none absolute inset-x-0 top-0 h-64 bg-gradient-glow opacity-60" />
           <motion.div
             key={meta.title}

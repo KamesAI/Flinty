@@ -44,6 +44,14 @@ describe("resolveShellMeta", () => {
     });
   });
 
+  it("masque l'en-tete shell sur les settings Calendly", () => {
+    expect(resolveShellMeta("/dashboard/settings/calendly/connect")).toEqual({
+      title: "Calendly",
+      eyebrow: "Configuration",
+      showPageHeader: false,
+    });
+  });
+
   it("masque l'en-tete shell sur Messagerie (en-tete dans la page)", () => {
     expect(resolveShellMeta("/dashboard/inbox")).toEqual({
       title: "Conversations",

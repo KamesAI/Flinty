@@ -5,6 +5,8 @@ import {
   buildSystemPrompt,
   shouldEscalate,
   isAiQuestion,
+  detectsAIQuestion,
+  appendAIDisclosure,
   routeIntent,
   type SetterContext,
 } from "./setter";
@@ -97,9 +99,37 @@ describe("isAiQuestion", () => {
     expect(isAiQuestion("Parlez-vous à un robot ?")).toBe(true);
   });
 
+  it("expose detectsAIQuestion avec 5 vrais positifs FR/EN", () => {
+    expect(detectsAIQuestion("Êtes-vous une IA ?")).toBe(true);
+    expect(detectsAIQuestion("Are you an AI or a real person?")).toBe(true);
+    expect(detectsAIQuestion("Vous êtes un robot ?")).toBe(true);
+    expect(detectsAIQuestion("bot ?")).toBe(true);
+    expect(detectsAIQuestion("c'est automatique ?")).toBe(true);
+  });
+
   it("ne fausse pas sur message normal", () => {
     expect(isAiQuestion("Bonjour, intéressé par votre offre")).toBe(false);
     expect(isAiQuestion("Quel est votre tarif ?")).toBe(false);
+  });
+
+  it("garde 3 faux négatifs vérifiés", () => {
+    expect(detectsAIQuestion("On utilise déjà de l'IA en interne.")).toBe(false);
+    expect(detectsAIQuestion("Votre automatisation peut aider notre équipe ?")).toBe(false);
+    expect(detectsAIQuestion("Je peux parler à Thomas demain ?")).toBe(false);
+  });
+});
+
+describe("appendAIDisclosure", () => {
+  it("ajoute le disclaimer EU AI Act avec la signature", () => {
+    const result = appendAIDisclosure("Bien reçu, je vous propose mardi.", "Thomas");
+    expect(result).toContain("Bien reçu");
+    expect(result).toContain("assistant IA");
+    expect(result).toContain("validée par Thomas");
+  });
+
+  it("n'ajoute pas deux fois le disclaimer", () => {
+    const draft = "Réponse.\n\n— Cette réponse a été préparée par un assistant IA et validée par Thomas.";
+    expect(appendAIDisclosure(draft, "Thomas")).toBe(draft);
   });
 });
 
@@ -159,6 +189,7 @@ describe("buildConversationContext", () => {
       offre_kames: "Automatisation IA pour PME",
       secteur: "Immobilier",
       localisation: "Paris",
+      workspace_id: "workspace-a",
       setter_tone: "formal",
       setter_signature: "Thomas Callendreau, Kames AI",
       icp_md: "**ICP** : Directeurs PME 5–20p cherchant à automatiser",

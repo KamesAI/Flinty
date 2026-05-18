@@ -23,6 +23,16 @@ vi.mock("@/lib/sheets", () => ({
   readIndex: vi.fn(),
 }));
 
+vi.mock("@/lib/replies", () => ({
+  readCampaignConfig: vi.fn(async () => ({})),
+}));
+
+vi.mock("@/components/linkedin/LinkedInSourcingPanel", () => ({
+  LinkedInSourcingPanel: ({ sourcedCount }: { sourcedCount: number }) => (
+    <div data-testid="li-sourcing">li={sourcedCount}</div>
+  ),
+}));
+
 vi.mock("./ActionButtons", () => ({
   ActionButtons: () => <div data-testid="action-buttons" />,
 }));
@@ -70,6 +80,6 @@ describe("CampaignDetailPage", () => {
 
     expect(html).toContain("Sites web artisans Bordeaux");
     expect(html).toContain("leads=0");
-    expect(readChildSheet).toHaveBeenNthCalledWith(2, "sheet-id", "Leads_Qualified!A2:S");
+    expect(readChildSheet).toHaveBeenNthCalledWith(2, "sheet-id", "Leads_Qualified!A2:AG");
   });
 });

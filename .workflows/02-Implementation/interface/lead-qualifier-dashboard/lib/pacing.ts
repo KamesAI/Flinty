@@ -1,4 +1,5 @@
 import type { PacingCheckResult } from "./types";
+import type { LIAccountStatus } from "./unipile";
 
 // ——— Constants ———
 
@@ -136,6 +137,69 @@ export function checkEmailHealth(
 
   return { allowed: true };
 }
+
+// ——— LinkedIn pacing ———
+
+export const LI_CAP_WEEKLY = 100;
+export const LI_CAP_DAILY_MAX = 20;
+
+const LI_RAMP_DAILY = [5, 10, 15, 20] as const;
+
+const LI_ACTIVE_STATUSES: LIAccountStatus[] = ["OK"];
+
+/** Cap journalier LinkedIn selon semaine de ramp-up (0-indexed). */
+export function getLIRampUpCap(weekIndex: number): number {
+  const idx = Math.min(weekIndex, LI_RAMP_DAILY.length - 1);
+  return LI_RAMP_DAILY[idx];
+}
+
+/**
+ * Vérifie si le compte LinkedIn peut envoyer une invitation maintenant.
+ * Cap hebdomadaire 100 est HARD — non-overridable.
+ *
+ * @param accountStatus — statut Unipile du compte LI
+ * @param sentToday — invitations envoyées aujourd'hui
+ * @param sentThisWeek — invitations envoyées cette semaine (lun–dim)
+ * @param weekIndex — semaine depuis le début du ramp-up (0-indexed)
+ * @param capDailyOverride — cap journalier custom (défaut: ramp-up par semaine)
+ */
+export function checkLIHealth(
+  accountStatus: LIAccountStatus,
+  sentToday: number,
+  sentThisWeek: number,
+  weekIndex: number,
+  capDailyOverride?: number
+): PacingCheckResult {
+  if (!LI_ACTIVE_STATUSES.includes(accountStatus)) {
+    return { allowed: false, reason: "li_account_paused" };
+  }
+
+  if (sentThisWeek >= LI_CAP_WEEKLY) {
+    return { allowed: false, reason: "cap_weekly_li" };
+  }
+
+  const capDaily = capDailyOverride ?? getLIRampUpCap(weekIndex);
+  if (sentToday >= capDaily) {
+    return { allowed: false, reason: "cap_daily_li" };
+  }
+
+  return { allowed: true };
+}
+
+/** Gauss typing delay LI : µ=5s σ=2s, minimum 2s. */
+export function sampleLITypingDelay(): number {
+  return Math.max(2, sampleGaussDelay(5, 2));
+}
+
+/**
+ * 60% des invitations incluent une note personnalisée, 40% sans.
+ * Basé sur le compteur journalier pour une distribution stable.
+ */
+export function shouldIncludeNote(sentTodayIndex: number): boolean {
+  return (sentTodayIndex % 10) < 6;
+}
+
+// ——— Email health status ———
 
 /**
  * Calcule le nouveau status Email_Health basé sur les taux.

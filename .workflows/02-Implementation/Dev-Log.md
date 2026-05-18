@@ -6,6 +6,162 @@
 
 ---
 
+## Session 2026-05-18 — TASK-v4-031 OAuth Calendly v2 multi-workspace ✅
+
+**Tâche v4 concernée** :
+- `v4-031` ✅ : flow OAuth Calendly v2, tokens par workspace, event types multi-tenant, fallback PAT.
+
+**Changements** :
+- `lib/calendly.ts` : OAuth URL, token exchange, refresh token, `getCalendlyToken(workspaceId)`, `listCalendlyEventTypes`, `getAvailableSlots(..., workspaceId)`.
+- `lib/sheets.ts` : `Accounts` Calendly (`access_token`, `refresh_token`, `token_expires_at`) + `Workspaces.default_calendly_event_uri`.
+- Routes :
+  - `GET /api/calendly/auth/initiate`
+  - `GET /api/calendly/auth/callback`
+  - `GET /api/calendly/event-types`
+  - `GET /api/calendly/slots` avec `x-workspace-id` + fallback event type workspace.
+  - `GET/PUT /api/workspaces/settings` sans exposition des tokens.
+- UI : `/dashboard/settings/calendly/connect` avec statut OAuth, bouton connecter et sélecteur event type par défaut.
+- Setter : propagation `workspace_id` jusqu'à `get_calendly_slots`.
+- Migration : `scripts/migrate-workspaces.ts` étendu à `Workspaces!A:E`.
+- Correction build liée à v4-031 : `DEFAULT_WORKSPACE_ID` isolé dans `lib/workspaces.ts` pour éviter que `middleware.ts` embarque `googleapis`/`node:process` dans le bundle Edge.
+
+**Vérification** :
+- TDD rouge observé sur `/api/calendly/slots` workspace-aware et `/api/workspaces/settings` absent.
+- `npm run test -- lib/calendly.test.ts lib/replies.test.ts lib/setter.test.ts lib/sheets.test.ts components/layout/AppShell.test.ts app/api/calendly/slots/route.test.ts app/api/calendly/auth/initiate/route.test.ts app/api/calendly/auth/callback/route.test.ts app/api/calendly/event-types/route.test.ts app/api/workspaces/settings/route.test.ts` → 10 fichiers / 80 tests ✅.
+- `npm run test` → 84 fichiers / 439 tests ✅.
+- `npm run build` → OK ✅ (`DEP0169 url.parse()` non bloquant, existant).
+
+**Opérations restantes hors code** :
+- Configurer `CALENDLY_CLIENT_ID` / `CALENDLY_CLIENT_SECRET` staging+prod.
+- Exécuter `npx tsx scripts/migrate-workspaces.ts` sur le GSheet réel avant premier OAuth multi-workspace.
+
+## 2026-05-18 — v4-030 Workspaces multi-tenant
+
+**Fichiers modifiés :**
+- `lib/types.ts` — `Campaign` + `workspace_id`
+- `lib/campaigns.ts` — `DEFAULT_WORKSPACE_ID`, `parseIndexCampaigns` (13→14 cols), `listCampaigns(workspaceId)`
+- `lib/sheets.ts` — `INDEX_CAMPAIGNS_COLUMNS` (A:N), `IndexCampaign.workspace_id`, `Workspaces` tab complet, `ACCOUNTS_HEADER` 8 cols
+- `middleware.ts` (nouveau) — inject `x-workspace-id: kames-default`
+- `app/api/campaigns/route.ts` — filtrage workspace + col 14
+- `app/api/workspaces/route.ts` (nouveau) — `GET /api/workspaces`
+- `scripts/migrate-workspaces.ts` (nouveau) — migration GSheets
+- Tests : `lib/campaigns.test.ts`, `lib/sheets.test.ts`, `app/api/campaigns/route.test.ts`
+
+**Preuve** : `npm run test` → 79 fichiers, 427 tests ✓
+
+**Reste** : `npx tsx scripts/migrate-workspaces.ts` sur le GSheets réel (smoke staging).
+
+---
+
+## Session 2026-05-18 — Phase 2 v4 Bloc 2 UI LinkedIn
+
+**Tâches v4 concernées** :
+- `v4-021` 🚧 partiel : settings LinkedIn + hosted auth routes + Accounts livrés ; reste flow réel Unipile avec credentials.
+- `v4-023` 🚧 partiel : UI sourcing LI + route WF9 livrées ; reste WF9/v4-022 et smoke staging réel.
+- `v4-024c` 🚧 partiel : bandeau LI health + route `LI_Health` livrés ; reste WF12/v4-024b et smoke pause simulée.
+
+**Changements** :
+- `lib/unipile.ts` : ajout `createHostedAuthLink()` pour Unipile hosted auth.
+- `lib/sheets.ts` : helpers Index `Accounts` et `LI_Health` (headers, parse, latest, upsert).
+- Routes :
+  - `POST /api/unipile/auth/initiate`
+  - `GET /api/unipile/callback`
+  - `GET /api/unipile/status`
+  - `POST /api/linkedin/source`
+  - `GET /api/li-health`
+- UI :
+  - Page `/dashboard/settings/linkedin/connect` avec statut compte et bouton connexion.
+  - `LinkedInSourcingPanel` sur `/dashboard/campaigns/[campaign_id]` : 4 canaux, formulaire dynamique, compteur leads LI, bouton Sourcer.
+  - `LIHealthBanner` intégré dans le shell dashboard, polling 5 min, ETA reprise.
+
+**Vérification** :
+- TDD rouge observé sur routes/composant absents.
+- `npm run test -- app/api/unipile/status/route.test.ts app/api/unipile/auth/initiate/route.test.ts app/api/unipile/callback/route.test.ts app/api/linkedin/source/route.test.ts components/layout/LIHealthBanner.test.tsx 'app/dashboard/campaigns/[campaign_id]/page.test.tsx'` → 6 fichiers / 11 tests ✅.
+- `npm run test` → 79 fichiers / 424 tests ✅.
+- `npm run build` → OK ✅. Alerte non bloquante existante : `DEP0169 url.parse()`.
+
+**Reste** :
+- `UNIPILE_API_KEY` / `UNIPILE_DSN` staging+prod, vrai callback Unipile compte Thomas.
+- `N8N_WF9_WEBHOOK` après livraison WF9.
+- WF12 pour alimenter `LI_Health` et smoke `paused_captcha`/`paused_low_accept`.
+
+## Session 2026-05-18 — Phase 1 v4 warm-up + audit automatique
+
+**Tâches v4 concernées** :
+- `v4-009` 🚧 partiel : WF7 vérifié actif staging ; smoke Resend simulé + latence restent à faire.
+- `v4-011` ✅ : routes replies finalisées, `/escalate` met aussi à jour `Leads_Qualified.setter_action`.
+- `v4-018` 🚧 partiel : script/checklist smoke Phase 1 prêts ; exécution réelle reportée.
+- `v4-018b` 🚧 partiel : mode warm-up livré côté code + WF2/WF3 ; smoke campagne warm-up réel restant.
+
+**Changements** :
+- Ajout `lib/warmup.ts` + tests : ramp-up 5→20 emails/jour sur 14 jours, état UI, compteur replies positives.
+- Extension Config GSheet enfant : `warmup_campaign`, `warmup_started_at`, `warmup_positive_replies`.
+- Settings campagne : toggle `Mode warm-up`, cap journalier, Jx/J14, compteur replies positives.
+- Routes :
+  - `PUT/GET /api/campaigns/[id]/settings` persiste le warm-up.
+  - `POST /api/campaigns/[id]/qualify` transmet `bypass_scoring`/`forced_score`.
+  - `POST /api/campaigns/[id]/send-j0` transmet cap warm-up + prefix `[WARMUP]`.
+  - `POST /api/replies/[lead_id]/warmup-positive` tagge une reply positive.
+- Auto-switch warm-up : le cron d'auto-graduation désactive `warmup_campaign` et écrit `warmup_completed_at` après J14.
+- Inbox : bouton `Marquer reply positive` dans l'onglet À répondre.
+- n8n staging :
+  - WF2 `01BB4q4j1buvWRC6` patché : si `bypass_scoring=true`, `score=100` et `statut_email=new`.
+  - WF3 `dfe1jIPlZA10dqJK` patché : node `Apply Warmup Cap` + objet email préfixé `[WARMUP]`.
+- Ajout `scripts/smoke-phase1.sh` pour déclencher WF7 avec payload Resend simulé et checklist.
+
+**Vérification** :
+- n8n MCP : WF7 actif ; WF2/WF3 patchs validés puis appliqués ; WF3 structure vérifiée.
+- `npm run test` → 73 fichiers, 382 tests passés ✅.
+- `npm run build` → OK ✅.
+- Non exécuté volontairement : campagne réelle / email réel / booking Calendly réel, conformément au report demandé.
+
+---
+
+## Session 2026-05-18 — TASK-v4-016b : Auto-graduation Setter
+
+**Tâche v4 concernée** :
+- `v4-016b` 🚧 Partiel : moteur, route et cron n8n livrés ; reste smoke staging GSheet réel 50 turns mockés + email reçu.
+
+**Changements** :
+- `lib/setter-graduation.ts` : `computeIntentAccuracy`, échantillon des 50 derniers turns labellisés, `graduateCampaign`, guard warm-up, seuil 85%, audit Config.
+- `lib/graduation-alerts.ts` : email Thomas via Resend sur graduation ou low accuracy après 21 jours.
+- `app/api/setter/graduate/route.ts` : `POST` protégé par `Authorization: Bearer $CRON_SECRET`.
+- `lib/conversations.ts`, `lib/types.ts`, `lib/sheets.ts`, `scripts/migrate-sheets-v4.ts` : colonne `human_intent_label` dans `Conversations` pour label humain explicite.
+- n8n staging : créé et activé `[FLINTY] WF13b - Setter Auto Graduation` (`edA3Un342BxYJ5gB`), cron quotidien 09:15 Europe/Paris, GET `/api/campaigns`, filtre `active|scheduled`, POST `/api/setter/graduate?campaign_id=X`.
+
+**Vérification** :
+- TDD rouge observé : module `setter-graduation` et route `/api/setter/graduate` absents.
+- `npm run test -- lib/setter-graduation.test.ts app/api/setter/graduate/route.test.ts lib/conversations.test.ts lib/sheets.test.ts` → 4 fichiers / 43 tests ✅.
+- `npm run test` → 70 fichiers / 370 tests ✅.
+- `npm run build` → OK ✅.
+- `n8n_validate_workflow` sur `edA3Un342BxYJ5gB` → valid=true, 0 erreur.
+- `n8n_test_workflow` ne peut pas déclencher un Schedule Trigger (pas de webhook/form/chat), attendu.
+
+**Reste** :
+- Vérifier variables n8n/Vercel staging : `FLINTY_DASHBOARD_URL`, `CRON_SECRET`, `RESEND_API_KEY`, `RESEND_FROM`, `ALERT_EMAIL_TO` si différent de `thomas@kamesai.com`.
+- Smoke staging réel : injecter 50 turns mockés à 90% → cron/API flip `setter_validation=false` dans Config ; puis cas 70% après 21 jours → pas de flip + email Thomas.
+
+## Session 2026-05-18 — TASK-v4-015 + TASK-v4-016 : Settings Setter + EU AI Act
+
+**Tâches v4 concernées** :
+- `v4-015` ✅ : page `/dashboard/campaigns/[campaign_id]/settings` + routes `GET/PUT /api/campaigns/[id]/settings`.
+- `v4-016` ✅ : forced validation sur question IA + disclaimer + tag conversation.
+
+**Changements** :
+- `app/dashboard/campaigns/[campaign_id]/settings/` : page serveur + `SettingsForm` client (toggles Setter, validation lock read-only, ton, signature, Calendly, toast).
+- `app/api/campaigns/[id]/settings/route.ts` : lecture/écriture Config enfant, fallback `CALENDLY_EVENT_TYPE_URI`, whitelist des clés (pas de `li_caps_daily`).
+- `lib/setter.ts` : `detectsAIQuestion()`, patterns FR/EN, `appendAIDisclosure()`, disclaimer signé sur `ai_disclosure`.
+- `lib/replies.ts` : lecture Config v4 avant legacy, override `setter_validation=true` uniquement pour le turn IA, retour `forced_validation`.
+- `lib/conversations.ts`, `lib/types.ts`, `lib/sheets.ts`, `scripts/migrate-sheets-v4.ts` : colonne `tags` pour `forced_validation_ai_question` et header rafraîchi avant append taggé.
+- `app/dashboard/campaigns/[campaign_id]/ActionButtons.tsx` : lien vers Paramètres depuis la fiche campagne.
+
+**Vérification** :
+- TDD rouge observé sur route/settings absente, `detectsAIQuestion` absent, et override validation absent.
+- `npm run test -- lib/setter.test.ts lib/conversations.test.ts lib/sheets.test.ts lib/replies-pipeline.test.ts app/api/campaigns/[id]/settings/route.test.ts` → 5 fichiers / 67 tests ✅.
+- `npm run test` → 68 fichiers / 356 tests ✅.
+- `npm run build` → OK ✅.
+- Playwright local : serveur lancé et navigateur fonctionnel ; `/dashboard/campaigns/cmp_1/settings` retourne 404 attendu car aucun ID campagne réel dans l'Index local (`GET /api/campaigns` → `[]`). La route est présente dans le build.
+
 ## Session 2026-05-17 — TASK-v4-010 WF8 Setter Send
 
 **Tâches v4 concernées** :
@@ -589,3 +745,19 @@ curl -X POST https://staging-n8n.kamesai.com/webhook/flinty-wf1-launch \
 - Playwright headless local : `/dashboard/inbox`, `/dashboard/inbox?tab=reply`, `/dashboard/inbox?tab=bookings` → 200 OK ✅.
 
 ---
+
+### 2026-05-18 — Auto-graduation Setter cmp_1
+- `setter_validation=false` appliqué automatiquement après warm-up.
+- Accuracy intent sur 50 turns : 100.0%.
+
+### 2026-05-18 — Auto-graduation Setter cmp_1
+- `setter_validation=false` appliqué automatiquement après warm-up.
+- Accuracy intent sur 50 turns : 100.0%.
+
+### 2026-05-18 — Auto-graduation Setter cmp_1
+- `setter_validation=false` appliqué automatiquement après warm-up.
+- Accuracy intent sur 50 turns : 100.0%.
+
+### 2026-05-18 — Auto-graduation Setter cmp_1
+- `setter_validation=false` appliqué automatiquement après warm-up.
+- Accuracy intent sur 50 turns : 100.0%.

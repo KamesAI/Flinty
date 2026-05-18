@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { readIndex, parseIndexCampaigns } from "@/lib/sheets";
+import { readCampaignConfig } from "@/lib/replies";
+import { buildWarmupState, configBool } from "@/lib/warmup";
 
 export async function POST(
   req: Request,
@@ -17,6 +19,10 @@ export async function POST(
   if (!campaign) {
     return NextResponse.json({ success: false, message: "Campagne introuvable" }, { status: 404 });
   }
+  const config = campaign.sheet_id
+    ? await readCampaignConfig(campaign.sheet_id, campaign_id)
+    : {};
+  const warmup = buildWarmupState(config, 0);
 
   const qualificationCallbackUrl = new URL(
     `/api/campaigns/${campaign_id}/qualification-complete`,
@@ -29,6 +35,9 @@ export async function POST(
     body: JSON.stringify({
       campaign_id,
       sheet_id: campaign.sheet_id,
+      warmup_campaign: configBool(config.warmup_campaign, false),
+      bypass_scoring: warmup.enabled,
+      forced_score: warmup.enabled ? 100 : undefined,
       qualification_callback_url: qualificationCallbackUrl,
     }),
   });

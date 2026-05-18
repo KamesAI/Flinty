@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Settings } from "lucide-react";
 
 export function ActionButtons({
   campaignId,
@@ -76,7 +78,14 @@ export function ActionButtons({
   }
 
   return (
-    <div className="flex gap-3">
+    <div className="flex flex-wrap gap-3">
+      <Link
+        href={`/dashboard/campaigns/${campaignId}/settings`}
+        className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:border-primary/30 hover:text-primary"
+      >
+        <Settings className="size-4" />
+        Paramètres
+      </Link>
       <button
         onClick={handleGenerate}
         disabled={generating}

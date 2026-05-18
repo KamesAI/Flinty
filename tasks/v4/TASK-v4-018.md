@@ -1,5 +1,5 @@
 # Task v4-018 : E2E smoke Phase 1 — reply test → Setter draft → validation → send → Calendly slot → tab Meetings
-**Status**: ⬜ À faire
+**Status**: 🚧 Partiel — 2026-05-18 (script/checklist prêts ; smoke réel restant)
 
 ## Autonomie
 🤝 **Mixte** — Claude prépare le script smoke + guide les étapes. Thomas doit déclencher le test en staging et vérifier la réception de l'email réel + le booking Calendly.
@@ -19,8 +19,8 @@ Smoke E2E Phase 1 réussi en staging sans erreur sur le chemin complet.
 
 ### Must Have
 **Préparation Claude** :
-- [ ] Script `scripts/smoke-phase1.sh` avec payload Resend simulé `email.replied`
-- [ ] Checklist exhaustive des points à vérifier à chaque étape
+- [x] Script `scripts/smoke-phase1.sh` avec payload Resend simulé `email.replied`
+- [x] Checklist exhaustive des points à vérifier à chaque étape
 
 **Exécution Thomas** :
 - [ ] Déclencher WF7 avec payload simulé (lead existant en staging)
@@ -69,6 +69,11 @@ echo "2. /dashboard/inbox?tab=valider"
 - [ ] Webhook Calendly simulé → row créée dans tab Meetings
 - [ ] Lead statut = booked dans Leads_Qualified
 - [ ] Setter intent accuracy évaluée : correct ? (tag `intent_correct` dans Conversations)
+
+## Avancement 2026-05-18
+- ✅ Ajout `scripts/smoke-phase1.sh` avec payload Resend `email.replied` paramétrable via env.
+- ✅ Checklist smoke imprimée par le script : WF7, Conversations, inbox, WF8, Calendly poll, Meetings, statut lead.
+- ⬜ Exécution réelle staging reportée comme demandé (campagne/lead test + email/Calendly réels).
 
 ## Dependencies
 **Blocked By**: v4-009 → v4-016 (tous les composants Phase 1)

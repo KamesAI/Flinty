@@ -1,8 +1,10 @@
 import type { CalendlySlot } from "./types";
+import type { CalendlyAccountRow } from "./sheets";
 
 export { type CalendlySlot };
 
 const CALENDLY_API_BASE = "https://api.calendly.com";
+const CALENDLY_AUTH_BASE = "https://auth.calendly.com";
 
 export interface RawCalendlySlot {
   start_time: string;
@@ -34,10 +36,132 @@ interface CalendlyInviteesResponse {
   collection: CalendlyInvitee[];
 }
 
-function getCalendlyToken(): string {
+function getCalendlyPAT(): string {
   const token = process.env.CALENDLY_TOKEN;
   if (!token) throw new Error("CALENDLY_TOKEN env var missing");
   return token;
+}
+
+export function buildCalendlyAuthUrl(clientId: string, redirectUri: string): string {
+  const params = new URLSearchParams({
+    client_id: clientId,
+    response_type: "code",
+    redirect_uri: redirectUri,
+  });
+  return `${CALENDLY_AUTH_BASE}/oauth/authorize?${params.toString()}`;
+}
+
+export interface CalendlyTokenResponse {
+  access_token: string;
+  refresh_token: string;
+  expires_in: number;
+  token_type: string;
+}
+
+export async function exchangeCalendlyCode(
+  code: string,
+  redirectUri: string
+): Promise<CalendlyTokenResponse> {
+  const clientId = process.env.CALENDLY_CLIENT_ID;
+  const clientSecret = process.env.CALENDLY_CLIENT_SECRET;
+  if (!clientId || !clientSecret) throw new Error("CALENDLY_CLIENT_ID/SECRET manquants");
+
+  const res = await fetch(`${CALENDLY_AUTH_BASE}/oauth/token`, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      grant_type: "authorization_code",
+      client_id: clientId,
+      client_secret: clientSecret,
+      code,
+      redirect_uri: redirectUri,
+    }).toString(),
+  });
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`Calendly token exchange error ${res.status}: ${body}`);
+  }
+  return res.json() as Promise<CalendlyTokenResponse>;
+}
+
+async function refreshCalendlyToken(refreshToken: string): Promise<CalendlyTokenResponse> {
+  const clientId = process.env.CALENDLY_CLIENT_ID;
+  const clientSecret = process.env.CALENDLY_CLIENT_SECRET;
+  if (!clientId || !clientSecret) throw new Error("CALENDLY_CLIENT_ID/SECRET manquants");
+
+  const res = await fetch(`${CALENDLY_AUTH_BASE}/oauth/token`, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      grant_type: "refresh_token",
+      client_id: clientId,
+      client_secret: clientSecret,
+      refresh_token: refreshToken,
+    }).toString(),
+  });
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`Calendly token refresh error ${res.status}: ${body}`);
+  }
+  return res.json() as Promise<CalendlyTokenResponse>;
+}
+
+export async function getCalendlyToken(workspaceId: string): Promise<string> {
+  const { getCalendlyAccount, upsertCalendlyAccount } = await import("./sheets");
+  const account = await getCalendlyAccount(workspaceId);
+
+  if (!account || !account.access_token) {
+    return getCalendlyPAT();
+  }
+
+  const expiresAt = account.token_expires_at ? new Date(account.token_expires_at).getTime() : 0;
+  const bufferMs = 5 * 60 * 1000; // refresh 5min avant expiry
+  if (Date.now() < expiresAt - bufferMs) {
+    return account.access_token;
+  }
+
+  if (!account.refresh_token) return getCalendlyPAT();
+
+  const refreshed = await refreshCalendlyToken(account.refresh_token);
+  const newExpiresAt = new Date(Date.now() + refreshed.expires_in * 1000).toISOString();
+  const updated: import("./sheets").CalendlyAccountRow = {
+    ...account,
+    access_token: refreshed.access_token,
+    refresh_token: refreshed.refresh_token,
+    token_expires_at: newExpiresAt,
+    status: "connected",
+  };
+  await upsertCalendlyAccount(updated);
+  return refreshed.access_token;
+}
+
+export interface CalendlyEventType {
+  uri: string;
+  name: string;
+  slug: string;
+  active: boolean;
+  scheduling_url: string;
+  duration: number;
+}
+
+export async function listCalendlyEventTypes(token: string): Promise<CalendlyEventType[]> {
+  const userRes = await fetch(`${CALENDLY_API_BASE}/users/me`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!userRes.ok) throw new Error(`Calendly users/me error ${userRes.status}`);
+  const userData = await userRes.json() as { resource: { uri: string } };
+  const userUri = userData.resource.uri;
+
+  const params = new URLSearchParams({ user: userUri, active: "true" });
+  const res = await fetch(`${CALENDLY_API_BASE}/event_types?${params.toString()}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`Calendly event_types error ${res.status}: ${body}`);
+  }
+  const data = await res.json() as { collection: CalendlyEventType[] };
+  return data.collection ?? [];
 }
 
 /**
@@ -46,9 +170,10 @@ function getCalendlyToken(): string {
  */
 export async function getAvailableSlots(
   eventTypeUri: string,
-  count = 3
+  count = 3,
+  workspaceId?: string
 ): Promise<CalendlySlot[]> {
-  const token = getCalendlyToken();
+  const token = workspaceId ? await getCalendlyToken(workspaceId) : getCalendlyPAT();
   const now = new Date();
   const startTime = now.toISOString();
   const endTime = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000).toISOString(); // +14 jours
@@ -87,7 +212,7 @@ export async function fetchCalendlyScheduledEvents(
   minStartTime: Date,
   maxStartTime: Date
 ): Promise<CalendlyScheduledEvent[]> {
-  const token = getCalendlyToken();
+  const token = getCalendlyPAT();
   const userUri = process.env.CALENDLY_USER_URI;
   if (!userUri) throw new Error("CALENDLY_USER_URI env var missing");
 
@@ -117,7 +242,7 @@ export async function fetchCalendlyScheduledEvents(
 export async function fetchCalendlyEventInvitees(
   eventUri: string
 ): Promise<CalendlyInvitee[]> {
-  const token = getCalendlyToken();
+  const token = getCalendlyPAT();
   const eventUuid = extractCalendlyId(eventUri);
   const res = await fetch(`${CALENDLY_API_BASE}/scheduled_events/${eventUuid}/invitees`, {
     headers: {

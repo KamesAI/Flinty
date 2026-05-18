@@ -1,13 +1,20 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   CONVERSATIONS_HEADER,
   CONVERSATIONS_SHEET_NAME,
+  addConversationTurnTag,
   parseConversationRows,
   formatConversationTurn,
   findConversationTurn,
   listUnvalidatedSetterDrafts,
   type ConversationTurnInput,
 } from "./conversations";
+
+vi.mock("./sheets", () => ({
+  getSheets: vi.fn(),
+}));
+
+import { getSheets } from "./sheets";
 
 describe("parseConversationRows", () => {
   it("parse les turns avec en-tête et données", () => {
@@ -114,5 +121,53 @@ describe("draft helpers", () => {
 describe("CONVERSATIONS_SHEET_NAME", () => {
   it("vaut 'Conversations'", () => {
     expect(CONVERSATIONS_SHEET_NAME).toBe("Conversations");
+  });
+});
+
+describe("addConversationTurnTag", () => {
+  const update = vi.fn();
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(getSheets).mockResolvedValue({
+      spreadsheets: {
+        values: {
+          get: vi.fn().mockResolvedValue({
+            data: {
+              values: [
+                [...CONVERSATIONS_HEADER],
+                [
+                  "turn_1",
+                  "lead_1",
+                  "email",
+                  "prospect",
+                  "Merci",
+                  "2026-05-14T09:00:00.000Z",
+                  "interested",
+                  "",
+                  "false",
+                  "existing",
+                  "",
+                ],
+              ],
+            },
+          }),
+          update,
+        },
+      },
+    } as never);
+  });
+
+  it("ajoute un tag sans écraser les tags existants", async () => {
+    const updated = await addConversationTurnTag("sheet_1", "turn_1", "warmup_positive_reply");
+
+    expect(updated.tags).toBe("existing,warmup_positive_reply");
+    expect(update).toHaveBeenCalledWith(expect.objectContaining({
+      spreadsheetId: "sheet_1",
+      range: "Conversations!A2:K2",
+      requestBody: expect.objectContaining({
+        values: [expect.arrayContaining(["existing,warmup_positive_reply"])],
+      }),
+    }));
   });
 });

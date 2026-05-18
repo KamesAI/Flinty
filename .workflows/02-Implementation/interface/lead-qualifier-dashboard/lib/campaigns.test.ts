@@ -22,6 +22,7 @@ const MOCK_HEADER = [
   "total_leads_qualified",
   "emails_envoyés",
   "taux_réponse",
+  "workspace_id",
 ];
 
 const MOCK_ROWS = [
@@ -40,6 +41,7 @@ const MOCK_ROWS = [
     "40",
     "35",
     "12",
+    "kames-default",
   ],
   [
     "camp-002",
@@ -55,13 +57,30 @@ const MOCK_ROWS = [
     "10",
     "5",
     "0",
+    "kames-default",
+  ],
+  [
+    "camp-003",
+    "Boutiques Bordeaux",
+    "3BcDeF",
+    "https://docs.google.com/spreadsheets/d/3BcDeF",
+    "Commerce",
+    "Bordeaux",
+    "Audit IA",
+    "active",
+    "2026-04-10",
+    "20",
+    "8",
+    "5",
+    "5",
+    "other-workspace",
   ],
 ];
 
 describe("parseIndexCampaigns", () => {
   it("parse correctement les lignes de l'Index", () => {
     const campaigns = parseIndexCampaigns(MOCK_ROWS);
-    expect(campaigns).toHaveLength(2);
+    expect(campaigns).toHaveLength(3);
     expect(campaigns[0]).toMatchObject({
       campaign_id: "camp-001",
       nom: "Agences Paris",
@@ -76,6 +95,7 @@ describe("parseIndexCampaigns", () => {
       total_leads_qualified: "40",
       emails_envoyés: "35",
       taux_réponse: "12",
+      workspace_id: "kames-default",
     });
   });
 
@@ -88,11 +108,12 @@ describe("parseIndexCampaigns", () => {
   });
 
   it("remplace les champs manquants par des valeurs par défaut", () => {
-    const rows = [MOCK_HEADER, ["camp-003"]]; // ligne incomplète
+    const rows = [MOCK_HEADER, ["camp-004"]]; // ligne incomplète
     const campaigns = parseIndexCampaigns(rows);
     expect(campaigns[0].nom).toBe("");
     expect(campaigns[0].statut).toBe("new");
     expect(campaigns[0].total_leads_raw).toBe("0");
+    expect(campaigns[0].workspace_id).toBe("kames-default");
   });
 });
 
@@ -101,17 +122,42 @@ describe("listCampaigns", () => {
     vi.mocked(readIndex).mockResolvedValue(MOCK_ROWS);
   });
 
-  it("retourne un tableau typé Campaign[]", async () => {
+  it("filtre par workspace_id par défaut (kames-default)", async () => {
     const campaigns = await listCampaigns();
     expect(campaigns).toHaveLength(2);
     expect(campaigns[0].campaign_id).toBe("camp-001");
     expect(campaigns[1].statut).toBe("paused");
+    expect(campaigns.every((c) => c.workspace_id === "kames-default")).toBe(true);
+  });
+
+  it("filtre par workspace_id explicite", async () => {
+    const campaigns = await listCampaigns("other-workspace");
+    expect(campaigns).toHaveLength(1);
+    expect(campaigns[0].campaign_id).toBe("camp-003");
+  });
+
+  it("isolation : workspace B ne voit pas les campagnes de workspace A", async () => {
+    const defaultCampaigns = await listCampaigns("kames-default");
+    const otherCampaigns = await listCampaigns("other-workspace");
+    const ids = defaultCampaigns.map((c) => c.campaign_id);
+    expect(otherCampaigns.every((c) => !ids.includes(c.campaign_id))).toBe(true);
   });
 
   it("retourne un tableau vide si l'Index est vide", async () => {
     vi.mocked(readIndex).mockResolvedValue([]);
     const campaigns = await listCampaigns();
     expect(campaigns).toEqual([]);
+  });
+
+  it("campagne sans workspace_id est rattachée à kames-default", async () => {
+    const rowsWithLegacy = [
+      MOCK_HEADER,
+      ["camp-legacy", "Ancien", "sid", "url", "Tech", "Paris", "IA", "active", "2026-01-01", "0", "0", "0", "0", ""],
+    ];
+    vi.mocked(readIndex).mockResolvedValue(rowsWithLegacy);
+    const campaigns = await listCampaigns("kames-default");
+    expect(campaigns).toHaveLength(1);
+    expect(campaigns[0].workspace_id).toBe("kames-default");
   });
 });
 

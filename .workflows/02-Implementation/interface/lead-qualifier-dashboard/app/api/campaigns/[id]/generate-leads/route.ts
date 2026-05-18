@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getPublicOrigin } from "@/lib/request-origin";
 import { readIndex, parseIndexCampaigns, readChildSheet, updateIndex } from "@/lib/sheets";
+import { configBool } from "@/lib/warmup";
 import {
   DEFAULT_ESTIMATED_QUALIFICATION_RATE,
   DEFAULT_TARGET_QUALIFIED_LEADS,
@@ -79,6 +80,7 @@ export async function POST(
       estimated_qualification_rate: estimatedQualificationRate,
       search_terms: config.search_terms ?? campaign.secteur,
       search_locations: config.search_locations ?? config.villes ?? campaign.localisation,
+      warmup_campaign: configBool(config.warmup_campaign, false),
       generation_callback_url: generationCallbackUrl,
     }),
   });

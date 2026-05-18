@@ -21,6 +21,7 @@ Avant de répondre, vérifier si un skill du repo (`skills/`) correspond à la d
 | Idée produit | `local-brainstorming` |
 | Copy, ICP, cold email, marketing (hors code) | `local-flinty-product-marketing-context` — puis [skills/sales-message-generator/SKILL.md](../../skills/sales-message-generator/SKILL.md) si messages ; vendor `external/marketingskills` selon [skills/vendor/marketingskills-INDEX.md](../../skills/vendor/marketingskills-INDEX.md) |
 | n8n | skills `n8n-*` + MCP n8n |
+| Tâche multi-layer (n8n + API + Sheets + TS) ou TASK-v4 > 2h | `local-subagent-driven-development` |
 
 ## Ne jamais faire
 

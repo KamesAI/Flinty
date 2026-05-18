@@ -30,7 +30,7 @@ const ACCOUNTS_HEADER = [
 
 // Nouveaux onglets enfant
 const CONVERSATIONS_HEADER = [
-  "turn_id", "lead_id", "channel", "role", "content", "sent_at", "intent", "validated_by", "edited_from_draft",
+  "turn_id", "lead_id", "channel", "role", "content", "sent_at", "intent", "validated_by", "edited_from_draft", "tags", "human_intent_label",
 ];
 const MEETINGS_V4_HEADER = [
   "meeting_id", "lead_id", "calendly_uri", "start_at", "event_type", "booked_via", "status",
@@ -40,6 +40,7 @@ const MEETINGS_V4_HEADER = [
 const CONFIG_DEFAULT_ROWS = [
   ["setter_enabled", "FALSE"],
   ["setter_validation", "TRUE"],
+  ["setter_validation_locked_until", ""],
   ["setter_tone", "formal"],
   ["setter_signature", "Thomas Callendreau, Kames AI"],
   ["calendly_event_uri", process.env.CALENDLY_EVENT_TYPE_URI ?? ""],

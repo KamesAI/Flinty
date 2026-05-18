@@ -13,6 +13,7 @@ export interface Campaign {
   total_leads_qualified: string;
   emails_envoyés: string;
   taux_réponse: string;
+  workspace_id: string;
 }
 
 /** GSheet enfant — onglet Leads_Qualified (v3) */
@@ -79,6 +80,8 @@ export interface ConversationTurn {
   intent: IntentLabel | "";
   validated_by: string;
   edited_from_draft: "true" | "false" | "";
+  tags?: string;
+  human_intent_label?: IntentLabel | "";
 }
 
 /** Index GSheet — onglet Email_Health (v4) */
@@ -112,6 +115,9 @@ export interface MeetingV4 {
 export interface CampaignConfig {
   setter_enabled: "true" | "false";
   setter_validation: "true" | "false";
+  warmup_campaign: "true" | "false";
+  warmup_started_at: string;
+  warmup_positive_replies: string;
   setter_tone: "formal" | "casual";
   setter_signature: string;
   calendly_event_uri: string;
@@ -143,6 +149,14 @@ export interface CalendlySlot {
 /** Pacing check result */
 export interface PacingCheckResult {
   allowed: boolean;
-  reason?: "paused_high_bounce" | "paused_high_complaint" | "cap_hourly" | "outside_hours" | "domain_not_found";
+  reason?:
+    | "paused_high_bounce"
+    | "paused_high_complaint"
+    | "cap_hourly"
+    | "outside_hours"
+    | "domain_not_found"
+    | "li_account_paused"
+    | "cap_daily_li"
+    | "cap_weekly_li";
   next_allowed_at?: string;
 }

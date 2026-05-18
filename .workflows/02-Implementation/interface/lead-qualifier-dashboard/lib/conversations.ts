@@ -17,6 +17,8 @@ export const CONVERSATIONS_HEADER = [
   "intent",
   "validated_by",
   "edited_from_draft",
+  "tags",
+  "human_intent_label",
 ] as const;
 
 export function parseConversationRows(rows: string[][]): ConversationTurn[] {
@@ -34,6 +36,8 @@ export function parseConversationRows(rows: string[][]): ConversationTurn[] {
       intent: ((row[6] ?? "") as IntentLabel | ""),
       validated_by: row[7] ?? "",
       edited_from_draft: ((row[8] ?? "false") as "true" | "false" | ""),
+      tags: row[9] ?? "",
+      human_intent_label: ((row[10] ?? "") as IntentLabel | ""),
     }));
 }
 
@@ -48,6 +52,8 @@ export function formatConversationTurn(turn: ConversationTurnInput): string[] {
     turn.intent,
     turn.validated_by,
     turn.edited_from_draft,
+    turn.tags ?? "",
+    turn.human_intent_label ?? "",
   ];
 }
 
@@ -83,7 +89,7 @@ async function ensureConversationsSheet(sheetId: string): Promise<void> {
   }
   await sheets.spreadsheets.values.update({
     spreadsheetId: sheetId,
-    range: `${CONVERSATIONS_SHEET_NAME}!A1:I1`,
+    range: `${CONVERSATIONS_SHEET_NAME}!A1:K1`,
     valueInputOption: "USER_ENTERED",
     requestBody: { values: [[...CONVERSATIONS_HEADER]] },
   });
@@ -100,7 +106,7 @@ export async function getConversationThread(
   const sheets = await getSheets();
   const response = await sheets.spreadsheets.values.get({
     spreadsheetId: sheetId,
-    range: `${CONVERSATIONS_SHEET_NAME}!A1:I5000`,
+    range: `${CONVERSATIONS_SHEET_NAME}!A1:K5000`,
   }).catch(() => ({ data: { values: [] } }));
 
   const rows = (response.data.values ?? []) as string[][];
@@ -112,7 +118,7 @@ export async function getAllConversationTurns(sheetId: string): Promise<Conversa
   const sheets = await getSheets();
   const response = await sheets.spreadsheets.values.get({
     spreadsheetId: sheetId,
-    range: `${CONVERSATIONS_SHEET_NAME}!A1:I5000`,
+    range: `${CONVERSATIONS_SHEET_NAME}!A1:K5000`,
   }).catch(() => ({ data: { values: [] } }));
 
   return parseConversationRows((response.data.values ?? []) as string[][]);
@@ -128,11 +134,15 @@ export async function appendConversationTurn(
 ): Promise<void> {
   const sheets = await getSheets();
 
+  if (turn.tags) {
+    await ensureConversationsSheet(sheetId);
+  }
+
   // Vérif onglet existe (lazy ensure — pas de re-fetch si ça fonctionne)
   try {
     await sheets.spreadsheets.values.append({
       spreadsheetId: sheetId,
-      range: `${CONVERSATIONS_SHEET_NAME}!A:I`,
+      range: `${CONVERSATIONS_SHEET_NAME}!A:K`,
       valueInputOption: "USER_ENTERED",
       requestBody: { values: [formatConversationTurn(turn)] },
     });
@@ -141,7 +151,7 @@ export async function appendConversationTurn(
       await ensureConversationsSheet(sheetId);
       await sheets.spreadsheets.values.append({
         spreadsheetId: sheetId,
-        range: `${CONVERSATIONS_SHEET_NAME}!A:I`,
+        range: `${CONVERSATIONS_SHEET_NAME}!A:K`,
         valueInputOption: "USER_ENTERED",
         requestBody: { values: [formatConversationTurn(turn)] },
       });
@@ -164,7 +174,7 @@ export async function validateConversationTurn(
   const sheets = await getSheets();
   const response = await sheets.spreadsheets.values.get({
     spreadsheetId: sheetId,
-    range: `${CONVERSATIONS_SHEET_NAME}!A1:I5000`,
+    range: `${CONVERSATIONS_SHEET_NAME}!A1:K5000`,
   });
 
   const rows = (response.data.values ?? []) as string[][];
@@ -181,10 +191,46 @@ export async function validateConversationTurn(
   const sheetRow = rowIndex + 1;
   await sheets.spreadsheets.values.update({
     spreadsheetId: sheetId,
-    range: `${CONVERSATIONS_SHEET_NAME}!A${sheetRow}:I${sheetRow}`,
+    range: `${CONVERSATIONS_SHEET_NAME}!A${sheetRow}:K${sheetRow}`,
     valueInputOption: "USER_ENTERED",
     requestBody: { values: [row] },
   });
+}
+
+export async function addConversationTurnTag(
+  sheetId: string,
+  turnId: string,
+  tag: string
+): Promise<ConversationTurn> {
+  const sheets = await getSheets();
+  const response = await sheets.spreadsheets.values.get({
+    spreadsheetId: sheetId,
+    range: `${CONVERSATIONS_SHEET_NAME}!A1:K5000`,
+  });
+
+  const rows = (response.data.values ?? []) as string[][];
+  const rowIndex = rows.findIndex((row) => row[0] === turnId);
+  if (rowIndex === -1) throw new Error(`Turn ${turnId} not found in sheet ${sheetId}`);
+
+  const row = [...rows[rowIndex]];
+  const tags = new Set(
+    (row[9] ?? "")
+      .split(",")
+      .map((value) => value.trim())
+      .filter(Boolean)
+  );
+  tags.add(tag);
+  row[9] = Array.from(tags).join(",");
+
+  const sheetRow = rowIndex + 1;
+  await sheets.spreadsheets.values.update({
+    spreadsheetId: sheetId,
+    range: `${CONVERSATIONS_SHEET_NAME}!A${sheetRow}:K${sheetRow}`,
+    valueInputOption: "USER_ENTERED",
+    requestBody: { values: [row] },
+  });
+
+  return parseConversationRows([[...CONVERSATIONS_HEADER], row])[0];
 }
 
 export async function findConversationTurnById(

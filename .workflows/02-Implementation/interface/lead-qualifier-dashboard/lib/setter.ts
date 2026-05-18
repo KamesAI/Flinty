@@ -23,11 +23,16 @@ const CONFIDENCE_THRESHOLD = 0.7;
 
 // AI question patterns (EU AI Act art. 50)
 const AI_QUESTION_PATTERNS = [
-  /\b(ia|i\.a\.|intelligence artificielle|bot|robot|chatgpt|gpt|claude|automated?)\b/i,
+  /(êtes-vous|es-tu|are you|vous êtes|t'es)\s+(un[e]?\s+|an?\s+)?(ia|i\.a\.|intelligence artificielle|ai|bot|robot|machine|programme|logiciel|humain|human)\b/i,
   /\b(vous êtes|t'es|es-tu|êtes-vous)\s+(un[e]?\s+)?(ia|bot|robot|machine|programme|logiciel)\b/i,
   /\b(parlez?|parlé)\s+(à|avec)\s+(un[e]?\s+)?(ia|bot|robot|humain|personne réelle)\b/i,
   /\b(qui\s+(répond|écrit|envoie)|c'est\s+qui)\b.*\b(ia|bot|machine|programme)\b/i,
+  /\b(bot|robot)\s*\?/i,
+  /\b(c['’]est|est-ce que c['’]est)\s+(automatique|un\s+bot|une\s+ia)\b/i,
+  /\bautomatique\s*\?/i,
 ];
+
+const AI_DISCLOSURE_MARKER = "assistant IA";
 
 // ——— Types ———
 
@@ -51,6 +56,7 @@ export interface SetterCampaign {
   offre_kames: string;
   secteur: string;
   localisation: string;
+  workspace_id?: string;
   setter_tone: "formal" | "casual";
   setter_signature: string;
   icp_md: string;
@@ -110,6 +116,16 @@ export function shouldEscalate(intent: IntentLabel, confidence?: number): boolea
 
 export function isAiQuestion(text: string): boolean {
   return AI_QUESTION_PATTERNS.some((pattern) => pattern.test(text));
+}
+
+export function detectsAIQuestion(message: string): boolean {
+  return isAiQuestion(message);
+}
+
+export function appendAIDisclosure(draft: string, signature: string): string {
+  if (draft.includes(AI_DISCLOSURE_MARKER)) return draft;
+  const validatedBy = signature.trim() || "Thomas";
+  return `${draft.trim()}\n\n— Cette réponse a été préparée par un assistant IA et validée par ${validatedBy}.`;
 }
 
 export function routeIntent(intent: IntentLabel, confidence: number): RouteAction {
@@ -242,7 +258,7 @@ export async function generateResponse(
   thread: ConversationMessage[],
   ctx: SetterContext,
   intent: IntentLabel,
-  options?: { eventTypeUri?: string }
+  options?: { eventTypeUri?: string; workspaceId?: string }
 ): Promise<{ draft: string; slots_proposed: boolean }> {
   const model =
     intent === "objection_trust"
@@ -315,7 +331,11 @@ export async function generateResponse(
 
       let slotsText = "";
       try {
-        const slots = await getAvailableSlots(eventUri, 3);
+        const slots = await getAvailableSlots(
+          eventUri,
+          3,
+          options?.workspaceId ?? ctx.campaign.workspace_id
+        );
         slotsText = formatSlotsNatural(slots);
         slots_proposed = true;
       } catch {
@@ -364,7 +384,7 @@ export async function generateResponse(
 export async function runSetterPipeline(
   thread: ConversationMessage[],
   ctx: SetterContext,
-  options?: { forceValidation?: boolean; eventTypeUri?: string }
+  options?: { forceValidation?: boolean; eventTypeUri?: string; workspaceId?: string }
 ): Promise<SetterGenerateResult> {
   const campaignCtx = buildConversationContext(ctx);
 
@@ -393,9 +413,12 @@ export async function runSetterPipeline(
     intentResult.intent,
     options
   );
+  const finalDraft = aiDisclosure
+    ? appendAIDisclosure(draft, ctx.campaign.setter_signature)
+    : draft;
 
   return {
-    draft,
+    draft: finalDraft,
     intent: intentResult.intent,
     confidence: intentResult.confidence,
     escalated: false,

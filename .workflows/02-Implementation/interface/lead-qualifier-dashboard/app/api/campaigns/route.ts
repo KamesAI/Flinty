@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { invalidateCampaignSheetIdCache } from "@/lib/cache";
 import { listCampaigns } from "@/lib/campaigns";
+
+const FALLBACK_WORKSPACE_ID = "kames-default";
 import { postCampaignBodySchema } from "@/lib/api-schemas";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { appendIndex, createChildGSheet, updateIndex } from "@/lib/sheets";
@@ -20,8 +22,9 @@ function generateCampaignId(): string {
   return id;
 }
 
-export async function GET() {
-  const campaigns = await listCampaigns();
+export async function GET(req: Request) {
+  const workspaceId = new Headers(req.headers).get("x-workspace-id") ?? FALLBACK_WORKSPACE_ID;
+  const campaigns = await listCampaigns(workspaceId);
   return NextResponse.json(campaigns);
 }
 
@@ -95,8 +98,9 @@ export async function POST(req: Request) {
       search_locations: searchLocationsResolved,
     });
 
-    // 2. Écrire dans l'Index maître (13 colonnes v3)
+    // 2. Écrire dans l'Index maître (14 colonnes v4 — col N = workspace_id)
     const initialStatut = wf1Url ? "generating" : "paused";
+    const workspaceId = new Headers(req.headers).get("x-workspace-id") ?? FALLBACK_WORKSPACE_ID;
     await appendIndex([
       campaign_id,
       sheet_name,
@@ -111,6 +115,7 @@ export async function POST(req: Request) {
       "0",
       "0",
       "0",
+      workspaceId,
     ]);
 
     if (!wf1Url) {

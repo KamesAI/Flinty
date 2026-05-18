@@ -1,5 +1,5 @@
 # Task v4-023 : UI sourcing LI sur page campagne — sélecteur canal + params
-**Status**: ⬜ À faire
+**Status**: 🚧 Partiel — 2026-05-18
 
 ## Autonomie
 🤖 **Claude 100%** — composant UI React.
@@ -15,14 +15,14 @@ Section "Sourcing LinkedIn" sur la page campagne avec sélecteur canal + formula
 ## Requirements
 
 ### Must Have
-- [ ] Section ajoutée sur page campagne (`/dashboard/campaigns/[id]`) ou settings
-- [ ] Select canal : "Recherche ICP" / "Engagements post" / "Visiteurs profil" / "Post externe"
-- [ ] Formulaire dynamique selon canal :
+- [x] Section ajoutée sur page campagne (`/dashboard/campaigns/[id]`) ou settings
+- [x] Select canal : "Recherche ICP" / "Engagements post" / "Visiteurs profil" / "Post externe"
+- [x] Formulaire dynamique selon canal :
   - Recherche ICP : champs titre, secteur, taille entreprise, localisation (pré-remplis depuis Config.icp_md)
   - Engagements post / Post externe : input URL du post
   - Visiteurs profil : aucun param (auto depuis compte connecté)
-- [ ] Bouton "Sourcer" → POST `/api/linkedin/source` → toast "Sourcing lancé (WF9)"
-- [ ] Compteur leads LI sourcés visible sur la page
+- [x] Bouton "Sourcer" → POST `/api/linkedin/source` → toast "Sourcing lancé (WF9)"
+- [x] Compteur leads LI sourcés visible sur la page
 
 ### Must NOT
 - Pas de résultats immédiats dans l'UI (WF9 est async) — uniquement feedback "lancé"
@@ -45,10 +45,22 @@ const CHANNELS = [
 ```
 
 ## Acceptance Criteria
-- [ ] Sélecteur canal visible et fonctionnel
-- [ ] Champs dynamiques changent selon canal choisi
-- [ ] Clic "Sourcer" → WF9 déclenché → toast "Sourcing lancé"
-- [ ] Bouton désactivé si status LI != connected
+- [x] Sélecteur canal visible et fonctionnel
+- [x] Champs dynamiques changent selon canal choisi
+- [x] Clic "Sourcer" → WF9 déclenché → toast "Sourcing lancé"
+- [x] Bouton désactivé si status LI != connected
+
+## Avancement
+
+### 2026-05-18 — UI campagne + route WF9 livrées, WF9 réel en attente
+- Ajout `components/linkedin/LinkedInSourcingPanel.tsx` dans la fiche campagne.
+- Sélecteur 4 canaux + formulaires dynamiques : recherche ICP, engagements post, visiteurs profil, post externe.
+- Bouton désactivé si `/api/unipile/status` ne retourne pas `connected`, avec lien vers settings LinkedIn.
+- Ajout `POST /api/linkedin/source` : vérifie compte LI, valide payload, appelle `N8N_WF9_WEBHOOK` avec `max_results=100`.
+- Compteur leads LinkedIn basé sur les colonnes `linkedin_url` / `source_channel` des leads qualifiés.
+
+**Reste avant ✅** :
+- Créer/activer WF9 (`v4-022`) et configurer `N8N_WF9_WEBHOOK`, puis smoke staging réel.
 
 ## Dependencies
 **Blocked By**: v4-022 (WF9), v4-021 (statut compte LI)

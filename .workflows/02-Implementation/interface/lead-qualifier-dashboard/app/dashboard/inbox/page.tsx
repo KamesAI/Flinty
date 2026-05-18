@@ -4,6 +4,7 @@ import { getMeetings } from "@/lib/sheets";
 import { listEscalatedSetterThreads, listSetterDraftQueue } from "@/lib/replies";
 import { ConversationThread } from "./ConversationThread";
 import { SetterDraftCard } from "./SetterDraftCard";
+import { WarmupPositiveButton } from "./WarmupPositiveButton";
 import { InboxSummaryCounters } from "./InboxSummaryCounters";
 
 type TabKey = "validate" | "reply" | "bookings";
@@ -295,6 +296,13 @@ export default async function InboxPage({
                     <p className="whitespace-pre-wrap text-sm leading-6 text-slate-900">
                       {item.lastProspectTurn.content}
                     </p>
+                    <div className="mt-3">
+                      <WarmupPositiveButton
+                        leadId={item.lead.lead_id}
+                        turnId={item.lastProspectTurn.turn_id}
+                        alreadyTagged={(item.lastProspectTurn.tags ?? "").includes("warmup_positive_reply")}
+                      />
+                    </div>
                   </div>
                 ) : null}
                 <ConversationThread turns={item.thread} leadName={getLeadName(item.lead)} />

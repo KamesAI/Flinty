@@ -1,8 +1,10 @@
 import { cacheGet, cacheSet, DEFAULT_TTL_MS } from "./cache";
 import { readIndex } from "./sheets";
 import type { Campaign } from "./types";
+import { DEFAULT_WORKSPACE_ID } from "./workspaces";
 
 export type { Campaign };
+export { DEFAULT_WORKSPACE_ID };
 
 export type CampaignByIdResult = {
   campaign: Campaign;
@@ -31,12 +33,14 @@ export function parseIndexCampaigns(rows: string[][]): Campaign[] {
     total_leads_qualified: r[10] ?? "0",
     emails_envoyés: r[11] ?? "0",
     taux_réponse: r[12] ?? "0",
+    workspace_id: r[13] || DEFAULT_WORKSPACE_ID,
   }));
 }
 
-export async function listCampaigns(): Promise<Campaign[]> {
+export async function listCampaigns(workspaceId = DEFAULT_WORKSPACE_ID): Promise<Campaign[]> {
   const rows = await readIndex();
-  return parseIndexCampaigns(rows);
+  const all = parseIndexCampaigns(rows);
+  return all.filter((c) => c.workspace_id === workspaceId);
 }
 
 export async function getCampaignById(

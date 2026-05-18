@@ -32,6 +32,7 @@ const RequestSchema = z.object({
     setter_tone: z.enum(["formal", "casual"]).default("formal"),
     setter_signature: z.string().default(""),
     icp_md: z.string().default(""),
+    workspace_id: z.string().default("kames-default"),
   }),
   lead: z.object({
     lead_id: z.string(),
@@ -70,7 +71,10 @@ export async function POST(req: Request) {
       thread,
       ctx,
       intent as IntentLabel,
-      { eventTypeUri: event_type_uri }
+      {
+        eventTypeUri: event_type_uri,
+        workspaceId: campaign.workspace_id,
+      }
     );
 
     return NextResponse.json(result);

@@ -1,5 +1,5 @@
 # Task v4-024c : Bandeau dashboard `<LIHealthBanner>` — rouge si status != active + raison + ETA reprise
-**Status**: ⬜ À faire
+**Status**: 🚧 Partiel — 2026-05-18
 
 ## Autonomie
 🤖 **Claude 100%** — composant React TypeScript.
@@ -15,11 +15,11 @@ Composant `<LIHealthBanner>` intégré dans le layout dashboard, visible uniquem
 ## Requirements
 
 ### Must Have
-- [ ] Composant `components/LIHealthBanner.tsx`
-- [ ] Affiché dans `app/dashboard/layout.tsx` (toutes les pages dashboard)
-- [ ] Données : `GET /api/li-health` (polling toutes 5 min)
-- [ ] Si `status=active` → invisible (null render)
-- [ ] Si `status=paused_*` → bandeau rouge avec :
+- [x] Composant `components/LIHealthBanner.tsx`
+- [x] Affiché dans `app/dashboard/layout.tsx` (toutes les pages dashboard)
+- [x] Données : `GET /api/li-health` (polling toutes 5 min)
+- [x] Si `status=active` → invisible (null render)
+- [x] Si `status=paused_*` → bandeau rouge avec :
   - Icône ⚠️ + "Compte LinkedIn en pause"
   - Raison lisible (ex: "Taux d'acceptation <20% — Vérifiez votre ICP")
   - ETA reprise : "Reprise automatique dans X jours" (calculé depuis pause date + TTL)
@@ -55,10 +55,22 @@ export function LIHealthBanner() {
 ```
 
 ## Acceptance Criteria
-- [ ] Status=active → bandeau invisible
-- [ ] Status=paused_captcha → bandeau rouge avec message correct
-- [ ] ETA reprise calculé et affiché (ex: "Reprise dans 23h")
-- [ ] Bandeau visible sur toutes les pages dashboard (layout intégration)
+- [x] Status=active → bandeau invisible
+- [x] Status=paused_captcha → bandeau rouge avec message correct
+- [x] ETA reprise calculé et affiché (ex: "Reprise dans 23h")
+- [x] Bandeau visible sur toutes les pages dashboard (layout intégration)
+
+## Avancement
+
+### 2026-05-18 — Bandeau + route LI_Health livrés, WF12 réel en attente
+- Ajout `components/layout/LIHealthBanner.tsx`, intégré dans `AppShell` pour toutes les pages dashboard.
+- Polling `/api/li-health` toutes les 5 minutes, rendu `null` tant que les données ne sont pas chargées ou si `status=active`.
+- Messages pause `paused_captcha`, `paused_warning`, `paused_low_accept`, `paused_follow_mode` + ETA calculée depuis `pause_started_at`.
+- Ajout helpers `LI_Health` dans `lib/sheets.ts` et route `GET /api/li-health`.
+- Tests Vitest des helpers de label/ETA et du rendu initial.
+
+**Reste avant ✅** :
+- Livrer WF12 (`v4-024b`) pour alimenter `LI_Health`, puis smoke pause simulée en staging.
 
 ## Dependencies
 **Blocked By**: v4-024b (WF12 + route /api/li-health)

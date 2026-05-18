@@ -62,10 +62,16 @@ function postRequest(body: object, ip = "203.0.113.50") {
   });
 }
 
+function getRequest(workspaceId = "kames-default") {
+  return new Request("http://localhost/api/campaigns", {
+    headers: { "x-workspace-id": workspaceId },
+  });
+}
+
 describe("GET /api/campaigns", () => {
   it("retourne la liste des campagnes depuis l'Index (200)", async () => {
     vi.mocked(listCampaigns).mockResolvedValue(MOCK_CAMPAIGNS);
-    const response = await GET();
+    const response = await GET(getRequest());
     expect(response.status).toBe(200);
     const data = await response.json();
     expect(data).toHaveLength(1);
@@ -74,7 +80,7 @@ describe("GET /api/campaigns", () => {
 
   it("retourne un tableau vide si l'Index est vide", async () => {
     vi.mocked(listCampaigns).mockResolvedValue([]);
-    const response = await GET();
+    const response = await GET(getRequest());
     expect(response.status).toBe(200);
     const data = await response.json();
     expect(data).toEqual([]);
@@ -125,15 +131,16 @@ describe("POST /api/campaigns", () => {
     );
   });
 
-  it("appelle appendIndex avec exactement 13 colonnes (schéma v3)", async () => {
+  it("appelle appendIndex avec exactement 14 colonnes (schéma v4 + workspace_id)", async () => {
     await POST(postRequest(VALID_POST_BODY));
     expect(appendIndex).toHaveBeenCalledOnce();
     const row: string[] = vi.mocked(appendIndex).mock.calls[0][0];
-    expect(row).toHaveLength(13);
+    expect(row).toHaveLength(14);
     expect(row[4]).toBe("Marketing"); // secteur
     expect(row[5]).toBe("Paris"); // localisation
     expect(row[7]).toBe("generating"); // statut initial pendant WF1
     expect(row[9]).toBe("0"); // total_leads_raw
+    expect(row[13]).toBe("kames-default"); // workspace_id
   });
 
   it("déclenche le webhook WF1 avec campaign_id + spreadsheet_id", async () => {

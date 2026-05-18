@@ -1,5 +1,5 @@
 # Task v4-009 : WF7 n8n — webhook Resend `email.replied` → classify + generate → Conversations
-**Status**: 🚧 Partiel — 2026-05-17
+**Status**: 🚧 Partiel — 2026-05-18
 
 ## Autonomie
 🤖 **Claude 100%** — via MCP n8n.
@@ -22,11 +22,11 @@ WF7 opérationnel en staging : reçoit webhook Resend reply → Setter classifie
   - IF pas skipped → Check Email Health → IF health.allowed
   - POST `/api/setter/email-reply` → IF auto-send (escalated=false AND setter_validation=false) → Trigger WF8
   - Responds OK / Skipped / Health Blocked selon cas
-- ⬜ WF7 non activé — à activer après smoke test manuel
+- ✅ WF7 activé en staging (`HsMPjDrI8oW6x7qj`)
 - ⬜ Smoke test : payload Resend simulé → run complet staging
 - ⬜ Latence mesurée <30s
 
-**Reste à faire** : activation WF7 + smoke test staging + mesure latence
+**Reste à faire** : smoke test staging + mesure latence
 
 ## Requirements
 
@@ -38,7 +38,7 @@ WF7 opérationnel en staging : reçoit webhook Resend reply → Setter classifie
 - [x] `setter_validation` retourné dans la réponse de la route → Node IF dans WF7 sans Sheets read supplémentaire
 - [x] Node IF : setter_validation=true OU escalated=true → STOP / sinon → call WF8
 - [x] Idempotent sur `email_id` (dedup via static data n8n, 500 IDs max)
-- [ ] WF7 activé en staging
+- [x] WF7 activé en staging
 - [ ] Latence cible : <30 sec end-to-end (à mesurer post-activation)
 
 ### Must NOT
@@ -67,6 +67,10 @@ Nodes WF7 :
 - [ ] Latence mesurée <30s sur staging
 - [x] Si validation humaine → draft visible dans inbox via queue des drafts non validés
 - [x] Si email_id déjà traité → WF7 s'arrête sans double-écriture (dedup static data)
+
+## Avancement 2026-05-18
+- ✅ Vérification n8n MCP : WF7 `[FLINTY] WF7 - Setter Email Reply` actif en staging.
+- ⬜ Smoke payload Resend simulé et mesure <30s restent à faire avec campagne staging dédiée.
 
 ## Dependencies
 **Blocked By**: v4-004 (classify), v4-005 (generate), v4-003 (conversations)

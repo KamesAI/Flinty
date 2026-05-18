@@ -36,6 +36,7 @@ describe("Setter mapping helpers", () => {
     total_leads_qualified: "0",
     emails_envoyés: "0",
     taux_réponse: "0",
+    workspace_id: "workspace-a",
   };
 
   const lead: Lead = {
@@ -67,6 +68,7 @@ describe("Setter mapping helpers", () => {
       setter_tone: "formal",
       setter_signature: "Thomas",
       icp_md: "# ICP",
+      workspace_id: "workspace-a",
     });
   });
 

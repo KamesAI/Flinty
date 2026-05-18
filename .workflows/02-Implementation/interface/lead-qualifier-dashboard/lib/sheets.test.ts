@@ -12,8 +12,8 @@ import {
 import { CONVERSATIONS_HEADER } from "./conversations";
 
 describe("CHILD_QUALIFIED_HEADER", () => {
-  it("contient les 27 colonnes v3 + 5 colonnes v4", () => {
-    expect(CHILD_QUALIFIED_HEADER).toHaveLength(32);
+  it("contient les 27 colonnes v3 + 6 colonnes v4", () => {
+    expect(CHILD_QUALIFIED_HEADER).toHaveLength(33);
   });
 
   it("commence par lead_id et campaign_id", () => {
@@ -21,9 +21,9 @@ describe("CHILD_QUALIFIED_HEADER", () => {
     expect(CHILD_QUALIFIED_HEADER[1]).toBe("campaign_id");
   });
 
-  it("contient les 5 nouvelles colonnes v4 à la fin", () => {
-    const v4Cols = ["linkedin_url", "source_channel", "statut_li", "reply_intent", "reply_at"];
-    const tail = [...CHILD_QUALIFIED_HEADER].slice(-5);
+  it("contient les 6 nouvelles colonnes v4 à la fin", () => {
+    const v4Cols = ["linkedin_url", "source_channel", "statut_li", "reply_intent", "reply_at", "setter_action"];
+    const tail = [...CHILD_QUALIFIED_HEADER].slice(-6);
     expect(tail).toEqual(v4Cols);
   });
 });
@@ -34,7 +34,7 @@ describe("CHILD_CONVERSATIONS_HEADER", () => {
   });
 
   it("contient 9 colonnes", () => {
-    expect(CHILD_CONVERSATIONS_HEADER).toHaveLength(9);
+    expect(CHILD_CONVERSATIONS_HEADER).toHaveLength(11);
   });
 });
 
@@ -86,6 +86,7 @@ describe("parseIndexCampaigns", () => {
     "campaign_id", "nom", "sheet_id", "sheet_url", "secteur",
     "localisation", "offre_kames", "statut", "date_création",
     "total_leads_raw", "total_leads_qualified", "emails_envoyés", "taux_réponse",
+    "workspace_id",
   ];
 
   it("parse correctement une ligne de campagne", () => {
@@ -95,7 +96,7 @@ describe("parseIndexCampaigns", () => {
         "cmp_abc", "Plombiers Paris", "sheet_xyz",
         "https://docs.google.com/spreadsheets/d/sheet_xyz",
         "Plomberie", "Paris", "Automatisation IA", "active",
-        "2026-05-01", "120", "45", "40", "12.5",
+        "2026-05-01", "120", "45", "40", "12.5", "kames-default",
       ],
     ];
     const campaigns = parseIndexCampaigns(rows);
@@ -109,11 +110,12 @@ describe("parseIndexCampaigns", () => {
       total_leads_raw: "120",
       total_leads_qualified: "45",
       taux_réponse: "12.5",
+      workspace_id: "kames-default",
     });
   });
 
   it("ignore les lignes sans campaign_id", () => {
-    const rows = [HEADER, ["", "Orphelin", "", "", "", "", "", "active", "", "", "", "", ""]];
+    const rows = [HEADER, ["", "Orphelin", "", "", "", "", "", "active", "", "", "", "", "", ""]];
     expect(parseIndexCampaigns(rows)).toHaveLength(0);
   });
 
@@ -129,6 +131,7 @@ describe("parseIndexCampaigns", () => {
     expect(c.sheet_id).toBe("");
     expect(c.taux_réponse).toBe("0");
     expect(c.statut).toBe("paused");
+    expect(c.workspace_id).toBe("kames-default");
   });
 });
 
@@ -163,7 +166,7 @@ describe("parseLeadsV3", () => {
 });
 
 describe("indexCampaignToCampaign", () => {
-  it("convertit IndexCampaign en Campaign avec taux_ouverture=0", () => {
+  it("convertit IndexCampaign en Campaign avec taux_ouverture=0 et workspace_id préservé", () => {
     const indexCampaign = {
       campaign_id: "cmp_abc",
       nom: "Test",
@@ -178,10 +181,12 @@ describe("indexCampaignToCampaign", () => {
       total_leads_qualified: "30",
       emails_envoyés: "25",
       taux_réponse: "8",
+      workspace_id: "kames-default",
     };
     const campaign = indexCampaignToCampaign(indexCampaign);
     expect(campaign.taux_ouverture).toBe("0");
     expect(campaign.campaign_id).toBe("cmp_abc");
     expect(campaign.statut).toBe("active");
+    expect(campaign.workspace_id).toBe("kames-default");
   });
 });

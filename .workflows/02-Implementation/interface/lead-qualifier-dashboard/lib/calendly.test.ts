@@ -1,11 +1,30 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi, beforeEach } from "vitest";
 import {
   formatSlotsNatural,
   parseCalendlySlots,
+  buildCalendlyAuthUrl,
+  getCalendlyToken,
   type RawCalendlyAvailability,
 } from "./calendly";
 
+vi.mock("./sheets", () => ({
+  getCalendlyAccount: vi.fn(),
+  upsertCalendlyAccount: vi.fn(),
+}));
+
+import { getCalendlyAccount, upsertCalendlyAccount } from "./sheets";
+
 const PARIS_TZ = "Europe/Paris";
+
+describe("buildCalendlyAuthUrl", () => {
+  it("construit l'URL OAuth avec client_id et redirect_uri", () => {
+    const url = buildCalendlyAuthUrl("client_123", "https://app.kamesai.com/api/calendly/auth/callback");
+    expect(url).toContain("https://auth.calendly.com/oauth/authorize");
+    expect(url).toContain("client_id=client_123");
+    expect(url).toContain("response_type=code");
+    expect(url).toContain(encodeURIComponent("https://app.kamesai.com/api/calendly/auth/callback"));
+  });
+});
 
 describe("parseCalendlySlots", () => {
   it("extrait 3 premiers slots d'une réponse Calendly", () => {
@@ -58,5 +77,70 @@ describe("formatSlotsNatural", () => {
     const text = formatSlotsNatural([], PARIS_TZ);
     expect(text).toBeTruthy();
     expect(text.length).toBeGreaterThan(10);
+  });
+});
+
+describe("getCalendlyToken", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    process.env.CALENDLY_TOKEN = "pat-token";
+    process.env.CALENDLY_CLIENT_ID = "client-id";
+    process.env.CALENDLY_CLIENT_SECRET = "client-secret";
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+  });
+
+  it("retourne le token OAuth non expire du workspace", async () => {
+    vi.mocked(getCalendlyAccount).mockResolvedValueOnce({
+      account_id: "calendly-workspace-a",
+      type: "calendly",
+      provider: "calendly",
+      status: "connected",
+      connected_at: "2026-05-18T08:00:00.000Z",
+      workspace_id: "workspace-a",
+      access_token: "oauth-access",
+      refresh_token: "oauth-refresh",
+      token_expires_at: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+    });
+
+    await expect(getCalendlyToken("workspace-a")).resolves.toBe("oauth-access");
+    expect(upsertCalendlyAccount).not.toHaveBeenCalled();
+  });
+
+  it("refresh le token OAuth expire puis met a jour Accounts", async () => {
+    vi.setSystemTime(new Date("2026-05-18T10:00:00.000Z"));
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({
+      access_token: "oauth-access-new",
+      refresh_token: "oauth-refresh-new",
+      expires_in: 3600,
+      token_type: "bearer",
+    }), { status: 200 })));
+    vi.mocked(getCalendlyAccount).mockResolvedValueOnce({
+      account_id: "calendly-workspace-a",
+      type: "calendly",
+      provider: "calendly",
+      status: "connected",
+      connected_at: "2026-05-18T08:00:00.000Z",
+      workspace_id: "workspace-a",
+      access_token: "oauth-access-old",
+      refresh_token: "oauth-refresh-old",
+      token_expires_at: "2026-05-18T09:59:00.000Z",
+    });
+
+    await expect(getCalendlyToken("workspace-a")).resolves.toBe("oauth-access-new");
+    expect(upsertCalendlyAccount).toHaveBeenCalledWith(
+      expect.objectContaining({
+        workspace_id: "workspace-a",
+        access_token: "oauth-access-new",
+        refresh_token: "oauth-refresh-new",
+        status: "connected",
+      })
+    );
+  });
+
+  it("fallback sur le PAT si aucun compte OAuth n'est configure", async () => {
+    vi.mocked(getCalendlyAccount).mockResolvedValueOnce(null);
+
+    await expect(getCalendlyToken("workspace-a")).resolves.toBe("pat-token");
   });
 });

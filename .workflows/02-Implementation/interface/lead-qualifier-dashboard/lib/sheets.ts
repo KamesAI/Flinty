@@ -293,6 +293,7 @@ export interface Campaign {
   emails_envoyés: string;
   taux_ouverture: string;
   taux_réponse: string;
+  workspace_id: string;
 }
 
 export interface Lead {
@@ -332,6 +333,7 @@ export function parseCampaigns(rows: string[][]): Campaign[] {
     emails_envoyés: r[9] ?? "0",
     taux_ouverture: r[10] ?? "0",
     taux_réponse: r[11] ?? "0",
+    workspace_id: r[12] || "kames-default",
   }));
 }
 
@@ -589,6 +591,7 @@ export function indexCampaignToCampaign(c: IndexCampaign): Campaign {
     emails_envoyés:        c.emails_envoyés,
     taux_ouverture:        "0",
     taux_réponse:          c.taux_réponse,
+    workspace_id:          c.workspace_id,
   };
 }
 
@@ -608,6 +611,7 @@ export interface IndexCampaign {
   total_leads_qualified: string;
   emails_envoyés: string;
   taux_réponse: string;
+  workspace_id: string;
 }
 
 export function parseIndexCampaigns(rows: string[][]): IndexCampaign[] {
@@ -629,6 +633,7 @@ export function parseIndexCampaigns(rows: string[][]): IndexCampaign[] {
       total_leads_qualified: r[10] ?? "0",
       emails_envoyés:        r[11] ?? "0",
       taux_réponse:          r[12] ?? "0",
+      workspace_id:          r[13] || "kames-default",
     }));
 }
 
@@ -650,12 +655,138 @@ export const INDEX_CAMPAIGNS_COLUMNS = [
   "total_leads_qualified",
   "emails_envoyés",
   "taux_réponse",
+  "workspace_id",
 ] as const;
 
 type IndexCampaignColumnName = (typeof INDEX_CAMPAIGNS_COLUMNS)[number];
 type IndexCampaignPatch = Partial<Record<IndexCampaignColumnName, string>>;
 
-const INDEX_CAMPAIGNS_RANGE = "Campagnes!A:M";
+const INDEX_CAMPAIGNS_RANGE = "Campagnes!A:N";
+
+export const ACCOUNTS_SHEET_NAME = "Accounts";
+export const ACCOUNTS_HEADER = [
+  "account_id",
+  "type",
+  "provider",
+  "status",
+  "connected_at",
+  "paused_reason",
+  "pause_started_at",
+  "workspace_id",
+  "access_token",
+  "refresh_token",
+  "token_expires_at",
+] as const;
+
+export interface LinkedInAccountRow {
+  account_id: string;
+  type: "linkedin";
+  provider: "unipile";
+  status: "connected" | "expired" | "paused" | "disconnected";
+  connected_at: string;
+  paused_reason: string;
+  pause_started_at: string;
+  workspace_id: string;
+}
+
+export interface CalendlyAccountRow {
+  account_id: string;
+  type: "calendly";
+  provider: "calendly";
+  status: "connected" | "expired" | "disconnected";
+  connected_at: string;
+  workspace_id: string;
+  access_token: string;
+  refresh_token: string;
+  token_expires_at: string;
+}
+
+export function parseCalendlyAccountRows(rows: string[][]): CalendlyAccountRow[] {
+  if (!rows.length) return [];
+  const [, ...data] = rows;
+  return data
+    .filter((r) => (r[0] ?? "").trim() && (r[1] ?? "").toLowerCase() === "calendly")
+    .map((r) => ({
+      account_id: r[0] ?? "",
+      type: "calendly",
+      provider: "calendly",
+      status: (r[3] as CalendlyAccountRow["status"]) || "disconnected",
+      connected_at: r[4] ?? "",
+      workspace_id: r[7] || "kames-default",
+      access_token: r[8] ?? "",
+      refresh_token: r[9] ?? "",
+      token_expires_at: r[10] ?? "",
+    }));
+}
+
+export async function getCalendlyAccount(workspaceId: string): Promise<CalendlyAccountRow | null> {
+  await ensureAccountsSheet();
+  const lastColumn = getColumnLetter(ACCOUNTS_HEADER.length);
+  const rows = await getSheetData(`${ACCOUNTS_SHEET_NAME}!A:${lastColumn}`);
+  return parseCalendlyAccountRows(rows).find((r) => r.workspace_id === workspaceId) ?? null;
+}
+
+export async function upsertCalendlyAccount(account: CalendlyAccountRow): Promise<void> {
+  await ensureAccountsSheet();
+  const lastColumn = getColumnLetter(ACCOUNTS_HEADER.length);
+  const rows = await getSheetData(`${ACCOUNTS_SHEET_NAME}!A:${lastColumn}`);
+  const existingIndex = rows.findIndex((r, i) => i > 0 && r[0] === account.account_id);
+  const values = [
+    account.account_id,
+    account.type,
+    account.provider,
+    account.status,
+    account.connected_at,
+    "",
+    "",
+    account.workspace_id,
+    account.access_token,
+    account.refresh_token,
+    account.token_expires_at,
+  ];
+  if (existingIndex > 0) {
+    const rowNumber = existingIndex + 1;
+    await updateRow(`${ACCOUNTS_SHEET_NAME}!A${rowNumber}:${lastColumn}${rowNumber}`, values);
+    return;
+  }
+  await appendRow(`${ACCOUNTS_SHEET_NAME}!A:${lastColumn}`, values);
+}
+
+export const WORKSPACES_SHEET_NAME = "Workspaces";
+export const WORKSPACES_HEADER = [
+  "workspace_id",
+  "name",
+  "owner_email",
+  "created_at",
+  "default_calendly_event_uri",
+] as const;
+
+export interface WorkspaceRow {
+  workspace_id: string;
+  name: string;
+  owner_email: string;
+  created_at: string;
+  default_calendly_event_uri: string;
+}
+
+export const LI_HEALTH_SHEET_NAME = "LI_Health";
+export const LI_HEALTH_HEADER = [
+  "account_id",
+  "status",
+  "reason",
+  "pause_started_at",
+  "last_check_at",
+  "acceptance_rate_7d",
+] as const;
+
+export interface LinkedInHealthRow {
+  account_id: string;
+  status: "active" | "paused_captcha" | "paused_warning" | "paused_low_accept" | "paused_follow_mode";
+  reason: string;
+  pause_started_at: string;
+  last_check_at: string;
+  acceptance_rate_7d: string;
+}
 
 /** Lecture directe de l'onglet Campagnes (sans cache — TASK-022 s'en chargera). */
 export async function readIndex(): Promise<string[][]> {
@@ -665,6 +796,142 @@ export async function readIndex(): Promise<string[][]> {
     range: INDEX_CAMPAIGNS_RANGE,
   });
   return (response.data.values ?? []) as string[][];
+}
+
+export async function ensureAccountsSheet() {
+  await ensureSheetExists(ACCOUNTS_SHEET_NAME, ACCOUNTS_HEADER);
+}
+
+export function parseLinkedInAccountRows(rows: string[][]): LinkedInAccountRow[] {
+  if (!rows.length) return [];
+  const [, ...data] = rows;
+  return data
+    .filter((r) => (r[0] ?? "").trim() && (r[1] ?? "").toLowerCase() === "linkedin")
+    .map((r) => ({
+      account_id: r[0] ?? "",
+      type: "linkedin",
+      provider: "unipile",
+      status: (r[3] as LinkedInAccountRow["status"]) || "disconnected",
+      connected_at: r[4] ?? "",
+      paused_reason: r[5] ?? "",
+      pause_started_at: r[6] ?? "",
+      workspace_id: r[7] || "kames-default",
+    }));
+}
+
+export async function getLinkedInAccounts(): Promise<LinkedInAccountRow[]> {
+  await ensureAccountsSheet();
+  const lastColumn = getColumnLetter(ACCOUNTS_HEADER.length);
+  const rows = await getSheetData(`${ACCOUNTS_SHEET_NAME}!A:${lastColumn}`);
+  return parseLinkedInAccountRows(rows);
+}
+
+export async function getLatestLinkedInAccount(): Promise<LinkedInAccountRow | null> {
+  const rows = await getLinkedInAccounts();
+  return rows.sort((a, b) => new Date(b.connected_at).getTime() - new Date(a.connected_at).getTime())[0] ?? null;
+}
+
+export async function upsertLinkedInAccount(account: LinkedInAccountRow): Promise<void> {
+  await ensureAccountsSheet();
+  const lastColumn = getColumnLetter(ACCOUNTS_HEADER.length);
+  const rows = await getSheetData(`${ACCOUNTS_SHEET_NAME}!A:${lastColumn}`);
+  const existingIndex = rows.findIndex((row, index) => index > 0 && row[0] === account.account_id);
+  const values = [
+    account.account_id,
+    account.type,
+    account.provider,
+    account.status,
+    account.connected_at,
+    account.paused_reason,
+    account.pause_started_at,
+    account.workspace_id || "kames-default",
+  ];
+
+  if (existingIndex > 0) {
+    const rowNumber = existingIndex + 1;
+    await updateRow(`${ACCOUNTS_SHEET_NAME}!A${rowNumber}:${lastColumn}${rowNumber}`, values);
+    return;
+  }
+
+  await appendRow(`${ACCOUNTS_SHEET_NAME}!A:${lastColumn}`, values);
+}
+
+export async function ensureLinkedInHealthSheet() {
+  await ensureSheetExists(LI_HEALTH_SHEET_NAME, LI_HEALTH_HEADER);
+}
+
+export function parseLinkedInHealthRows(rows: string[][]): LinkedInHealthRow[] {
+  if (!rows.length) return [];
+  const [, ...data] = rows;
+  return data
+    .filter((r) => (r[0] ?? "").trim())
+    .map((r) => ({
+      account_id: r[0] ?? "",
+      status: (r[1] as LinkedInHealthRow["status"]) || "active",
+      reason: r[2] ?? "",
+      pause_started_at: r[3] ?? "",
+      last_check_at: r[4] ?? "",
+      acceptance_rate_7d: r[5] ?? "",
+    }));
+}
+
+export async function getLatestLinkedInHealth(): Promise<LinkedInHealthRow | null> {
+  await ensureLinkedInHealthSheet();
+  const lastColumn = getColumnLetter(LI_HEALTH_HEADER.length);
+  const rows = await getSheetData(`${LI_HEALTH_SHEET_NAME}!A:${lastColumn}`);
+  return parseLinkedInHealthRows(rows).sort(
+    (a, b) => new Date(b.last_check_at).getTime() - new Date(a.last_check_at).getTime()
+  )[0] ?? null;
+}
+
+export async function ensureWorkspacesSheet() {
+  await ensureSheetExists(WORKSPACES_SHEET_NAME, WORKSPACES_HEADER);
+}
+
+export function parseWorkspaceRows(rows: string[][]): WorkspaceRow[] {
+  if (!rows.length) return [];
+  const [, ...data] = rows;
+  return data
+    .filter((r) => (r[0] ?? "").trim())
+    .map((r) => ({
+      workspace_id: r[0] ?? "",
+      name: r[1] ?? "",
+      owner_email: r[2] ?? "",
+      created_at: r[3] ?? "",
+      default_calendly_event_uri: r[4] ?? "",
+    }));
+}
+
+export async function listWorkspaces(): Promise<WorkspaceRow[]> {
+  await ensureWorkspacesSheet();
+  const lastColumn = getColumnLetter(WORKSPACES_HEADER.length);
+  const rows = await getSheetData(`${WORKSPACES_SHEET_NAME}!A:${lastColumn}`);
+  return parseWorkspaceRows(rows);
+}
+
+export async function getWorkspace(workspaceId: string): Promise<WorkspaceRow | null> {
+  const workspaces = await listWorkspaces();
+  return workspaces.find((workspace) => workspace.workspace_id === workspaceId) ?? null;
+}
+
+export async function upsertWorkspace(workspace: WorkspaceRow): Promise<void> {
+  await ensureWorkspacesSheet();
+  const lastColumn = getColumnLetter(WORKSPACES_HEADER.length);
+  const rows = await getSheetData(`${WORKSPACES_SHEET_NAME}!A:${lastColumn}`);
+  const existingIndex = rows.findIndex((r, i) => i > 0 && r[0] === workspace.workspace_id);
+  const values = [
+    workspace.workspace_id,
+    workspace.name,
+    workspace.owner_email,
+    workspace.created_at,
+    workspace.default_calendly_event_uri,
+  ];
+  if (existingIndex > 0) {
+    const rowNumber = existingIndex + 1;
+    await updateRow(`${WORKSPACES_SHEET_NAME}!A${rowNumber}:${lastColumn}${rowNumber}`, values);
+    return;
+  }
+  await appendRow(`${WORKSPACES_SHEET_NAME}!A:${lastColumn}`, values);
 }
 
 /** Ajout d'une ligne dans l'onglet Campagnes de l'Index. */
@@ -778,6 +1045,34 @@ export async function updateChildSheetValues(
   });
 }
 
+export async function updateLeadFieldInChild(
+  sheetId: string,
+  campaignId: string,
+  leadId: string,
+  field: string,
+  value: string
+): Promise<void> {
+  const fieldIndex = CHILD_QUALIFIED_HEADER.indexOf(field as never);
+  if (fieldIndex === -1) throw new Error(`Champ inconnu dans CHILD_QUALIFIED_HEADER: ${field}`);
+
+  const colLetter = getColumnLetter(fieldIndex + 1);
+  const tabName = `${campaignId}_Qualified`;
+  const sheets = await getSheets();
+
+  // Read only column A (lead_ids) to find the row number
+  const resp = await sheets.spreadsheets.values.get({
+    spreadsheetId: sheetId,
+    range: childSheetA1Range(tabName, "A2:A5000"),
+  });
+
+  const leadIds = (resp.data.values ?? []).map((r) => r[0] ?? "");
+  const rowIndex = leadIds.findIndex((id) => id === leadId);
+  if (rowIndex === -1) throw new Error(`Lead ${leadId} introuvable dans ${tabName}`);
+
+  const rowNumber = rowIndex + 2; // +1 header, +1 for 1-indexed
+  await updateChildSheetValues(sheetId, childSheetA1Range(tabName, `${colLetter}${rowNumber}`), [[value]]);
+}
+
 // ——— Création GSheet enfant (v4 — 1 fichier dédié par campagne) ———
 
 export interface ChildSheetConfig {
@@ -807,11 +1102,12 @@ export const CHILD_QUALIFIED_HEADER = [
   "email_confidence",
   // v4
   "linkedin_url", "source_channel", "statut_li", "reply_intent", "reply_at",
+  "setter_action",
 ] as const;
 
 export const CHILD_CONVERSATIONS_HEADER = [
   "turn_id", "lead_id", "channel", "role", "content",
-  "sent_at", "intent", "validated_by", "edited_from_draft",
+  "sent_at", "intent", "validated_by", "edited_from_draft", "tags", "human_intent_label",
 ] as const;
 
 /**
@@ -878,7 +1174,7 @@ export async function createChildGSheet(
           values: [["param_key", "param_value", "description"]],
         },
         {
-          range: "Conversations!A1:I1",
+          range: "Conversations!A1:K1",
           values: [[...CHILD_CONVERSATIONS_HEADER]],
         },
       ],
@@ -909,9 +1205,13 @@ export async function createChildGSheet(
         // v4
         ["setter_enabled",      "FALSE",   "Activer le Setter IA"],
         ["setter_validation",   "TRUE",    "Validation humaine obligatoire avant envoi"],
+        ["setter_validation_locked_until", "", "Date ISO de fin warm-up Setter"],
+        ["warmup_campaign",     "FALSE",   "Mode soft warm-up email 14 jours"],
+        ["warmup_started_at",   "",        "Date ISO de démarrage du warm-up"],
+        ["warmup_positive_replies", "0",   "Replies positives taggées pendant le warm-up"],
         ["setter_tone",         "formal",  "Ton du Setter (formal|casual)"],
         ["setter_signature",    "Thomas",  "Nom de signature"],
-        ["calendly_event_uri",  "",        "URI Calendly pour réservation"],
+        ["calendly_event_uri",  process.env.CALENDLY_EVENT_TYPE_URI ?? "", "URI Calendly pour réservation"],
         ["li_caps_daily",       "20",      "Cap quotidien invitations LinkedIn"],
       ],
     },
@@ -948,7 +1248,15 @@ export async function updateConfigValue(
     }
 
     const rowIndex = rows.findIndex((r) => r[0] === param_key);
-    if (rowIndex === -1) continue;
+    if (rowIndex === -1) {
+      await sheets.spreadsheets.values.append({
+        spreadsheetId,
+        range: `${configTab}!A:C`,
+        valueInputOption: "USER_ENTERED",
+        requestBody: { values: [[param_key, param_value, ""]] },
+      });
+      return;
+    }
 
     const sheetRow = rowIndex + 1;
     await sheets.spreadsheets.values.update({

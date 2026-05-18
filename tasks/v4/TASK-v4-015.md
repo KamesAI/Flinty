@@ -1,5 +1,5 @@
 # Task v4-015 : Page `/dashboard/campaigns/[id]/settings` — toggle setter_validation, ton, signature
-**Status**: ⬜ À faire
+**Status**: ✅ Terminé — 2026-05-18
 
 ## Autonomie
 🤖 **Claude 100%** — nouvelle page Next.js.
@@ -15,20 +15,20 @@ Page settings campagne fonctionnelle avec sauvegarde dans Config GSheet enfant.
 ## Requirements
 
 ### Must Have
-- [ ] Page `app/dashboard/campaigns/[id]/settings/page.tsx`
-- [ ] Section "AI Setter" avec 4 contrôles :
+- [x] Page `app/dashboard/campaigns/[id]/settings/page.tsx`
+- [x] Section "AI Setter" avec 4 contrôles :
   - Toggle `setter_enabled` (activer/désactiver Setter pour cette campagne)
   - Toggle `setter_validation` (validation humaine requise — défaut `true` **pendant warm-up**, flip auto à `false` après M1 KPI atteint via v4-016b)
   - Champ lecture seule `setter_validation_locked_until` (date fin warm-up — empêche bascule manuelle avant)
   - Select `setter_tone` : Formel / Casual
   - Textarea `setter_signature` : nom affiché dans emails Setter
-- [ ] Section "Calendly" : input `calendly_event_uri` (pré-rempli depuis env var, éditable par campagne)
-- [ ] Bouton "Sauvegarder" → POST `/api/campaigns/[id]/settings` → update Config tab
-- [ ] Feedback toast "Sauvegardé" ou "Erreur"
-- [ ] Load actuel depuis Config tab au chargement de la page
+- [x] Section "Calendly" : input `calendly_event_uri` (pré-rempli depuis env var, éditable par campagne)
+- [x] Bouton "Sauvegarder" → PUT `/api/campaigns/[id]/settings` → update Config tab
+- [x] Feedback toast "Sauvegardé" ou "Erreur"
+- [x] Load actuel depuis Config tab au chargement de la page
 
-- [ ] Route `GET /api/campaigns/[id]/settings` — lit Config tab enfant
-- [ ] Route `PUT /api/campaigns/[id]/settings` — update Config tab enfant
+- [x] Route `GET /api/campaigns/[id]/settings` — lit Config tab enfant
+- [x] Route `PUT /api/campaigns/[id]/settings` — update Config tab enfant
 
 ### Must NOT
 - Ne pas exposer `li_caps_daily` dans cette page (Phase 2)
@@ -55,10 +55,18 @@ export default async function CampaignSettings({ params }: { params: { id: strin
 ```
 
 ## Acceptance Criteria
-- [ ] Page accessible depuis `/dashboard/campaigns/[id]/settings`
-- [ ] Toggles chargent les valeurs actuelles depuis Config
-- [ ] Clic "Sauvegarder" → Config tab mis à jour → toast confirmation
-- [ ] Toggle setter_validation=false visible dans WF7 (vérifiable en relisant Config)
+- [x] Page accessible depuis `/dashboard/campaigns/[id]/settings`
+- [x] Toggles chargent les valeurs actuelles depuis Config
+- [x] Clic "Sauvegarder" → Config tab mis à jour → toast confirmation
+- [x] Toggle setter_validation=false visible dans WF7 (vérifiable en relisant Config)
+
+## Avancement
+
+### 2026-05-18 — Implémentation dashboard settings
+- Ajout de la page `/dashboard/campaigns/[campaign_id]/settings` avec formulaire AI Setter + Calendly et lien depuis la fiche campagne.
+- Ajout de `GET/PUT /api/campaigns/[id]/settings`, normalisation booléens Config, fallback `CALENDLY_EVENT_TYPE_URI`, et écriture limitée aux clés autorisées (pas de `li_caps_daily` exposé).
+- `readCampaignConfig` lit désormais l'onglet `Config` v4 avant le fallback legacy `{campaignId}_Config`.
+- Preuves : `npm run test` → 68 fichiers / 356 tests ; `npm run build` → OK.
 
 ## Dependencies
 **Blocked By**: v4-002 (Config tab avec nouvelles lignes)

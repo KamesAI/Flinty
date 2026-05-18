@@ -400,6 +400,29 @@ OR
 
 **When you see these:** You failed verification-before-completion. Apologize and verify properly.
 
+## Subagent Verification (v5.0+)
+
+Quand un subagent reporte un statut, la vérification s'applique **au parent** avant de propager le résultat.
+
+| Statut subagent | Action parent | Vérification requise |
+|----------------|---------------|----------------------|
+| `DONE` | Passer en spec compliance review | Oui — relire output + preuves |
+| `DONE_WITH_CONCERNS` | Traiter les concerns d'abord | Oui — ne pas ignorer les concerns |
+| `NEEDS_CONTEXT` | Fournir le contexte manquant, re-dispatcher | N/A jusqu'au prochain `DONE` |
+| `BLOCKED` | Identifier type de blocage (contexte / modèle / tâche trop large / escalade Thomas) | N/A jusqu'à déblocage |
+
+**Règle clé :** `DONE` d'un subagent ≠ vérifié. Le parent DOIT lire les preuves et confirmer avant de marquer la tâche TASK-v4-XXX en `✅`.
+
+### n8n — Vérification post-subagent
+
+```
+Subagent reporte DONE sur workflow n8n :
+1. Lire son output : quels nodes ont exécuté ? quelle data de sortie ?
+2. Vérifier exécution réelle via MCP n8n (pas juste icône verte)
+3. Confirmer résultat final (Sheets mis à jour / email envoyé / setter déclenché)
+ONLY THEN : accepter le DONE
+```
+
 ## Special Cases
 
 ### When Thomas Asks "Does this work?"

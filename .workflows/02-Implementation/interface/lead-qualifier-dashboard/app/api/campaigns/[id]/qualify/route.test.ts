@@ -6,16 +6,22 @@ vi.mock("@/lib/sheets", () => ({
   readIndex: vi.fn(),
 }));
 
+vi.mock("@/lib/replies", () => ({
+  readCampaignConfig: vi.fn(),
+}));
+
 const mockFetch = vi.fn();
 vi.stubGlobal("fetch", mockFetch);
 
 import { parseIndexCampaigns, readIndex } from "@/lib/sheets";
+import { readCampaignConfig } from "@/lib/replies";
 
 describe("POST /api/campaigns/[id]/qualify", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     process.env.N8N_WF2_WEBHOOK = "https://staging-n8n.kamesai.com/webhook/flinty-wf2-qualify";
     vi.mocked(readIndex).mockResolvedValue([]);
+    vi.mocked(readCampaignConfig).mockResolvedValue({});
     vi.mocked(parseIndexCampaigns).mockReturnValue([
       {
         campaign_id: "cmp_x",
@@ -48,5 +54,21 @@ describe("POST /api/campaigns/[id]/qualify", () => {
     expect(body.qualification_callback_url).toBe(
       "http://localhost/api/campaigns/cmp_x/qualification-complete"
     );
+  });
+
+  it("transmet le bypass scoring warm-up à WF2", async () => {
+    vi.mocked(readCampaignConfig).mockResolvedValueOnce({ warmup_campaign: "TRUE" });
+
+    const res = await POST(new Request("http://localhost"), {
+      params: Promise.resolve({ id: "cmp_x" }),
+    });
+
+    expect(res.status).toBe(200);
+    const body = JSON.parse(mockFetch.mock.calls[0][1].body);
+    expect(body).toMatchObject({
+      warmup_campaign: true,
+      bypass_scoring: true,
+      forced_score: 100,
+    });
   });
 });

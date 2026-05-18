@@ -1,5 +1,5 @@
 # Task v4-016 : Validation mode forcé sur question IA (Voss exception + EU AI Act)
-**Status**: ⬜ À faire
+**Status**: ✅ Terminé — 2026-05-18
 
 ## Autonomie
 🤖 **Claude 100%** — logique dans lib/setter.ts + WF7 n8n.
@@ -15,10 +15,10 @@ Détection de question IA dans le thread → forced validation pour ce lead + di
 ## Requirements
 
 ### Must Have
-- [ ] Fonction `detectsAIQuestion(message: string): boolean` dans `lib/setter.ts` — patterns : "êtes-vous une IA", "are you an AI", "vous êtes un robot", "bot ?", "automatique ?", etc. (liste extensible)
-- [ ] Si `detectsAIQuestion(lastProspectMessage)=true` dans WF7 → forcer `setter_validation=true` pour ce turn (override Config) + ajouter tag `forced_validation_ai_question` dans Conversations
-- [ ] Prompt Setter modifié si AI question : ajouter en fin de réponse "— Cette réponse a été préparée par un assistant IA et validée par [signature]." (ou variante naturelle)
-- [ ] Tests Vitest : detectsAIQuestion (vrais positifs + faux négatifs)
+- [x] Fonction `detectsAIQuestion(message: string): boolean` dans `lib/setter.ts` — patterns : "êtes-vous une IA", "are you an AI", "vous êtes un robot", "bot ?", "automatique ?", etc. (liste extensible)
+- [x] Si `detectsAIQuestion(lastProspectMessage)=true` dans WF7 → forcer `setter_validation=true` pour ce turn (override Config) + ajouter tag `forced_validation_ai_question` dans Conversations
+- [x] Prompt Setter modifié si AI question : ajouter en fin de réponse "— Cette réponse a été préparée par un assistant IA et validée par [signature]." (ou variante naturelle)
+- [x] Tests Vitest : detectsAIQuestion (vrais positifs + faux négatifs)
 
 ### Must NOT
 - Ne pas mentir si prospect demande directement — réponse honnête obligatoire
@@ -50,10 +50,19 @@ if (isAIQuestion) {
 WF7 n8n : `Code` node après classify → `if (detectsAIQuestion) { forceValidation = true; tag = 'forced_ai_question' }`
 
 ## Acceptance Criteria
-- [ ] `npm run test` — tests detectsAIQuestion passent (5 vrais positifs, 3 faux négatifs vérifiés)
-- [ ] Avec message "Vous êtes un robot ?" → turn Setter créé avec `forced_validation=true` même si Config setter_validation=false
-- [ ] Réponse générée contient le disclaimer EU AI Act
-- [ ] Turn taggé `forced_validation_ai_question` dans Conversations
+- [x] `npm run test` — tests detectsAIQuestion passent (5 vrais positifs, 3 faux négatifs vérifiés)
+- [x] Avec message "Vous êtes un robot ?" → turn Setter créé avec `forced_validation=true` même si Config setter_validation=false
+- [x] Réponse générée contient le disclaimer EU AI Act
+- [x] Turn taggé `forced_validation_ai_question` dans Conversations
+
+## Avancement
+
+### 2026-05-18 — Forced validation IA + disclaimer
+- Ajout de `detectsAIQuestion()` et du disclaimer EU AI Act dans `lib/setter.ts`; le disclaimer utilise la signature campagne.
+- `processEmailReply()` force `setter_validation=true` uniquement pour le turn courant quand `ai_disclosure=true`, retourne `forced_validation=true`, et écrit le tag `forced_validation_ai_question`.
+- Extension de `Conversations` avec colonne `tags`; le header est rafraîchi avant append lorsqu'un tag est écrit, et le script migration v4 reflète la colonne.
+- Aucun changement n8n graph nécessaire : WF7 consomme déjà `setter_validation` depuis `/api/setter/email-reply`; l'override backend pilote donc la branche validation.
+- Preuves : `npm run test` → 68 fichiers / 356 tests ; `npm run build` → OK.
 
 ## Dependencies
 **Blocked By**: v4-005 (generateResponse base), v4-015 (toggle validation mode)

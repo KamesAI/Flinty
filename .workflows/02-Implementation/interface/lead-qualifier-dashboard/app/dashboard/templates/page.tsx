@@ -50,7 +50,7 @@ export default async function TemplatesPage({
         </div>
         <Link
           href="/dashboard/campaigns/new"
-          className="mb-6 inline-flex px-4 py-2 rounded-lg bg-gradient-to-r from-blue-500 to-pink-500 text-white font-medium text-sm hover:opacity-90 transition-opacity"
+          className="mb-6 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground font-medium text-sm hover:bg-primary/90 transition-colors"
         >
           + Nouvelle campagne
         </Link>

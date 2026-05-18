@@ -8,6 +8,8 @@ import {
   indexCampaignToCampaign,
   readChildSheet,
 } from "@/lib/sheets";
+import { readCampaignConfig } from "@/lib/replies";
+import { LinkedInSourcingPanel } from "@/components/linkedin/LinkedInSourcingPanel";
 import { ActionButtons } from "./ActionButtons";
 import { CampaignStatsHeader } from "./CampaignStatsHeader";
 import { KanbanBoard } from "./KanbanBoard";
@@ -33,13 +35,13 @@ function parseKanbanLeads(rows: string[][]): KanbanLead[] {
 
 async function readKanbanLeadRows(sheetId: string, campaignId: string) {
   try {
-    return await readChildSheet(sheetId, `${campaignId}_Qualified!A2:S`);
+    return await readChildSheet(sheetId, `${campaignId}_Qualified!A2:AG`);
   } catch (error) {
     if (!isMissingSheetRangeError(error)) throw error;
   }
 
   try {
-    return await readChildSheet(sheetId, "Leads_Qualified!A2:S");
+    return await readChildSheet(sheetId, "Leads_Qualified!A2:AG");
   } catch (error) {
     if (!isMissingSheetRangeError(error)) throw error;
     return [];
@@ -66,7 +68,11 @@ export default async function CampaignDetailPage({
   const leadRows = indexCampaign.sheet_id
     ? await readKanbanLeadRows(indexCampaign.sheet_id, campaign_id)
     : [];
+  const config: Record<string, string> = indexCampaign.sheet_id
+    ? await readCampaignConfig(indexCampaign.sheet_id, campaign_id).catch(() => ({}))
+    : {};
   const leads = parseKanbanLeads(leadRows);
+  const linkedInSourcedCount = leadRows.filter((row) => (row[27] ?? row[28] ?? "").trim()).length;
 
   const qualified = parseInt(campaign.total_leads_qualified || "0", 10) || 0;
   const emailsSent = parseInt(campaign.emails_envoyés || "0", 10) || 0;
@@ -126,6 +132,14 @@ export default async function CampaignDetailPage({
         </div>
         <ActionButtons campaignId={campaign_id} status={campaign.statut} />
       </div>
+
+      <LinkedInSourcingPanel
+        campaignId={campaign_id}
+        initialSector={config.secteur || campaign.secteur}
+        initialLocation={config.villes || campaign.localisation}
+        initialIcp={config.icp_md || ""}
+        sourcedCount={linkedInSourcedCount}
+      />
 
       {/* Kanban */}
       <div className="mt-5">

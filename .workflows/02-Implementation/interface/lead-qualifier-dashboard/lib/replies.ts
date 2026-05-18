@@ -5,10 +5,13 @@ import {
   readChildQualifiedLeads,
   readChildSheet,
   readIndex,
+  updateConfigValue,
+  updateLeadFieldInChild,
   type IndexCampaign,
   type Lead,
 } from "@/lib/sheets";
 import {
+  addConversationTurnTag,
   appendConversationTurn,
   findConversationTurnById,
   generateTurnId,
@@ -60,6 +63,8 @@ export interface EmailReplyResult {
   confidence: number;
   escalated: boolean;
   setter_validation: boolean;
+  forced_validation?: boolean;
+  forced_validation_reason?: "ai_question";
 }
 
 export function parseCampaignConfigRows(rows: string[][]): Record<string, string> {
@@ -96,6 +101,7 @@ export function campaignToSetterCampaign(
     offre_kames: config.offre_kames || campaign.offre_kames,
     secteur: config.secteur || campaign.secteur,
     localisation: campaign.localisation,
+    workspace_id: campaign.workspace_id,
     setter_tone: config.setter_tone === "casual" ? "casual" : "formal",
     setter_signature: config.setter_signature || "Thomas Callendreau, Kames AI",
     icp_md: config.icp_md || "",
@@ -115,7 +121,9 @@ export async function readCampaignConfig(
   sheetId: string,
   campaignId: string
 ): Promise<Record<string, string>> {
-  const rows = await readChildSheet(sheetId, `${campaignId}_Config!A2:B`).catch(() => []);
+  const rows = await readChildSheet(sheetId, "Config!A2:B")
+    .catch(() => readChildSheet(sheetId, `${campaignId}_Config!A2:B`))
+    .catch(() => []);
   return parseCampaignConfigRows(rows);
 }
 
@@ -197,8 +205,12 @@ export async function processEmailReply(input: EmailReplyInput): Promise<EmailRe
       lead: leadToSetterLead(context.lead),
       campaign: campaignToSetterCampaign(context.campaign, context.config),
     },
-    { eventTypeUri: context.config.calendly_event_uri }
+    {
+      eventTypeUri: context.config.calendly_event_uri,
+      workspaceId: context.campaign.workspace_id,
+    }
   );
+  const forcedValidation = setterResult.ai_disclosure === true;
 
   const setterTurn: ConversationTurn = {
     turn_id: generateTurnId(),
@@ -210,6 +222,7 @@ export async function processEmailReply(input: EmailReplyInput): Promise<EmailRe
     intent: setterResult.intent,
     validated_by: setterResult.escalated ? "escalated" : "",
     edited_from_draft: "false",
+    tags: forcedValidation ? "forced_validation_ai_question" : "",
   };
 
   await appendConversationTurn(context.campaign.sheet_id, setterTurn);
@@ -222,7 +235,9 @@ export async function processEmailReply(input: EmailReplyInput): Promise<EmailRe
     intent: setterResult.intent,
     confidence: setterResult.confidence,
     escalated: setterResult.escalated,
-    setter_validation: context.config.setter_validation === "true",
+    setter_validation: forcedValidation || context.config.setter_validation.toLowerCase() === "true",
+    forced_validation: forcedValidation || undefined,
+    forced_validation_reason: forcedValidation ? "ai_question" : undefined,
   };
 }
 
@@ -354,5 +369,51 @@ export async function escalateSetterDraft(input: {
   const label = input.reason
     ? `escalated:${input.escalated_by}:${input.reason}`
     : `escalated:${input.escalated_by}`;
-  await validateConversationTurn(context.campaign.sheet_id, input.turn_id, label);
+
+  await Promise.all([
+    validateConversationTurn(context.campaign.sheet_id, input.turn_id, label),
+    updateLeadFieldInChild(
+      context.campaign.sheet_id,
+      context.campaign.campaign_id,
+      input.lead_id,
+      "setter_action",
+      "escalated"
+    ),
+  ]);
+}
+
+export async function markWarmupPositiveReply(input: {
+  lead_id: string;
+  turn_id: string;
+}): Promise<ConversationTurn> {
+  const context = await findLeadContextForReply({ lead_id: input.lead_id });
+  if (!context) throw new Error("Lead introuvable");
+
+  const turn = await findConversationTurnById(context.campaign.sheet_id, input.turn_id);
+  if (!turn || turn.lead_id !== input.lead_id || turn.role !== "prospect") {
+    throw new Error("Reply prospect introuvable");
+  }
+
+  const updated = await addConversationTurnTag(
+    context.campaign.sheet_id,
+    input.turn_id,
+    "warmup_positive_reply"
+  );
+  const allTurns = await getAllConversationTurns(context.campaign.sheet_id);
+  const positiveReplies = allTurns.filter((candidate) => {
+    const tags = candidate.turn_id === input.turn_id ? updated.tags : candidate.tags;
+    return (tags ?? "")
+      .split(",")
+      .map((tag) => tag.trim())
+      .includes("warmup_positive_reply");
+  }).length;
+
+  await updateConfigValue(
+    context.campaign.sheet_id,
+    context.campaign.campaign_id,
+    "warmup_positive_replies",
+    String(positiveReplies)
+  );
+
+  return updated;
 }
