@@ -1,3 +1,5 @@
+"use client";
+
 import { motion } from "framer-motion";
 import { ChevronLeft, ChevronRight, Calendar, Clock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
