@@ -26,13 +26,13 @@ export default async function DataPage({
   try {
     const [indexRows, meetings, snapshots] = await Promise.all([
       readIndex(),
-      getMeetings(),
-      getAnalyticsDailySnapshots(),
+      getMeetings().catch((e) => { console.error("[DataPage] getMeetings failed:", e); return []; }),
+      getAnalyticsDailySnapshots().catch((e) => { console.error("[DataPage] getAnalyticsDailySnapshots failed:", e); return []; }),
     ]);
 
     const indexCampaigns = parseIndexCampaigns(indexRows);
     const campaigns = indexCampaigns.map(indexCampaignToCampaign);
-    const leads = await getAllLeadsV3(indexCampaigns);
+    const leads = await getAllLeadsV3(indexCampaigns).catch((e) => { console.error("[DataPage] getAllLeadsV3 failed:", e); return []; });
 
     model = buildDataDashboardModel({
       campaigns,
@@ -42,7 +42,8 @@ export default async function DataPage({
       statusGroup: "all",
       period,
     });
-  } catch {
+  } catch (e) {
+    console.error("[DataPage] fatal error:", e);
     error = true;
   }
 
@@ -62,6 +63,8 @@ export default async function DataPage({
       globalKpis={model.globalKpis}
       campaignRows={model.businessRows}
       topTemplates={model.topTemplates}
+      funnelEmail={model.funnelEmail}
+      funnelLI={model.funnelLI}
     />
   );
 }

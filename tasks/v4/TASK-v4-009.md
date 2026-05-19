@@ -1,5 +1,5 @@
 # Task v4-009 : WF7 n8n — webhook Resend `email.replied` → classify + generate → Conversations
-**Status**: 🚧 Partiel — 2026-05-18
+**Status**: ✅ Done — 2026-05-18
 
 ## Autonomie
 🤖 **Claude 100%** — via MCP n8n.
@@ -61,7 +61,7 @@ Nodes WF7 :
 11. `IF` setter_validation=false → `HTTP Request` POST WF8 webhook
 
 ## Acceptance Criteria
-- [ ] WF7 déclenché manuellement avec payload Resend simulé → run complet sans erreur
+- [x] WF7 déclenché manuellement avec payload Resend simulé → run complet sans erreur
 - [x] Turn prospect + setter créés dans Conversations enfant côté route Next (couvert par tests mocks)
 - [x] `setter_validation` exposé dans la réponse → IF node WF7 opérationnel
 - [ ] Latence mesurée <30s sur staging
@@ -71,6 +71,21 @@ Nodes WF7 :
 ## Avancement 2026-05-18
 - ✅ Vérification n8n MCP : WF7 `[FLINTY] WF7 - Setter Email Reply` actif en staging.
 - ⬜ Smoke payload Resend simulé et mesure <30s restent à faire avec campagne staging dédiée.
+
+## Avancement 2026-05-18 — smoke fixture M1
+- ✅ Campagne fixture créée dans l'Index staging : `smoke_m1_20260518161356_wb45` (`SMOKE M1 Phase 1 - staging`) avec lead test `thomas+smoke@kamesai.com`.
+- ✅ Script `scripts/prepare-phase1-smoke-fixture.mjs` ajouté pour préparer/réutiliser la fixture sans prospect réel ; fallback fichier partagé car `spreadsheets.create` est refusé au service account.
+- ✅ Lecture Config corrigée : `{campaign_id}_Config` est prioritaire avant `Config`, nécessaire pour les fixtures legacy/fichier partagé.
+- ❌ Smoke WF7 MCP `execution 5375` échoué en 1.153s : node `Check Email Health` appelle `https://flinty.vercel.app/api/email-health?...` et reçoit 500 `MIDDLEWARE_INVOCATION_FAILED`.
+- ⬜ Reste : corriger l'URL/env Vercel backend utilisée par WF7, puis relancer payload Resend simulé avec `data.from`/`data.plain_text` et mesurer la latence <30s.
+
+## Avancement 2026-05-18 — blocages levés
+- ✅ Cause Vercel trouvée : `instrumentation.ts` appelait `process.emitWarning.bind(process)` dans l'environnement Edge/middleware où `emitWarning` peut être absent ; garde runtime ajouté puis déployé sur `flinty.vercel.app`.
+- ✅ Setter backend migré vers OpenRouter (`OPENROUTER_API_KEY`) au lieu du SDK Anthropic direct (`ANTHROPIC_API_KEY` absent côté Vercel), puis déployé.
+- ✅ Nouvelle fixture dédiée OAuth partagée service account : campagne `smoke_m1_20260518193456_hy3o`, sheet `13ZqT3Lgm6ybwv3AwrGYPQHDaN-oaBJ32nH0QXVbOmFw`, lead `smoke_m1_20260518193456_hy3o_lead_smoke_001`.
+- ✅ `N8N_WF7_WEBHOOK` ajouté aux `.env.local` locaux.
+- ✅ WF7 MCP relancé avec payload Resend simulé (`data.from`, `data.plain_text`, `tags.campaign_id`) : succès 200 en 15.313s, intent `meeting_ready`, `setter_validation=true`.
+- ✅ Conversations enfant contient le turn prospect + draft Setter ; `/api/inbox/summary` expose le draft `turn_1779133280696_upq4zo`.
 
 ## Dependencies
 **Blocked By**: v4-004 (classify), v4-005 (generate), v4-003 (conversations)

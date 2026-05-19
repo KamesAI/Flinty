@@ -1,5 +1,5 @@
 # Task v4-024 : `lib/pacing.ts` — Gauss LI + caps daily/weekly 100 + ramp-up 4 sem + human hours + typing speed + note ratio
-**Status**: ⬜ À faire
+**Status**: ✅ 2026-05-19
 
 ## Autonomie
 🤖 **Claude 100%** — code TypeScript + tests Vitest (TDD).
@@ -15,7 +15,7 @@ Le pacing LinkedIn est critique pour éviter le ban du compte Thomas. HARD CAP L
 ## Requirements
 
 ### Must Have
-- [ ] Constantes LI :
+- [x] Constantes LI :
   ```typescript
   const CAPS_LI_WEEKLY = { invitations: 100 } // HARD CAP LinkedIn
   const CAPS_LI_DAILY_WARM = { invitations: 20, dms: 50, views: 200, removals: 50 }
@@ -23,13 +23,13 @@ Le pacing LinkedIn est critique pour éviter le ban du compte Thomas. HARD CAP L
   const RAMP_UP_LI = { week_1: 5, week_2: 10, week_3: 15, week_4: 20 } // invits/j
   const NOTE_RATIO = { with_note: 0.6, without_note: 0.4 }
   ```
-- [ ] `nextLIDelayMs(action: 'invitation'|'dm'|'reply'): number` — Gauss µ=360s/240s/60s σ=40%
-- [ ] `checkLIDailyCap(action, sentToday, accountAge): boolean`
-- [ ] `checkLIWeeklyCap(invitsSentThisWeek): boolean` — retourne false si ≥100
-- [ ] `getRampUpLimit(accountCreatedAt: Date, action: 'invitation'): number` — invits/j selon semaine compte
-- [ ] `shouldAddNote(invitsSentToday: number): boolean` — alterne 60/40 selon ratio
-- [ ] `typingDurationMs(text: string): number` — 35±10 wpm Gauss, min 2000ms
-- [ ] Tests Vitest : weekly cap (99→ok, 100→block), ramp-up semaine 1/2/3/4, shouldAddNote distribution, typing duration (≥2000ms), human hours LI (même fonction v4-002b)
+- [x] `nextLIDelayMs(action: 'invitation'|'dm'|'reply'): number` — Gauss µ=360s/240s/60s σ=40%
+- [x] `checkLIDailyCap(action, sentToday, accountAge): boolean`
+- [x] `checkLIWeeklyCap(invitsSentThisWeek): boolean` — retourne false si ≥100
+- [x] `getRampUpLimit(accountCreatedAt: Date, action: 'invitation'): number` — invits/j selon semaine compte
+- [x] `shouldAddNote(invitsSentToday: number): boolean` — alterne 60/40 selon ratio
+- [x] `typingDurationMs(text: string): number` — 35±10 wpm Gauss, min 2000ms
+- [x] Tests Vitest : weekly cap (99→ok, 100→block), ramp-up semaine 1/2/3/4, shouldAddNote distribution, typing duration (≥2000ms), human hours LI (même fonction v4-002b)
 
 ### Must NOT
 - Ne pas permettre d'overrider le cap weekly 100 — hardcodé, non configurable
@@ -62,11 +62,11 @@ export function shouldAddNote(invitsSentToday: number): boolean {
 ```
 
 ## Acceptance Criteria
-- [ ] `npm run test` — tous les tests pacing LI passent
-- [ ] `checkLIWeeklyCap(100)` retourne false
-- [ ] `getRampUpLimit(dateNow-6j)` retourne 5 (semaine 1)
-- [ ] `shouldAddNote` sur 10 appels → 6 true, 4 false
-- [ ] `typingDurationMs("Bonjour Thomas")` ≥ 2000ms
+- [x] `npm run test` — tous les tests pacing LI passent (75/75 ✅ 2026-05-19)
+- [x] `checkLIWeeklyCap(100)` retourne false
+- [x] `getRampUpLimit(dateNow-6j)` retourne 5 (semaine 1)
+- [x] `shouldAddNote` sur 10 appels → 6 true, 4 false
+- [x] `typingDurationMs("Bonjour Thomas")` ≥ 2000ms
 
 ## Dependencies
 **Blocked By**: v4-020 (lib/unipile.ts pour contexte), v4-002b (gaussRandom déjà défini)

@@ -1,5 +1,5 @@
 # Task v4-008 : Cron polling Calendly → tab Meetings
-**Status**: 🚧 Partiel — 2026-05-17 (code + tests + build OK ; smoke Calendly/Sheets réel restant)
+**Status**: ✅ Done — 2026-05-18
 
 ## Autonomie
 🤖 **Claude 100%** — route Next.js cron + tests Vitest (TDD).
@@ -61,7 +61,7 @@ Variable à ajouter : `CRON_SECRET` (Vercel l'injecte automatiquement sur les pr
 
 ## Acceptance Criteria
 - [x] `npm run test` — tests polling passent
-- [ ] Cron déclenché → row écrite dans Meetings + lead.statut=booked
+- [x] Cron déclenché → row écrite dans Meetings + lead.statut=booked
 - [x] Deuxième déclenchement même event → no-op
 - [x] Route répond 401 sans `CRON_SECRET`
 
@@ -76,6 +76,15 @@ Variable à ajouter : `CRON_SECRET` (Vercel l'injecte automatiquement sur les pr
 - ✅ Tests ajoutés : route 401/OK, nouvel event, event déjà connu, 0 event, récupération invitees.
 - ✅ Preuves : `npm run test` → 67 fichiers / 345 tests passés ; `npm run build` → OK.
 - ⬜ Reste : smoke réel staging avec Calendly + GSheet enfant pour valider l'écriture live et la valeur de statut attendue côté feuille.
+
+### 2026-05-18 — Auth cron live débloquée
+
+- ✅ `CRON_SECRET` généré localement et ajouté à Vercel Production.
+- ✅ Redéploiement production `dpl_41XWLvECN67bW5c845HJiajFjMeL`.
+- ✅ Appel live `GET https://flinty.vercel.app/api/calendly/poll` avec bearer secret : 200 `{ success:true, events:0, invitees:0, created:0 }`.
+- ✅ Booking réel smoke avec `thomas+smoke@kamesai.com` détecté : poll live 200 `{ events:1, invitees:1, created:1 }`.
+- ✅ GSheet enfant final `13ZqT3Lgm6ybwv3AwrGYPQHDaN-oaBJ32nH0QXVbOmFw` : row `Meetings` créée pour event `d3c28652-76a1-4282-9e16-95dd08a6c9b0`.
+- ✅ Lead `smoke_m1_20260518193456_hy3o_lead_smoke_001` passé `statut_email=booked`.
 
 ## Dependencies
 **Blocked By**: v4-002 (tab Meetings), v4-006 (`lib/calendly.ts`)

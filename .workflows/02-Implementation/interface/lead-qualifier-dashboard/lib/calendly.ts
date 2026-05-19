@@ -164,6 +164,26 @@ export async function listCalendlyEventTypes(token: string): Promise<CalendlyEve
   return data.collection ?? [];
 }
 
+export async function getCalendlySchedulingUrl(eventTypeUri?: string): Promise<string> {
+  if (process.env.CALENDLY_SCHEDULING_URL) return process.env.CALENDLY_SCHEDULING_URL;
+
+  const uri = eventTypeUri || process.env.CALENDLY_EVENT_TYPE_URI || "";
+  if (!uri) return "";
+  if (!uri.includes("api.calendly.com")) return uri;
+
+  const token = getCalendlyPAT();
+  const res = await fetch(uri, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (!res.ok) return "";
+  const data = await res.json() as { resource?: { scheduling_url?: string }; scheduling_url?: string };
+  return data.resource?.scheduling_url ?? data.scheduling_url ?? "";
+}
+
 /**
  * Récupère les N prochains slots disponibles pour un event type.
  * Calendly v2 API — endpoint: GET /event_type_available_times

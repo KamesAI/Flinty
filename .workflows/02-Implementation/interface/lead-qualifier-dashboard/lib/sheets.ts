@@ -114,7 +114,26 @@ async function getSpreadsheetTitles() {
   }
 }
 
-function getAuth() {
+function hasUserOAuthCredentials() {
+  return Boolean(
+    process.env.GOOGLE_OAUTH_CLIENT_ID &&
+      process.env.GOOGLE_OAUTH_CLIENT_SECRET &&
+      process.env.GOOGLE_OAUTH_REFRESH_TOKEN
+  );
+}
+
+async function getAuthClient() {
+  if (hasUserOAuthCredentials()) {
+    const oauth2Client = new google.auth.OAuth2(
+      process.env.GOOGLE_OAUTH_CLIENT_ID,
+      process.env.GOOGLE_OAUTH_CLIENT_SECRET
+    );
+    oauth2Client.setCredentials({
+      refresh_token: process.env.GOOGLE_OAUTH_REFRESH_TOKEN,
+    });
+    return oauth2Client;
+  }
+
   return new google.auth.GoogleAuth({
     credentials: {
       client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
@@ -122,18 +141,18 @@ function getAuth() {
     },
     scopes: [
       "https://www.googleapis.com/auth/spreadsheets",
-      "https://www.googleapis.com/auth/drive.file",
+      "https://www.googleapis.com/auth/drive",
     ],
-  });
+  }).getClient();
 }
 
 export async function getSheets() {
-  const auth = await getAuth().getClient();
+  const auth = await getAuthClient();
   return google.sheets({ version: "v4", auth: auth as never });
 }
 
 export async function getDrive() {
-  const auth = await getAuth().getClient();
+  const auth = await getAuthClient();
   return google.drive({ version: "v3", auth: auth as never });
 }
 
@@ -294,6 +313,11 @@ export interface Campaign {
   taux_ouverture: string;
   taux_réponse: string;
   workspace_id: string;
+  // v4 KPI (from WF6, may be empty before first run)
+  connection_rate_li?: string;
+  setter_response_rate?: string;
+  meeting_rate?: string;
+  cost_per_meeting?: string;
 }
 
 export interface Lead {
@@ -313,6 +337,10 @@ export interface Lead {
   statut_email: string;
   resend_email_id: string;
   last_email_sent_at?: string;
+  // v4 fields
+  source_channel?: string;
+  statut_li?: string;
+  setter_action?: string;
 }
 
 // ——— Parsers ———
@@ -533,7 +561,7 @@ export async function getAllEmailEvents(): Promise<EmailEvent[]> {
 
 export { type EmailEvent };
 
-/** Parse les lignes d'un onglet {campaign_id}_Qualified (schéma v4, 27 colonnes A:AA). */
+/** Parse les lignes d'un onglet {campaign_id}_Qualified (schéma v4, 32 colonnes A:AF). */
 export function parseLeadsV3(rows: string[][]): Lead[] {
   if (!rows.length) return [];
   const [, ...data] = rows;
@@ -556,6 +584,10 @@ export function parseLeadsV3(rows: string[][]): Lead[] {
       statut_email:       r[18] ?? "new",
       resend_email_id:    "",
       last_email_sent_at: undefined,
+      // v4 fields
+      source_channel:     r[28] ?? "",
+      statut_li:          r[29] ?? "",
+      setter_action:      r[31] ?? "",
     }));
 }
 
@@ -576,7 +608,7 @@ export async function getAllLeadsV3(campaigns: IndexCampaign[]): Promise<Lead[]>
   return results.flat();
 }
 
-/** Convertit un IndexCampaign v3 vers l'ancien type Campaign (taux_ouverture absent → "0"). */
+/** Convertit un IndexCampaign v3/v4 vers Campaign (taux_ouverture absent → "0"). */
 export function indexCampaignToCampaign(c: IndexCampaign): Campaign {
   return {
     campaign_id:           c.campaign_id,
@@ -592,6 +624,10 @@ export function indexCampaignToCampaign(c: IndexCampaign): Campaign {
     taux_ouverture:        "0",
     taux_réponse:          c.taux_réponse,
     workspace_id:          c.workspace_id,
+    connection_rate_li:    c.connection_rate_li,
+    setter_response_rate:  c.setter_response_rate,
+    meeting_rate:          c.meeting_rate,
+    cost_per_meeting:      c.cost_per_meeting,
   };
 }
 
@@ -612,6 +648,11 @@ export interface IndexCampaign {
   emails_envoyés: string;
   taux_réponse: string;
   workspace_id: string;
+  // v4 — calculées par WF6 toutes les 6h (vides avant premier run WF6)
+  connection_rate_li: string;
+  setter_response_rate: string;
+  meeting_rate: string;
+  cost_per_meeting: string;
 }
 
 export function parseIndexCampaigns(rows: string[][]): IndexCampaign[] {
@@ -634,6 +675,11 @@ export function parseIndexCampaigns(rows: string[][]): IndexCampaign[] {
       emails_envoyés:        r[11] ?? "0",
       taux_réponse:          r[12] ?? "0",
       workspace_id:          r[13] || "kames-default",
+      // v4 KPI columns (written by WF6)
+      connection_rate_li:    r[14] ?? "",
+      setter_response_rate:  r[15] ?? "",
+      meeting_rate:          r[16] ?? "",
+      cost_per_meeting:      r[17] ?? "",
     }));
 }
 
@@ -656,12 +702,17 @@ export const INDEX_CAMPAIGNS_COLUMNS = [
   "emails_envoyés",
   "taux_réponse",
   "workspace_id",
+  // v4 KPI columns (written by WF6)
+  "connection_rate_li",
+  "setter_response_rate",
+  "meeting_rate",
+  "cost_per_meeting",
 ] as const;
 
 type IndexCampaignColumnName = (typeof INDEX_CAMPAIGNS_COLUMNS)[number];
 type IndexCampaignPatch = Partial<Record<IndexCampaignColumnName, string>>;
 
-const INDEX_CAMPAIGNS_RANGE = "Campagnes!A:N";
+const INDEX_CAMPAIGNS_RANGE = "Campagnes!A:R";
 
 export const ACCOUNTS_SHEET_NAME = "Accounts";
 export const ACCOUNTS_HEADER = [
@@ -1110,47 +1161,174 @@ export const CHILD_CONVERSATIONS_HEADER = [
   "sent_at", "intent", "validated_by", "edited_from_draft", "tags", "human_intent_label",
 ] as const;
 
+async function ensureChildGSheetTabs(spreadsheetId: string) {
+  const sheets = await getSheets();
+  const metadata = await sheets.spreadsheets.get({
+    spreadsheetId,
+    fields: "sheets.properties(sheetId,title,index)",
+  });
+  const sheetProps = metadata.data.sheets?.map((sheet) => sheet.properties).filter(Boolean) ?? [];
+  const titles = new Set(sheetProps.map((sheet) => sheet?.title).filter(Boolean));
+  const requests: Array<Record<string, unknown>> = [];
+
+  if (!titles.has("Leads_Raw")) {
+    const firstSheet = sheetProps[0];
+    if (firstSheet?.sheetId !== undefined) {
+      requests.push({
+        updateSheetProperties: {
+          properties: { sheetId: firstSheet.sheetId, title: "Leads_Raw", index: 0 },
+          fields: "title,index",
+        },
+      });
+      titles.add("Leads_Raw");
+    }
+  }
+
+  for (const [index, title] of ["Leads_Qualified", "Leads_Rejected", "Config", "Conversations"].entries()) {
+    if (!titles.has(title)) {
+      requests.push({ addSheet: { properties: { title, index: index + 1 } } });
+      titles.add(title);
+    }
+  }
+
+  if (requests.length > 0) {
+    await sheets.spreadsheets.batchUpdate({
+      spreadsheetId,
+      requestBody: { requests },
+    });
+  }
+}
+
+async function createDriveSpreadsheetFile(title: string, folderId?: string) {
+  const drive = await getDrive();
+  const templateId = process.env.GOOGLE_CHILD_SHEET_TEMPLATE_ID ?? process.env.GOOGLE_SHEET_TEMPLATE_ID;
+  const parents = folderId ? [folderId] : undefined;
+
+  if (templateId) {
+    const copied = await drive.files.copy({
+      fileId: templateId,
+      supportsAllDrives: true,
+      requestBody: {
+        name: title,
+        parents,
+      },
+      fields: "id, webViewLink",
+    });
+    return {
+      spreadsheetId: copied.data.id!,
+      sheetUrl: copied.data.webViewLink ?? `https://docs.google.com/spreadsheets/d/${copied.data.id}`,
+    };
+  }
+
+  const created = await drive.files.create({
+    supportsAllDrives: true,
+    requestBody: {
+      name: title,
+      mimeType: "application/vnd.google-apps.spreadsheet",
+      parents,
+    },
+    fields: "id, webViewLink",
+  });
+
+  return {
+    spreadsheetId: created.data.id!,
+    sheetUrl: created.data.webViewLink ?? `https://docs.google.com/spreadsheets/d/${created.data.id}`,
+  };
+}
+
+async function transferDriveOwnershipIfConfigured(spreadsheetId: string) {
+  const ownerEmail = process.env.GOOGLE_DRIVE_OWNER_EMAIL;
+  if (!ownerEmail || hasUserOAuthCredentials()) return;
+
+  const drive = await getDrive();
+  try {
+    await drive.permissions.create({
+      fileId: spreadsheetId,
+      supportsAllDrives: true,
+      sendNotificationEmail: true,
+      requestBody: {
+        type: "user",
+        role: "writer",
+        pendingOwner: true,
+        emailAddress: ownerEmail,
+      },
+    });
+  } catch (error) {
+    console.warn(
+      `Drive ownership transfer skipped for ${spreadsheetId}: ${
+        error instanceof Error ? error.message : String(error)
+      }`
+    );
+  }
+}
+
+async function shareDriveFileWithServiceAccount(spreadsheetId: string) {
+  const serviceAccountEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
+  if (!serviceAccountEmail || !hasUserOAuthCredentials()) return;
+
+  const drive = await getDrive();
+  try {
+    await drive.permissions.create({
+      fileId: spreadsheetId,
+      supportsAllDrives: true,
+      sendNotificationEmail: false,
+      requestBody: {
+        type: "user",
+        role: "writer",
+        emailAddress: serviceAccountEmail,
+      },
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (!/already exists|duplicate/i.test(message)) {
+      throw error;
+    }
+  }
+}
+
 /**
  * Crée un nouveau fichier GSheet dédié à la campagne (1 fichier par campagne).
  * Onglets : Leads_Raw, Leads_Qualified (v4), Leads_Rejected, Config (v4), Conversations
- * Déplace le fichier dans GOOGLE_DRIVE_FOLDER_ID si configuré.
+ * Si GOOGLE_OAUTH_* est configuré, crée/copiera avec le compte Gmail utilisateur
+ * pour éviter le quota nul du service account.
  */
 export async function createChildGSheet(
   _sheetName: string,
   config: ChildSheetConfig
 ): Promise<{ spreadsheetId: string; sheetUrl: string }> {
   const sheets = await getSheets();
-
-  // 1. Créer un fichier GSheet dédié avec les 5 onglets
-  const newSheet = await sheets.spreadsheets.create({
-    requestBody: {
-      properties: { title: `Flinty — ${config.campaign_id}` },
-      sheets: [
-        { properties: { title: "Leads_Raw", index: 0 } },
-        { properties: { title: "Leads_Qualified", index: 1 } },
-        { properties: { title: "Leads_Rejected", index: 2 } },
-        { properties: { title: "Config", index: 3 } },
-        { properties: { title: "Conversations", index: 4 } },
-      ],
-    },
-  });
-
-  const spreadsheetId = newSheet.data.spreadsheetId!;
-  const sheetUrl = `https://docs.google.com/spreadsheets/d/${spreadsheetId}`;
-
-  // 2. Déplacer dans le dossier Drive si GOOGLE_DRIVE_FOLDER_ID est configuré
   const folderId = process.env.GOOGLE_DRIVE_FOLDER_ID;
+  const title = `Flinty — ${config.campaign_id}`;
+  let spreadsheetId: string;
+  let sheetUrl: string;
+
+  // 1. Créer/copier le fichier via Drive si possible. En Gmail gratuit, le chemin OAuth
+  // utilisateur est le plus fiable : le fichier appartient au Gmail, pas au service account.
   if (folderId) {
-    const drive = await getDrive();
-    await drive.files.update({
-      fileId: spreadsheetId,
-      addParents: folderId,
-      removeParents: "root",
-      fields: "id, parents",
+    const created = await createDriveSpreadsheetFile(title, folderId);
+    spreadsheetId = created.spreadsheetId;
+    sheetUrl = created.sheetUrl;
+    await transferDriveOwnershipIfConfigured(spreadsheetId);
+    await shareDriveFileWithServiceAccount(spreadsheetId);
+    await ensureChildGSheetTabs(spreadsheetId);
+  } else {
+    const newSheet = await sheets.spreadsheets.create({
+      requestBody: {
+        properties: { title },
+        sheets: [
+          { properties: { title: "Leads_Raw", index: 0 } },
+          { properties: { title: "Leads_Qualified", index: 1 } },
+          { properties: { title: "Leads_Rejected", index: 2 } },
+          { properties: { title: "Config", index: 3 } },
+          { properties: { title: "Conversations", index: 4 } },
+        ],
+      },
     });
+    spreadsheetId = newSheet.data.spreadsheetId!;
+    sheetUrl = `https://docs.google.com/spreadsheets/d/${spreadsheetId}`;
   }
 
-  // 3. Headers sur chaque onglet
+  // 2. Headers sur chaque onglet
   const qualifiedLastCol = getColumnLetter(CHILD_QUALIFIED_HEADER.length);
   await sheets.spreadsheets.values.batchUpdate({
     spreadsheetId,
@@ -1222,8 +1400,8 @@ export async function createChildGSheet(
 
 /**
  * Met à jour la valeur d'un param_key dans l'onglet Config du GSheet enfant.
- * Essaie "Config" (v4 — 1 fichier par campagne) en premier,
- * puis "{campaign_id}_Config" (v3 legacy — onglets dans fichier partagé).
+ * Essaie "{campaign_id}_Config" (legacy/fichier partagé) en premier,
+ * puis "Config" (v4 — 1 fichier par campagne).
  */
 export async function updateConfigValue(
   spreadsheetId: string,
@@ -1232,7 +1410,7 @@ export async function updateConfigValue(
   param_value: string
 ): Promise<void> {
   const sheets = await getSheets();
-  const tabNames = ["Config", `${campaign_id}_Config`];
+  const tabNames = [`${campaign_id}_Config`, "Config"];
 
   for (const configTab of tabNames) {
     let rows: string[][];

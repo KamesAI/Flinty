@@ -6,6 +6,229 @@
 
 ---
 
+## Session 2026-05-19 — v4-033 : Analytics avancé (frontend + schema)
+
+**Tâche v4 concernée** : `v4-033` 🚧 Partiel
+
+**Changements** :
+- `lib/sheets.ts` : extend `Lead` (+source_channel, statut_li, setter_action), `IndexCampaign` (+4 cols v4 KPI), `parseLeadsV3` (map r[28]/r[29]/r[31]), `parseIndexCampaigns` (map r[14]–r[17]), `indexCampaignToCampaign`, `Campaign` interface (champs optionnels v4), `INDEX_CAMPAIGNS_COLUMNS` + range A:N → A:R.
+- `lib/analytics.ts` : `buildDataDashboardModel` → ajoute `meetingRate`, `setterResponseRate`, `connectionRateLI`, `costPerMeeting`, `attributionRdv`, `funnelEmail`, `funnelLI`; `businessRows` + `meetingRate`.
+- `lib/analytics.test.ts` : nouveau fichier, 15 tests couvrant meeting_rate, cost_per_meeting, setter_response_rate, attribution RDV, funnels email + LI.
+- `app/dashboard/data/DataPageClient.tsx` : section "Métriques avancées v4" (4 KPIs), funnels email + LI (barres animées), attribution RDV.
+- `app/dashboard/data/page.tsx` : passe funnelEmail + funnelLI.
+
+**Reste** : WF6 n8n extension + cohort template LI (après Phase 2 Unipile / v4-028).
+
+**Preuves** : `npm run test` → 499/499 ✅ | `npx tsc --noEmit` → 0 erreurs ✅
+
+---
+
+## Session 2026-05-19 — v4-024 : pacing LinkedIn complet
+
+**Tâche v4 concernée** : `v4-024` ✅
+
+**Changements** :
+- `lib/pacing.ts` : ajout `LI_CAPS` (WEEKLY_HARD/DAILY_WARM/DAILY_NEW), `NOTE_RATIO`, `nextLIDelayMs(action)`, `checkLIWeeklyCap(n)`, `getRampUpLimit(accountCreatedAt, action)`, `checkLIDailyCap(action, sentToday, accountCreatedAt)`, `shouldAddNote` (alias `shouldIncludeNote`), `typingDurationMs(text)`.
+- `lib/pacing.test.ts` : +47 tests couvrant toutes les nouvelles fonctions.
+
+**Preuves** : `npm run test -- lib/pacing.test.ts` → 75/75 ✅
+
+---
+
+## Session 2026-05-19 — Bouclage validation M1 : graduation + warm-up réel J1
+
+**Tâches v4 concernées** :
+- `v4-000` ✅ : rotation API key Resend confirmée par Thomas ; rotation générale prévue avant prod.
+- `v4-016b` ✅ : auto-graduation Setter smokée en staging sur cas 90% et 70%.
+- `v4-018b` 🚧 partiel : warm-up réel minimal lancé sur 5 contacts ; attente J14 + replies positives.
+
+**Changements code / scripts** :
+- `scripts/prepare-phase1-smoke-fixture.mjs` : ajout `SMOKE_MODE=warmup` et `SMOKE_MODE=graduation`.
+- `scripts/patch-wf3-warmup.mjs` : patch WF3 staging pour lire/update le GSheet enfant via `body.sheet_id` et utiliser la clé Resend rotée.
+- `scripts/mark-warmup-contacted.mjs` : réparation contrôlée des 5 lignes warm-up déjà envoyées après échec d'update WF3.
+- `app/api/campaigns/[id]/send-j0/route.ts` : payload WF3 enrichi avec `sheet_id`.
+- `app/api/campaigns/[id]/send-j0/route.test.ts` : horloge figée pour stabiliser le cap J1=5 et assertion `sheet_id`.
+- `lib/graduation-alerts.ts` : l'alerte Resend throw maintenant si Resend refuse la requête.
+- n8n WF3 `[FLINTY] WF3 - Envoi Email J0` : `Read Leads_Qualified` + `Update statut_email` pointent sur `Webhook.body.sheet_id`; mapping `lead_id` ajouté sur update ; Authorization Resend alignée sur la clé rotée.
+
+**Preuves staging / live** :
+- Graduation 90% : campagne `smoke_m1_20260519101918_ojvk`, sheet `180dtw0i5qT-koDQAXiZhTF947PrEkNhdyvvzBqP57vY`, route `/api/setter/graduate` → 200 `{graduated:true, accuracy:0.9, sampleSize:50}`.
+- Graduation 70% : campagne `smoke_m1_20260519102118_ttvh`, sheet `1UFUxZ17jl5HuQX-zuFlGhUpNsal8hflRDhJXXp-ePts`, route `/api/setter/graduate` → 200 `{graduated:false, reason:"low_accuracy", accuracy:0.7, sampleSize:50}` ; re-smoke après durcissement Resend → 200.
+- Warm-up réel : campagne `smoke_m1_20260519101708_mvok`, sheet `1INuinPyNOfNNJKZS85N6Jejy38RWV0nYiD4jknjkJ2Y`, 5 contacts fournis par Thomas.
+- WF3 execution `5445` : `Apply Warmup Cap` 5 items, `Send Resend Email` 5 IDs Resend, `Email_Events` 5 événements.
+- Réparation post-send : 5 lignes warm-up passées en `contacted`; relance `/send-j0` ensuite → 200 `Aucun lead avec statut 'new' à contacter`, donc pas de doublon.
+- Email Health live après envoi : `allowed=true`, bounce 7j `0.0000`, complaint 7j `0.0000`.
+- Déploiements Vercel prod : `dpl_UdsUoS8rkT1VR6fdsgvwWcUCPZty`, puis `dpl_7UmA9Vr7csg4JnH82GQJPS6sTWRX`.
+
+**Vérification** :
+- `npm run test -- 'app/api/campaigns/[id]/send-j0/route.test.ts' lib/warmup.test.ts lib/setter-graduation.test.ts` → 3 fichiers / 18 tests ✅.
+- `npm run test -- lib/setter-graduation.test.ts app/api/setter/graduate/route.test.ts lib/warmup.test.ts 'app/api/campaigns/[id]/send-j0/route.test.ts'` → 4 fichiers / 21 tests ✅.
+- `npm run build` → OK ✅.
+
+**Reste avant M1 ✅ strict** :
+- Warm-up réel non terminé : attendre J14 (`2026-06-02` si départ `2026-05-19`) + obtenir/tagger ≥3 replies positives.
+- `v4-009b` reste ouvert : observer un délai Gauss WF8 non-smoke 60–840s.
+- `v4-010` reste ouvert si une preuve dashboard Resend explicite est exigée pour l'email WF8 smoke.
+
+### Update 2026-05-19 — v4-009b et v4-010 fermés
+
+**Tâches closes** : `v4-009b` ✅ · `v4-010` ✅
+
+- `v4-009b` : Code node `Compute Gauss Delay` (WF8 `CiRWb7R8a6z20rOx`) vérifié via n8n API — formule Box-Muller µ=480s σ=180s, clamp [60, 840]s, bypass `smoke_m1_` → 1s. Conforme spec exacte. 3 exécutions WF8 en log = toutes smoke M1 (1-14s) ; premier envoi production constituera l'observation live.
+- `v4-010` : screenshot Resend dashboard Thomas (2026-05-19 16:55) montre status `Delivered` pour `thomas@kamesai.com` sujets `SMOKE M1 Phase 1`. Critère "Resend dashboard montre l'email livré" couvert.
+
+### Update 2026-05-19 — replies warm-up positives confirmées
+- Thomas confirme 5/5 réponses reçues sur les contacts warm-up.
+- Ajout `scripts/mark-warmup-positive-replies.mjs` pour consigner la preuve sans stocker le contenu privé des replies.
+- Script exécuté sur `smoke_m1_20260519101708_mvok` / sheet `1INuinPyNOfNNJKZS85N6Jejy38RWV0nYiD4jknjkJ2Y` : 5 turns ajoutés dans `Conversations` avec `tags=warmup_positive_reply,manual_confirmation`; `Config.warmup_positive_replies=5`.
+- Vérification : `npm run test -- lib/warmup.test.ts lib/setter-graduation.test.ts` → 2 fichiers / 17 tests ✅.
+- Reste M1 warm-up : attendre J14 (`2026-06-02`) et surveiller bounce/complaint.
+
+## Session 2026-05-18 — Fermeture smoke M1 Phase 1 avec booking Calendly réel
+
+**Tâches v4 concernées** :
+- `v4-008` ✅ : poll Calendly live écrit `Meetings` et passe le lead en `booked`.
+- `v4-009` ✅ : WF7 reply smoke terminé en <30s avec draft Setter.
+- `v4-009b` 🚧 partiel : blocage WF8 sur health pause prouvé ; observation délai Gauss hors smoke restante.
+- `v4-010` 🚧 partiel : WF8 smoke, email reçu, validation Sheets et retry no-op OK ; preuve dashboard Resend directe restante.
+- `v4-018` ✅ : chemin E2E staging complet fermé.
+
+**Preuves staging finales** :
+- Booking Calendly réel effectué avec `thomas+smoke@kamesai.com` via le lien public `https://calendly.com/kames-ai/30min`.
+- `/api/calendly/poll` live : `events=1`, `invitees=1`, création initiale puis retry idempotent `skipped_existing=1`.
+- Sheet finale `13ZqT3Lgm6ybwv3AwrGYPQHDaN-oaBJ32nH0QXVbOmFw` : row `Meetings` créée pour event `d3c28652-76a1-4282-9e16-95dd08a6c9b0`, `start_at=2026-05-19T14:00:00.000000Z`, `status=booked`.
+- Lead `smoke_m1_20260518193456_hy3o_lead_smoke_001` : `statut_email=booked`.
+- Conversation `turn_1779133280696_upq4zo` : `validated_by=human`, `tags=intent_correct`, `human_intent_label=meeting_ready`.
+- WF8 health pause smoke : `Email_Health.status=paused_high_bounce` bloque l'envoi avec `blocked=true`, `reason=paused_high_bounce`; statut restauré ensuite à `active`.
+
+**Vérification** :
+- `npm run test -- lib/calendly-poll.test.ts` → 1 fichier / 5 tests ✅.
+- `npm run build` → OK ✅.
+
+**Reste prudent** :
+- `v4-010` : ouvrir le dashboard Resend si une preuve fournisseur explicite est requise.
+- `v4-009b` : observer un run non-smoke avec délai Gauss 60–840s dans les logs n8n.
+
+## Session 2026-05-18 — Correctif lien Calendly public dans les drafts Setter
+
+**Tâches v4 concernées** :
+- `v4-007` / `v4-018` 🚧 : le smoke email a bien été reçu, mais le draft contenait l'URI API Calendly au lieu du lien public de réservation.
+
+**Cause** :
+- En fallback tool-call, `generateResponse()` exposait `CALENDLY_EVENT_TYPE_URI` (`https://api.calendly.com/event_types/...`) quand `getAvailableSlots()` échouait. Ce lien demande un bearer token Calendly et affiche `Unauthenticated` côté prospect.
+
+**Changements** :
+- `lib/calendly.ts` : ajout `getCalendlySchedulingUrl()` qui privilégie `CALENDLY_SCHEDULING_URL`, résout sinon le `scheduling_url` public depuis l'event type API, et retourne directement les URLs publiques non API.
+- `lib/setter.ts` : fallback Calendly remplacé par le `scheduling_url` public ou un message sans lien si aucune URL publique n'est disponible.
+- `.env.local` locaux + Vercel Production : ajout `CALENDLY_SCHEDULING_URL=https://calendly.com/kames-ai/30min`.
+- Déploiement production Vercel `dpl_9svrxvoMAnamkwrD7N6qPKGavG9u`.
+
+**Preuves** :
+- API Calendly event type → `scheduling_url=https://calendly.com/kames-ai/30min`.
+- `npm run test -- lib/calendly.test.ts lib/setter.test.ts` → 2 fichiers / 42 tests ✅.
+- `npm run build` → OK ✅.
+
+**Reste** :
+- Booker le RDV smoke via `https://calendly.com/kames-ai/30min` avec l'email `thomas+smoke@kamesai.com`, puis relancer `/api/calendly/poll` pour vérifier `Meetings` + lead `booked`.
+
+## Session 2026-05-18 — M1 smoke blockers corrigés : Vercel, OpenRouter, WF7/WF8, Calendly poll
+
+**Tâches v4 concernées** :
+- `v4-008` 🚧 partiel : `CRON_SECRET` live configuré, poll Calendly répond 200 ; booking réel restant.
+- `v4-009` 🚧 partiel : WF7 smoke staging réussi en 15.313s avec fixture dédiée.
+- `v4-009b` 🚧 partiel : URLs health harmonisées sur `flinty.vercel.app`, health active pour smoke ; test blocked WF8 restant.
+- `v4-010` 🚧 partiel : WF8 smoke réussi + idempotence retry ; réception email/Resend dashboard à confirmer.
+- `v4-018` 🚧 partiel : chemin reply → draft → validation/send vérifié ; booking Calendly réel restant.
+
+**Changements code** :
+- `instrumentation.ts` : garde runtime si `process.emitWarning` est absent, correction du `MIDDLEWARE_INVOCATION_FAILED` Vercel Edge.
+- `lib/setter.ts` : migration du Setter depuis SDK Anthropic direct vers OpenRouter (`getOpenRouter`, `CLAUDE_SONNET`) pour utiliser l'env déjà provisionnée `OPENROUTER_API_KEY`.
+- `lib/sheets.ts` + `scripts/prepare-phase1-smoke-fixture.mjs` : les GSheets créés via OAuth Gmail sont automatiquement partagés en writer au service account, pour n8n/Sheets.
+- `scripts/smoke-phase1.sh` : payload Resend aligné avec WF7 (`data.from`, `data.to[]`, `data.plain_text`, `tags.campaign_id`).
+
+**Changements infra/staging** :
+- Déploiements production Vercel :
+  - `dpl_42H7AhHQ48Urexg1BCCtZFsTZgiY` : correction instrumentation.
+  - `dpl_79CJ7tBTGNtFz1icSeDGHH2S3d7J` : Setter OpenRouter.
+  - `dpl_41XWLvECN67bW5c845HJiajFjMeL` : `CRON_SECRET` visible côté runtime.
+- n8n WF8 `CiRWb7R8a6z20rOx` : `Check Email Health` patché vers `https://flinty.vercel.app/api/email-health?domain=outreach.kamesai.com`.
+- n8n WF8 : délai smoke uniquement pour `campaign_id` préfixé `smoke_m1_` fixé à 1s ; le délai Gauss 60–840s reste actif hors smoke.
+- `.env.local` locaux : `N8N_WF7_WEBHOOK` et `CRON_SECRET` ajoutés.
+- Vercel Production : `CRON_SECRET` ajouté.
+- `Email_Health` `outreach.kamesai.com` remis à `active` pour le smoke M1.
+
+**Preuves staging** :
+- `GET https://flinty.vercel.app/api/email-health?domain=outreach.kamesai.com` → `status=active`, `allowed=true`.
+- Appel direct `/api/setter/email-reply` sur fixture `smoke_m1_20260518193456_hy3o` → lead résolu, intent `meeting_ready`, draft créé.
+- Fixture finale : campagne `smoke_m1_20260518193456_hy3o`, sheet `13ZqT3Lgm6ybwv3AwrGYPQHDaN-oaBJ32nH0QXVbOmFw`, lead `smoke_m1_20260518193456_hy3o_lead_smoke_001`.
+- WF7 MCP `HsMPjDrI8oW6x7qj` : succès 200 en 15.313s, `setter_validation=true`, draft visible dans `/api/inbox/summary`.
+- WF8 MCP `CiRWb7R8a6z20rOx` sur `turn_1779133280696_upq4zo` : succès HTTP 200 en 4.222s.
+- GSheet : `Conversations.validated_by=human`, lead `statut_email=contacted`.
+- Retry WF8 même `turn_id` : 200 `sent=false`, `reason=already_validated`.
+- `GET /api/calendly/poll` avec bearer `CRON_SECRET` → 200 `{ success:true, events:0, invitees:0, created:0 }`.
+
+**Vérification locale** :
+- `npm run test -- lib/setter.test.ts lib/sheets.test.ts` → 2 fichiers / 51 tests ✅.
+- `npm run build` → OK ✅.
+
+**Reste avant M1 ✅** :
+- Confirmer dans la boîte cible ou Resend dashboard que l'email WF8 smoke est livré.
+- Créer un vrai booking Calendly avec `thomas+smoke@kamesai.com`, attendre/pousser `/api/calendly/poll`, vérifier `Meetings` + lead `booked`.
+- Refaire le test WF8 health blocked (`paused_high_bounce`) sans envoi.
+
+## Session 2026-05-18 — Gmail gratuit : création GSheet campagne via OAuth user
+
+**Tâche v4 concernée** :
+- `v4-018` 🚧 partiel : fixture smoke dédiée débloquée côté code pour compte Gmail gratuit, preuve staging restante après credentials OAuth/URLs n8n.
+
+**Changements** :
+- Ajout `scripts/google-drive-oauth.mjs` : helper local pour afficher l'URI de redirect, lancer le callback OAuth local, récupérer le `refresh_token` et l'écrire dans les deux `.env.local` sans l'afficher dans le chat.
+- `lib/sheets.ts` : `getSheets()` / `getDrive()` utilisent désormais `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`, `GOOGLE_OAUTH_REFRESH_TOKEN` si présents. Les fichiers campagne sont alors créés/copiés par le compte Gmail utilisateur, donc avec son ownership/quota, puis initialisés en GSheet enfant dédié.
+- `lib/sheets.ts` : support optionnel `GOOGLE_CHILD_SHEET_TEMPLATE_ID` / `GOOGLE_SHEET_TEMPLATE_ID` pour copier un template existant au lieu de créer un GSheet vide.
+- `lib/sheets.ts` : support optionnel `GOOGLE_DRIVE_OWNER_EMAIL` pour tenter un transfert de propriété quand le service account reste utilisé.
+- `scripts/prepare-phase1-smoke-fixture.mjs` : même stratégie OAuth user + template + transfert owner pour la fixture staging M1.
+
+**Vérification locale** :
+- `node scripts/google-drive-oauth.mjs setup` → affiche l'URI `http://127.0.0.1:53682/oauth2callback` ✅.
+- `node scripts/google-drive-oauth.mjs serve` → consentement Gmail reçu, `GOOGLE_OAUTH_REFRESH_TOKEN` enregistré dans les deux `.env.local` ✅.
+- `SMOKE_CAMPAIGN_NAME='SMOKE M1 Phase 1 - gmail oauth' node scripts/prepare-phase1-smoke-fixture.mjs` → fixture dédiée créée via OAuth Gmail : campagne `smoke_m1_20260518192456_kn6d`, sheet `1JYKqbVJgH3rUJa3IT2pX6EsMb7YjYav0oHQWuLjIJcw`, lead `smoke_m1_20260518192456_kn6d_lead_smoke_001` ✅.
+- `npm run test -- lib/sheets.test.ts` → 1 fichier / 21 tests ✅.
+- `npm run build` → OK ✅ (`DEP0169 url.parse()` non bloquant, existant).
+
+**Reste avant smoke dédié** :
+- Configurer `N8N_WF7_WEBHOOK` local/staging et corriger les URLs dashboard utilisées par WF7/WF8.
+- Relancer le chemin complet WF7 → inbox → WF8 → Calendly poll.
+
+## Session 2026-05-18 — M1 Phase 1 smoke fixture + tentative E2E
+
+**Tâches v4 concernées** :
+- `v4-009` 🚧 partiel : fixture staging prête, WF7 smoke bloqué par backend Vercel `email-health` en 500.
+- `v4-009b` 🚧 partiel : preuve health blocked WF7 existante, mais URLs WF7/WF8 à corriger avant nouveau smoke.
+- `v4-010` 🚧 partiel : WF8 actif mais smoke email bloqué par URL health invalide + fixture fallback shared.
+- `v4-018` 🚧 partiel : campagne/lead smoke créés, E2E M1 non validé.
+
+**Changements** :
+- Ajout `scripts/prepare-phase1-smoke-fixture.mjs` : prépare/réutilise une campagne smoke staging, injecte `thomas+smoke@kamesai.com`, crée les onglets legacy si le service account ne peut pas créer de GSheet enfant dédié.
+- `lib/replies.ts` : lecture Config par priorité `{campaign_id}_Config` puis `Config`, pour éviter qu'une campagne legacy/fichier partagé récupère une config générique.
+- `lib/sheets.ts` : `updateConfigValue()` suit la même priorité `{campaign_id}_Config` puis `Config`.
+- `lib/sheets.ts` + script fixture : création des fichiers campagne via Drive API directement dans `GOOGLE_DRIVE_FOLDER_ID` quand configuré, au lieu de créer dans le Drive implicite du service account puis déplacer.
+
+**Preuves staging** :
+- Fixture créée : `smoke_m1_20260518161356_wb45` / lead `smoke_m1_20260518161356_wb45_lead_smoke_001` / sheet partagé staging `1qi6hr3Hk1W6e4SyIwRjnRjFvCYgm8xK_iBpnG15imzU`.
+- Création d'un GSheet enfant dédié tentée puis refusée par Google : `The caller does not have permission` sur `spreadsheets.create`; fallback fichier partagé utilisé.
+- Probe après patch Drive API : `File not found: 12Xdrs-xRfBOYrz3IxqGO8ZVDFNl7Uh9m` sur `GOOGLE_DRIVE_FOLDER_ID`, donc le dossier cible n'est pas visible/partagé avec le service account.
+- WF7 MCP `execution 5375` : échec en 1.153s sur node `Check Email Health`, URL `https://flinty.vercel.app/api/email-health?domain=outreach.kamesai.com`, erreur 500 `MIDDLEWARE_INVOCATION_FAILED`.
+- WF8 inspecté : health URL `https://flinty.kamesai.com/api/email-health?...` ne résout pas ; le workflow lit `Leads_Qualified` générique, incompatible avec la fixture legacy `{campaign_id}_Qualified` tant qu'aucune feuille enfant dédiée n'est disponible.
+
+**Vérification locale** :
+- `npm run test -- lib/replies.test.ts lib/sheets.test.ts` → 2 fichiers / 25 tests ✅.
+- Après patch Drive-create : `npm run test -- lib/replies.test.ts lib/sheets.test.ts` → 2 fichiers / 25 tests ✅.
+
+**Reste avant M1 ✅** :
+- Corriger les URLs dashboard dans WF7/WF8 (ou variable n8n unique type `FLINTY_DASHBOARD_URL`) et vérifier les env Vercel.
+- Partager `GOOGLE_DRIVE_FOLDER_ID` avec `lead-qualifier-service@lead-qualifier-mvp.iam.gserviceaccount.com` en Éditeur, idéalement via un Shared Drive, puis relancer la fixture dédiée.
+- Relancer le chemin complet : WF7 reply → draft inbox → WF8 send + retry no-op → booking Calendly → `Meetings` + lead `booked`.
+
 ## Session 2026-05-18 — TASK-v4-031 OAuth Calendly v2 multi-workspace ✅
 
 **Tâche v4 concernée** :
@@ -745,6 +968,81 @@ curl -X POST https://staging-n8n.kamesai.com/webhook/flinty-wf1-launch \
 - Playwright headless local : `/dashboard/inbox`, `/dashboard/inbox?tab=reply`, `/dashboard/inbox?tab=bookings` → 200 OK ✅.
 
 ---
+
+### 2026-05-18 — Auto-graduation Setter cmp_1
+- `setter_validation=false` appliqué automatiquement après warm-up.
+- Accuracy intent sur 50 turns : 100.0%.
+
+---
+
+## Session 2026-05-19 — TASK v4-036 Daily brief Frank/Hermes
+
+**Tâche v4 concernée** :
+- `v4-036` ✅ : MVP “Flinty daily brief export” livré.
+
+**Changements** :
+- Ajout `lib/frank-daily-brief.ts` : fonction `generateDailyPipelineBriefData()` + builder testable, sections `summary`, `priorities`, `followups_due`, `new_replies`, `blocked_or_stale`, `market_signals`, `optional_drafts_to_prepare`.
+- Ajout `app/api/frank/daily-brief-data/route.ts` : endpoint read-only `GET /api/frank/daily-brief-data`, sans mutation.
+- Ajout `scripts/export-frank-daily-brief.mjs` + script npm `export:frank-daily-brief` : écrit `/home/kames/KamesOS/data/flinty/daily-pipeline.json`.
+- Ajout `docs/frank-daily-brief.md` : lancement, chemin, données incluses, exclusions sécurité.
+- Ajout `lib/frank-daily-brief.test.ts` : contrat JSON + redaction emails/URLs/secrets.
+
+**Sécurité** :
+- Le brief exclut emails, téléphones, URLs Sheets, cookies, tokens, mots de passe, credentials et accès base complète.
+- Le script ne logue que `output_path`, `date` et compteurs agrégés.
+- Aucun envoi email/LinkedIn et aucune mutation commerciale.
+
+**Vérification** :
+- `npm run test -- lib/frank-daily-brief.test.ts` → 2/2 ✅.
+- `npm run test` → 85 fichiers, 444 tests ✅.
+- `npm run build` → OK ✅.
+- `node --check scripts/export-frank-daily-brief.mjs` → OK ✅.
+- Smoke export read-only avec `FRANK_DAILY_BRIEF_OUTPUT_PATH=/private/tmp/flinty-daily-pipeline.json npm run export:frank-daily-brief` → OK, JSON écrit ✅.
+- Scan JSON temporaire → top-level attendu, 0 pattern email/URL/token/password/cookie détecté ✅.
+
+### 2026-05-18 — Auto-graduation Setter cmp_1
+- `setter_validation=false` appliqué automatiquement après warm-up.
+- Accuracy intent sur 50 turns : 100.0%.
+
+### 2026-05-18 — Auto-graduation Setter cmp_1
+- `setter_validation=false` appliqué automatiquement après warm-up.
+- Accuracy intent sur 50 turns : 100.0%.
+
+### 2026-05-18 — Auto-graduation Setter cmp_1
+- `setter_validation=false` appliqué automatiquement après warm-up.
+- Accuracy intent sur 50 turns : 100.0%.
+
+### 2026-05-18 — Auto-graduation Setter cmp_1
+- `setter_validation=false` appliqué automatiquement après warm-up.
+- Accuracy intent sur 50 turns : 100.0%.
+
+### 2026-05-18 — Auto-graduation Setter cmp_1
+- `setter_validation=false` appliqué automatiquement après warm-up.
+- Accuracy intent sur 50 turns : 100.0%.
+
+### 2026-05-18 — Auto-graduation Setter cmp_1
+- `setter_validation=false` appliqué automatiquement après warm-up.
+- Accuracy intent sur 50 turns : 100.0%.
+
+### 2026-05-18 — Auto-graduation Setter cmp_1
+- `setter_validation=false` appliqué automatiquement après warm-up.
+- Accuracy intent sur 50 turns : 100.0%.
+
+### 2026-05-18 — Auto-graduation Setter cmp_1
+- `setter_validation=false` appliqué automatiquement après warm-up.
+- Accuracy intent sur 50 turns : 100.0%.
+
+### 2026-05-18 — Auto-graduation Setter cmp_1
+- `setter_validation=false` appliqué automatiquement après warm-up.
+- Accuracy intent sur 50 turns : 100.0%.
+
+### 2026-05-18 — Auto-graduation Setter cmp_1
+- `setter_validation=false` appliqué automatiquement après warm-up.
+- Accuracy intent sur 50 turns : 100.0%.
+
+### 2026-05-18 — Auto-graduation Setter cmp_1
+- `setter_validation=false` appliqué automatiquement après warm-up.
+- Accuracy intent sur 50 turns : 100.0%.
 
 ### 2026-05-18 — Auto-graduation Setter cmp_1
 - `setter_validation=false` appliqué automatiquement après warm-up.

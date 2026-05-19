@@ -13,6 +13,9 @@ import {
   ArrowRight,
   TrendingUp,
   TrendingDown,
+  Linkedin,
+  DollarSign,
+  Bot,
 } from "lucide-react";
 
 const ACCENT = "hsl(var(--primary))";
@@ -40,6 +43,24 @@ interface CampaignRow {
   openRate: number;
   replyRate: number;
   bookingRate: number;
+  meetingRate?: number;
+}
+
+interface FunnelEmail {
+  leadsSourced: number;
+  leadsQualified: number;
+  emailsSent: number;
+  replies: number;
+  meetings: number;
+}
+
+interface FunnelLI {
+  profilesSourced: number;
+  invited: number;
+  accepted: number;
+  dmSent: number;
+  replied: number;
+  meetings: number;
 }
 
 export interface DataPageClientProps {
@@ -55,10 +76,18 @@ export interface DataPageClientProps {
     bookingRate: number;
     repliesPending: number;
     upcomingMeetings: number;
+    // v4
+    meetingRate?: number;
+    setterResponseRate?: number;
+    connectionRateLI?: number;
+    costPerMeeting?: number;
+    attributionRdv?: { email: number; linkedin: number; unknown: number };
   };
   campaignRows: CampaignRow[];
   topTemplates: Array<{ templateKey: string; replies: number }>;
   period: AnalyticsPeriod;
+  funnelEmail?: FunnelEmail;
+  funnelLI?: FunnelLI;
 }
 
 function classify(metric: "open" | "reply" | "booking", value: number) {
@@ -242,9 +271,14 @@ export default function DataPageClient({
   campaignRows,
   topTemplates,
   period,
+  funnelEmail,
+  funnelLI,
 }: DataPageClientProps) {
-  const { qualifiedLeads, emailsSent, openRate, replyRate, bookingRate, repliesPending, upcomingMeetings } =
-    globalKpis;
+  const {
+    qualifiedLeads, emailsSent, openRate, replyRate, bookingRate, repliesPending, upcomingMeetings,
+    meetingRate = 0, setterResponseRate = 0, connectionRateLI = 0, costPerMeeting = 0,
+    attributionRdv = { email: 0, linkedin: 0, unknown: 0 },
+  } = globalKpis;
 
   const subtitle = useMemo(() => {
     if (replyRate > 8) return "Vos campagnes performent au-dessus de la moyenne du secteur. Continuez.";
@@ -517,6 +551,171 @@ export default function DataPageClient({
           </div>
         </section>
       )}
+
+      {/* ── 7. KPIs v4 ── */}
+      <section>
+        <h2 className="mb-4 text-lg font-semibold text-foreground">Métriques avancées v4</h2>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {[
+            { icon: CalendarCheck, label: "Taux meeting", value: meetingRate, suffix: "%", decimals: 1, hint: "meetings / leads qualifiés" },
+            { icon: Bot, label: "Setter rate", value: setterResponseRate, suffix: "%", decimals: 1, hint: "replies traitées par le Setter" },
+            { icon: Linkedin, label: "Connexion LI", value: connectionRateLI, suffix: "%", decimals: 1, hint: "invitations acceptées" },
+            { icon: DollarSign, label: "Coût / meeting", value: costPerMeeting, suffix: "$", decimals: 3, hint: "estimation tokens Anthropic" },
+          ].map((k, i) => {
+            const Icon = k.icon;
+            return (
+              <motion.div
+                key={k.label}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35, delay: i * 0.05 }}
+                className="rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-4"
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="rounded-lg bg-primary/10 p-1.5">
+                    <Icon size={14} style={{ color: ACCENT }} />
+                  </div>
+                  <span className="text-[11px] uppercase tracking-wider text-muted-foreground">{k.label}</span>
+                </div>
+                <CountUp
+                  value={k.value}
+                  decimals={k.decimals}
+                  suffix={k.suffix}
+                  className="text-xl font-semibold text-primary tabular-nums"
+                />
+                <p className="mt-1 text-[10px] text-muted-foreground">{k.hint}</p>
+              </motion.div>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* ── 8. Funnels email + LI ── */}
+      <section className="grid gap-4 md:grid-cols-2">
+        {/* Funnel email */}
+        {funnelEmail && (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.1 }}
+            className="rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-5"
+          >
+            <div className="flex items-center gap-2 mb-4">
+              <Mail size={16} style={{ color: ACCENT }} />
+              <h3 className="text-sm font-semibold text-foreground">Funnel Email</h3>
+            </div>
+            <FunnelBars
+              steps={[
+                { label: "Sourcés", value: funnelEmail.leadsSourced },
+                { label: "Qualifiés", value: funnelEmail.leadsQualified },
+                { label: "Contactés", value: funnelEmail.emailsSent },
+                { label: "Réponses", value: funnelEmail.replies },
+                { label: "Meetings", value: funnelEmail.meetings },
+              ]}
+            />
+          </motion.div>
+        )}
+
+        {/* Funnel LI */}
+        {funnelLI && (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.15 }}
+            className="rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-5"
+          >
+            <div className="flex items-center gap-2 mb-1">
+              <Linkedin size={16} style={{ color: ACCENT }} />
+              <h3 className="text-sm font-semibold text-foreground">Funnel LinkedIn</h3>
+            </div>
+            <p className="text-[10px] text-muted-foreground mb-3 italic">
+              Données disponibles après activation Unipile
+            </p>
+            <FunnelBars
+              steps={[
+                { label: "Sourcés", value: funnelLI.profilesSourced },
+                { label: "Invités", value: funnelLI.invited },
+                { label: "Acceptés", value: funnelLI.accepted },
+                { label: "DM envoyés", value: funnelLI.dmSent },
+                { label: "Réponses", value: funnelLI.replied },
+                { label: "Meetings", value: funnelLI.meetings },
+              ]}
+            />
+          </motion.div>
+        )}
+      </section>
+
+      {/* ── 9. Attribution RDV ── */}
+      {(attributionRdv.email + attributionRdv.linkedin + attributionRdv.unknown) > 0 && (
+        <section>
+          <h2 className="mb-4 text-lg font-semibold text-foreground">Attribution RDV</h2>
+          <div className="rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-5">
+            <AttributionRdv attribution={attributionRdv} />
+          </div>
+        </section>
+      )}
+    </div>
+  );
+}
+
+function FunnelBars({ steps }: { steps: Array<{ label: string; value: number }> }) {
+  const max = Math.max(...steps.map((s) => s.value), 1);
+  return (
+    <div className="space-y-2">
+      {steps.map((s, i) => (
+        <div key={s.label} className="flex items-center gap-3">
+          <span className="w-20 text-[11px] text-muted-foreground shrink-0">{s.label}</span>
+          <div className="flex-1 h-4 rounded overflow-hidden" style={{ background: TRACK }}>
+            <motion.div
+              className="h-full"
+              style={{ background: ACCENT }}
+              initial={{ width: 0 }}
+              whileInView={{ width: `${(s.value / max) * 100}%` }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8, ease: "easeOut", delay: i * 0.08 }}
+            />
+          </div>
+          <span className="w-10 text-right text-xs text-primary tabular-nums shrink-0">{s.value}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function AttributionRdv({ attribution }: { attribution: { email: number; linkedin: number; unknown: number } }) {
+  const total = attribution.email + attribution.linkedin + attribution.unknown;
+  if (total === 0) return null;
+
+  const items = [
+    { label: "Email", value: attribution.email, color: ACCENT },
+    { label: "LinkedIn", value: attribution.linkedin, color: "#0077B5" },
+    ...(attribution.unknown > 0 ? [{ label: "Autre", value: attribution.unknown, color: "hsl(var(--muted-foreground))" }] : []),
+  ];
+
+  return (
+    <div className="space-y-3">
+      {items.map((item) => {
+        const pct = total > 0 ? (item.value / total) * 100 : 0;
+        return (
+          <div key={item.label} className="flex items-center gap-3">
+            <span className="w-20 text-[11px] text-muted-foreground shrink-0">{item.label}</span>
+            <div className="flex-1 h-4 rounded overflow-hidden" style={{ background: TRACK }}>
+              <motion.div
+                className="h-full"
+                style={{ background: item.color, width: `${pct}%` }}
+                initial={{ width: 0 }}
+                whileInView={{ width: `${pct}%` }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.8, ease: "easeOut" }}
+              />
+            </div>
+            <span className="w-16 text-right text-xs tabular-nums" style={{ color: item.color }}>
+              {item.value} <span className="text-muted-foreground">({pct.toFixed(0)}%)</span>
+            </span>
+          </div>
+        );
+      })}
+      <p className="text-[11px] text-muted-foreground pt-1">Total : {total} RDV</p>
     </div>
   );
 }

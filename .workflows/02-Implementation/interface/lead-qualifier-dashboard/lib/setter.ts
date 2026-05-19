@@ -1,5 +1,5 @@
-import Anthropic from "@anthropic-ai/sdk";
-import { getAvailableSlots, formatSlotsNatural } from "./calendly";
+import { getAvailableSlots, formatSlotsNatural, getCalendlySchedulingUrl } from "./calendly";
+import { CLAUDE_SONNET, getOpenRouter } from "./openrouter";
 import type { IntentLabel, IntentResult, CalendlySlot } from "./types";
 
 // ——— Constants ———
@@ -201,17 +201,6 @@ Valeurs d'intent autorisées :
 RÉPONDS UNIQUEMENT LE JSON`.trim();
 }
 
-// ——— Anthropic client (singleton) ———
-
-let _client: Anthropic | null = null;
-
-function getClient(): Anthropic {
-  if (!_client) {
-    _client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-  }
-  return _client;
-}
-
 // ——— API calls ———
 
 /**
@@ -222,7 +211,7 @@ export async function classifyIntent(
   thread: ConversationMessage[],
   campaignContext: string
 ): Promise<IntentResult> {
-  const client = getClient();
+  const client = getOpenRouter();
 
   const lastProspectMsg = [...thread].reverse().find((m) => m.role === "prospect");
   const recentThread = thread
@@ -232,20 +221,16 @@ export async function classifyIntent(
 
   const userContent = `${campaignContext}\n\n## Thread récent\n${recentThread}\n\n## Dernier message prospect\n${lastProspectMsg?.content ?? ""}`;
 
-  const response = await client.messages.create({
-    model: process.env.SETTER_MODEL ?? "claude-sonnet-4-6",
+  const response = await client.chat.completions.create({
+    model: process.env.SETTER_MODEL ?? CLAUDE_SONNET,
     max_tokens: 256,
-    system: [
-      {
-        type: "text",
-        text: buildIntentSystemPrompt(),
-        cache_control: { type: "ephemeral" },
-      },
+    messages: [
+      { role: "system", content: buildIntentSystemPrompt() },
+      { role: "user", content: userContent },
     ],
-    messages: [{ role: "user", content: userContent }],
   });
 
-  const raw = response.content.find((b) => b.type === "text")?.text ?? "";
+  const raw = response.choices[0]?.message?.content ?? "";
   return parseIntentResponse(raw);
 }
 
@@ -262,10 +247,10 @@ export async function generateResponse(
 ): Promise<{ draft: string; slots_proposed: boolean }> {
   const model =
     intent === "objection_trust"
-      ? (process.env.SETTER_FALLBACK_MODEL ?? "claude-opus-4-6")
-      : (process.env.SETTER_MODEL ?? "claude-sonnet-4-6");
+      ? (process.env.SETTER_FALLBACK_MODEL ?? process.env.SETTER_MODEL ?? CLAUDE_SONNET)
+      : (process.env.SETTER_MODEL ?? CLAUDE_SONNET);
 
-  const client = getClient();
+  const client = getOpenRouter();
   const campaignCtx = buildConversationContext(ctx);
   const systemPrompt = buildSystemPrompt(ctx.campaign.setter_tone);
 
@@ -277,19 +262,22 @@ export async function generateResponse(
     })
     .join("\n\n");
 
-  const tools: Anthropic.Tool[] = [
+  const tools = [
     {
-      name: "get_calendly_slots",
-      description: "Récupère les 3 prochains créneaux Calendly disponibles pour proposer un RDV.",
-      input_schema: {
-        type: "object" as const,
-        properties: {
-          event_type_uri: {
-            type: "string",
-            description: "URI Calendly de l'event type",
+      type: "function" as const,
+      function: {
+        name: "get_calendly_slots",
+        description: "Récupère les 3 prochains créneaux Calendly disponibles pour proposer un RDV.",
+        parameters: {
+          type: "object",
+          properties: {
+            event_type_uri: {
+              type: "string",
+              description: "URI Calendly de l'event type",
+            },
           },
+          required: [],
         },
-        required: [],
       },
     },
   ];
@@ -299,32 +287,30 @@ export async function generateResponse(
   let draft = "";
   let slots_proposed = false;
 
-  const response = await client.messages.create({
+  const response = await client.chat.completions.create({
     model,
     max_tokens: 512,
-    system: [
-      {
-        type: "text",
-        text: systemPrompt,
-        cache_control: { type: "ephemeral" },
-      },
-      {
-        type: "text",
-        text: campaignCtx,
-        cache_control: { type: "ephemeral" },
-      },
-    ],
     tools,
-    tool_choice: intent === "meeting_ready" ? { type: "auto" } : { type: "none" },
-    messages: [{ role: "user", content: userContent }],
+    tool_choice: intent === "meeting_ready" ? "auto" : "none",
+    messages: [
+      { role: "system", content: `${systemPrompt}\n\n${campaignCtx}` },
+      { role: "user", content: userContent },
+    ],
   });
 
   // Handle tool use
-  if (response.stop_reason === "tool_use") {
-    const toolUse = response.content.find((b) => b.type === "tool_use");
-    if (toolUse && toolUse.type === "tool_use" && toolUse.name === "get_calendly_slots") {
+  const assistantMessage = response.choices[0]?.message;
+  const toolCall = assistantMessage?.tool_calls?.find(
+    (call) => call.type === "function" && call.function.name === "get_calendly_slots"
+  );
+  if (toolCall) {
+    try {
+      const functionCall = toolCall as { id: string; function: { arguments?: string } };
+      const input = functionCall.function.arguments
+        ? JSON.parse(functionCall.function.arguments)
+        : {};
       const eventUri =
-        (toolUse.input as { event_type_uri?: string }).event_type_uri ??
+        (input as { event_type_uri?: string }).event_type_uri ??
         options?.eventTypeUri ??
         process.env.CALENDLY_EVENT_TYPE_URI ??
         "";
@@ -339,39 +325,35 @@ export async function generateResponse(
         slotsText = formatSlotsNatural(slots);
         slots_proposed = true;
       } catch {
-        slotsText = "Consultez mon agenda directement : " + process.env.CALENDLY_EVENT_TYPE_URI;
+        const schedulingUrl = await getCalendlySchedulingUrl(eventUri);
+        slotsText = schedulingUrl
+          ? "Consultez mon agenda directement : " + schedulingUrl
+          : "Je vous envoie mon lien de réservation juste après.";
       }
 
       // Continue conversation avec les slots
-      const followUp = await client.messages.create({
+      const followUp = await client.chat.completions.create({
         model,
         max_tokens: 512,
-        system: [
-          { type: "text", text: systemPrompt, cache_control: { type: "ephemeral" } },
-          { type: "text", text: campaignCtx, cache_control: { type: "ephemeral" } },
-        ],
         tools,
         messages: [
+          { role: "system", content: `${systemPrompt}\n\n${campaignCtx}` },
           { role: "user", content: userContent },
-          { role: "assistant", content: response.content },
+          assistantMessage,
           {
-            role: "user",
-            content: [
-              {
-                type: "tool_result",
-                tool_use_id: toolUse.id,
-                content: slotsText,
-              },
-            ],
+            role: "tool",
+            tool_call_id: functionCall.id,
+            content: slotsText,
           },
         ],
       });
 
-      draft =
-        followUp.content.find((b) => b.type === "text")?.text ?? "";
+      draft = followUp.choices[0]?.message?.content ?? "";
+    } catch {
+      draft = assistantMessage?.content ?? "";
     }
   } else {
-    draft = response.content.find((b) => b.type === "text")?.text ?? "";
+    draft = assistantMessage?.content ?? "";
   }
 
   return { draft: draft.trim(), slots_proposed };

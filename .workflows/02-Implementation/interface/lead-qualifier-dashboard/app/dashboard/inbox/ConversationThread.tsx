@@ -1,8 +1,25 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { Linkedin, Mail } from "lucide-react";
+import { CheckCheck, Clock, Linkedin, Mail } from "lucide-react";
 import type { ConversationTurn } from "@/lib/conversations";
+
+const INTENT_LABELS: Record<string, string> = {
+  meeting_ready: "Prêt pour RDV",
+  interested: "Intéressé",
+  objection_price: "Objection prix",
+  objection_timing: "Objection timing",
+  objection_need: "Objection besoin",
+  objection_trust: "Objection confiance",
+  off_topic: "Hors sujet",
+  unsubscribe: "Désinscription",
+  hostile: "Hostile",
+};
+
+function intentLabel(raw: string | undefined): string | null {
+  if (!raw) return null;
+  return INTENT_LABELS[raw] ?? raw;
+}
 
 interface ConversationThreadProps {
   turns?: ConversationTurn[];
@@ -81,19 +98,30 @@ export function ConversationThread({ turns, thread, leadName = "ce lead" }: Conv
                   : isHuman
                     ? "border-emerald-200 bg-emerald-50 text-slate-950"
                     : isDraft
-                      ? "border-[hsl(var(--primary)/0.3)] bg-[hsl(var(--primary)/0.08)] text-slate-950"
-                      : "border-[hsl(var(--primary)/0.18)] bg-white text-slate-950"
+                      ? "border-amber-300 bg-amber-50 text-slate-950"
+                      : "border-[hsl(var(--primary)/0.25)] bg-[hsl(var(--primary)/0.06)] text-slate-950"
               }`}
             >
               <div className="mb-2 flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                 <span>{roleLabel(turn.role)}</span>
                 <ChannelBadge channel={turn.channel} />
-                {turn.intent ? <span>{turn.intent}</span> : null}
+                {turn.intent ? (
+                  <span className={isDraft ? "text-amber-700" : undefined}>
+                    {intentLabel(turn.intent)}
+                  </span>
+                ) : null}
                 <time dateTime={turn.sent_at}>{formatRelativeDate(turn.sent_at)}</time>
+                {!isProspect && !isDraft && turn.validated_by ? (
+                  <span className="inline-flex items-center gap-1 text-emerald-700">
+                    <CheckCheck className="size-3" />
+                    Envoyé
+                  </span>
+                ) : null}
               </div>
               {isDraft ? (
-                <div className="mb-2 rounded-md border border-[hsl(var(--primary)/0.22)] bg-white/70 px-2 py-1 text-xs font-semibold text-[hsl(var(--primary))]">
-                  Draft — en attente de validation
+                <div className="mb-2 inline-flex items-center gap-1.5 rounded-md border border-amber-300 bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-800">
+                  <Clock className="size-3" />
+                  En attente de validation
                 </div>
               ) : null}
               <p className="whitespace-pre-wrap">{turn.content}</p>

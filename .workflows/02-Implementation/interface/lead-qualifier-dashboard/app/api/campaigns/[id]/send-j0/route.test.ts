@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { POST } from "./route";
 
 vi.mock("@/lib/sheets", () => ({
@@ -28,6 +28,8 @@ vi.stubGlobal("fetch", fetchMock);
 
 describe("POST /api/campaigns/[id]/send-j0", () => {
   beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-05-18T10:00:00.000Z"));
     vi.clearAllMocks();
     process.env.N8N_WF3_WEBHOOK = "https://staging-n8n.kamesai.com/webhook/kames-send-email-j0";
     vi.mocked(readIndex).mockResolvedValue([]);
@@ -73,6 +75,10 @@ describe("POST /api/campaigns/[id]/send-j0", () => {
     fetchMock.mockResolvedValue({ ok: true });
   });
 
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it("cappe les envois warm-up à 5 emails J1 et préfixe le sujet", async () => {
     vi.mocked(readCampaignConfig).mockResolvedValueOnce({
       warmup_campaign: "TRUE",
@@ -87,6 +93,7 @@ describe("POST /api/campaigns/[id]/send-j0", () => {
     const webhookBody = JSON.parse(fetchMock.mock.calls[0][1].body);
     expect(webhookBody).toMatchObject({
       campaign_id: "cmp_1",
+      sheet_id: "sheet_1",
       leads_count: 5,
       warmup_campaign: true,
       warmup_max_daily_sends: 5,

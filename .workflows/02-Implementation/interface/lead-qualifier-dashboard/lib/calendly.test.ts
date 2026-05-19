@@ -1,6 +1,7 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import {
   formatSlotsNatural,
+  getCalendlySchedulingUrl,
   parseCalendlySlots,
   buildCalendlyAuthUrl,
   getCalendlyToken,
@@ -142,5 +143,33 @@ describe("getCalendlyToken", () => {
     vi.mocked(getCalendlyAccount).mockResolvedValueOnce(null);
 
     await expect(getCalendlyToken("workspace-a")).resolves.toBe("pat-token");
+  });
+});
+
+describe("getCalendlySchedulingUrl", () => {
+  beforeEach(() => {
+    vi.unstubAllGlobals();
+    delete process.env.CALENDLY_SCHEDULING_URL;
+    process.env.CALENDLY_TOKEN = "pat-token";
+    process.env.CALENDLY_EVENT_TYPE_URI = "https://api.calendly.com/event_types/type_1";
+  });
+
+  it("retourne CALENDLY_SCHEDULING_URL si configure", async () => {
+    process.env.CALENDLY_SCHEDULING_URL = "https://calendly.com/kames-ai/30min";
+    await expect(getCalendlySchedulingUrl()).resolves.toBe("https://calendly.com/kames-ai/30min");
+  });
+
+  it("résout le scheduling_url public depuis l'URI API event type", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({
+      resource: { scheduling_url: "https://calendly.com/kames-ai/30min" },
+    }), { status: 200 })));
+
+    await expect(getCalendlySchedulingUrl()).resolves.toBe("https://calendly.com/kames-ai/30min");
+  });
+
+  it("retourne directement une URL publique non API", async () => {
+    await expect(getCalendlySchedulingUrl("https://calendly.com/kames-ai/30min")).resolves.toBe(
+      "https://calendly.com/kames-ai/30min"
+    );
   });
 });

@@ -1,5 +1,5 @@
 # Task v4-018b : Mode `warmup_campaign` UI + flag campagne + soft warm-up flow 2 sem
-**Status**: 🚧 Partiel — 2026-05-18 (code + WF2/WF3 + tests OK ; smoke warm-up réel restant)
+**Status**: 🚧 Partiel — 2026-05-19 (J1 réel envoyé + 5 replies positives ; attente J14/santé)
 
 ## Autonomie
 🤖 **Claude 100%** — code UI + logique campagne.
@@ -43,7 +43,7 @@ if (campaign.warmup_campaign) {
 - [x] Toggle warmup_campaign visible dans page settings campagne
 - [x] Campagne warmup : WF2 n'écarte aucun lead (score forcé à 100)
 - [x] Campagne warmup J1 : max 5 emails envoyés
-- [x] Campagne warmup J14 : max 20 emails envoyés
+- [ ] Campagne warmup J14 : max 20 emails envoyés
 - [x] Reply positive taggée manuellement depuis inbox
 
 ## Avancement 2026-05-18
@@ -55,7 +55,25 @@ if (campaign.warmup_campaign) {
 - ✅ Route WF3 `/send-j0` transmet `warmup_max_daily_sends`, `subject_prefix`; WF3 n8n patché avec node `Apply Warmup Cap` + objet `[WARMUP]`.
 - ✅ Auto-switch : le cron d'auto-graduation désactive `warmup_campaign` et écrit `warmup_completed_at` dès J14.
 - ✅ Preuves : `npm run test` → 73 fichiers / 382 tests passés ; `npm run build` → OK.
-- ⬜ Reste : smoke warm-up réel avec campagne dédiée pour confirmer Sheets/n8n/email sur J1/J14.
+- ⬜ Reste : J1 réel lancé le 2026-05-19 ; J14 + replies positives restent à confirmer.
+
+## Avancement 2026-05-19 — warm-up réel minimal lancé
+- ✅ Rotation API key Resend confirmée par Thomas ; rotation générale de toutes les clés prévue avant production.
+- ✅ Ajout du mode `SMOKE_MODE=warmup` dans `scripts/prepare-phase1-smoke-fixture.mjs`.
+- ✅ Campagne warm-up créée : `smoke_m1_20260519101708_mvok`, sheet `1INuinPyNOfNNJKZS85N6Jejy38RWV0nYiD4jknjkJ2Y`, 5 contacts fournis par Thomas insérés en `statut_email=new`.
+- ✅ Route `POST /api/campaigns/[id]/send-j0` patchée pour transmettre `sheet_id` à WF3.
+- ✅ WF3 staging patché : lecture/update `Leads_Qualified` sur le GSheet enfant via `body.sheet_id`; clé Resend alignée sur la clé rotée ; `lead_id` ajouté au mapping d'update.
+- ✅ J1 warm-up déclenché : WF3 execution `5445` a appliqué le cap à 5 items, `Send Resend Email` a retourné 5 IDs Resend, `Email_Events` a écrit 5 événements.
+- ✅ L'échec post-send de `Update statut_email` sur execution `5445` a été corrigé côté WF3 ; les 5 lignes warm-up déjà envoyées ont été réparées en `contacted` via `scripts/mark-warmup-contacted.mjs`.
+- ✅ Anti-duplication vérifiée : relance de `/send-j0` après réparation → 200 `{success:false, message:"Aucun lead avec statut 'new' à contacter"}`.
+- ✅ Email Health live après envoi : `allowed=true`, bounce 7j `0.0000`, complaint 7j `0.0000`.
+- ✅ 5/5 replies positives confirmées par Thomas le 2026-05-19 ; `scripts/mark-warmup-positive-replies.mjs` a ajouté 5 turns `warmup_positive_reply` dans `Conversations` et mis `Config.warmup_positive_replies=5`.
+- ✅ Preuves : `npm run test -- 'app/api/campaigns/[id]/send-j0/route.test.ts' lib/warmup.test.ts lib/setter-graduation.test.ts` → 3 fichiers / 18 tests ; `npm run build` → OK ; Vercel `dpl_UdsUoS8rkT1VR6fdsgvwWcUCPZty`, puis `dpl_7UmA9Vr7csg4JnH82GQJPS6sTWRX`.
+
+**Reste avant ✅** :
+- Attendre la fin réelle du warm-up 14 jours (J14 attendu le 2026-06-02 si démarrage le 2026-05-19).
+- Confirmer absence de bounce/complaint après les replies et l'observation du domaine.
+- Ne pas relancer `/send-j0` sur cette campagne sauf si de nouveaux contacts warm-up sont ajoutés volontairement.
 
 ## Dependencies
 **Blocked By**: v4-015 (page settings), v4-000 (domaine Resend prêt)

@@ -143,6 +143,14 @@ export function checkEmailHealth(
 export const LI_CAP_WEEKLY = 100;
 export const LI_CAP_DAILY_MAX = 20;
 
+export const LI_CAPS = {
+  WEEKLY_HARD: 100,
+  DAILY_WARM: { invitations: 20, dms: 50, views: 200, removals: 50 },
+  DAILY_NEW: { invitations: 5, dms: 20, views: 50, removals: 10 },
+} as const;
+
+export const NOTE_RATIO = { with_note: 0.6, without_note: 0.4 } as const;
+
 const LI_RAMP_DAILY = [5, 10, 15, 20] as const;
 
 const LI_ACTIVE_STATUSES: LIAccountStatus[] = ["OK"];
@@ -197,6 +205,79 @@ export function sampleLITypingDelay(): number {
  */
 export function shouldIncludeNote(sentTodayIndex: number): boolean {
   return (sentTodayIndex % 10) < 6;
+}
+
+/** Alias shouldIncludeNote — nom task v4-024. */
+export const shouldAddNote = shouldIncludeNote;
+
+/**
+ * Délai Gauss avant action LI, en ms.
+ * invitation: µ=360s σ=144s · dm: µ=240s σ=96s · reply: µ=60s σ=24s
+ */
+export function nextLIDelayMs(action: "invitation" | "dm" | "reply"): number {
+  const MU_S = { invitation: 360, dm: 240, reply: 60 } as const;
+  const mu = MU_S[action];
+  const sigma = mu * 0.4;
+  return sampleGaussDelay(mu, sigma) * 1000;
+}
+
+/** Retourne false si le cap hebdomadaire LinkedIn (100 HARD) est atteint. */
+export function checkLIWeeklyCap(invitsSentThisWeek: number): boolean {
+  return invitsSentThisWeek < LI_CAPS.WEEKLY_HARD;
+}
+
+/**
+ * Cap journalier invitations selon semaine de ramp-up, à partir de la date
+ * de création du compte (identique à getLIRampUpCap mais accepte une Date).
+ */
+export function getRampUpLimit(
+  accountCreatedAt: Date,
+  action: "invitation"
+): number {
+  void action; // seule invitation supportée — signature extensible
+  const weeksSince = Math.floor(
+    (Date.now() - accountCreatedAt.getTime()) / (7 * 86_400_000)
+  );
+  return getLIRampUpCap(weeksSince);
+}
+
+/**
+ * Vérifie si l'action LI peut encore être faite aujourd'hui.
+ * Distingue compte "new" (<4 sem) et "warm" (≥4 sem) pour dms/views/removals.
+ * Pour invitations : utilise toujours le ramp-up.
+ */
+export function checkLIDailyCap(
+  action: "invitation" | "dm" | "view" | "removal",
+  sentToday: number,
+  accountCreatedAt: Date
+): boolean {
+  const weeksSince = Math.floor(
+    (Date.now() - accountCreatedAt.getTime()) / (7 * 86_400_000)
+  );
+
+  if (action === "invitation") {
+    return sentToday < getLIRampUpCap(weeksSince);
+  }
+
+  const isNew = weeksSince < 4;
+  const caps = isNew ? LI_CAPS.DAILY_NEW : LI_CAPS.DAILY_WARM;
+  const capMap: Record<string, number> = {
+    dm: caps.dms,
+    view: caps.views,
+    removal: caps.removals,
+  };
+  return sentToday < (capMap[action] ?? 0);
+}
+
+/**
+ * Durée de frappe simulée pour un texte donné.
+ * µ=35wpm σ=10wpm Gauss, minimum 2000ms.
+ */
+export function typingDurationMs(text: string): number {
+  const words = text.trim().split(/\s+/).length;
+  const wpm = sampleGaussDelay(35, 10); // clamp ≥30 de sampleGaussDelay
+  const ms = Math.round((words / wpm) * 60_000);
+  return Math.max(2000, ms);
 }
 
 // ——— Email health status ———

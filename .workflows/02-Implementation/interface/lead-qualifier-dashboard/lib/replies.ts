@@ -121,8 +121,8 @@ export async function readCampaignConfig(
   sheetId: string,
   campaignId: string
 ): Promise<Record<string, string>> {
-  const rows = await readChildSheet(sheetId, "Config!A2:B")
-    .catch(() => readChildSheet(sheetId, `${campaignId}_Config!A2:B`))
+  const rows = await readChildSheet(sheetId, `${campaignId}_Config!A2:B`)
+    .catch(() => readChildSheet(sheetId, "Config!A2:B"))
     .catch(() => []);
   return parseCampaignConfigRows(rows);
 }

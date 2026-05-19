@@ -27,7 +27,7 @@ export async function sendSetterGraduationEmail(input: SetterGraduationEmailInpu
     input.reason ? `Raison: ${input.reason}` : "",
   ].filter(Boolean).join("\n");
 
-  await fetch("https://api.resend.com/emails", {
+  const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${apiKey}`,
@@ -40,4 +40,8 @@ export async function sendSetterGraduationEmail(input: SetterGraduationEmailInpu
       text: body,
     }),
   });
+
+  if (!response.ok) {
+    throw new Error(`Resend graduation alert failed: ${response.status}`);
+  }
 }

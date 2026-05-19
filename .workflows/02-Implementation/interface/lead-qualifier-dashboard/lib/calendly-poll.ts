@@ -81,7 +81,7 @@ export async function resolveLeadByInviteeEmail(email: string): Promise<LeadMatc
   const targetEmail = normalizeEmail(email);
   const campaigns = parseIndexCampaigns(await readIndex()).filter(
     (campaign) => campaign.statut === "active" && campaign.sheet_id
-  );
+  ).reverse();
 
   for (const campaign of campaigns) {
     const rows = await readChildQualifiedLeads(

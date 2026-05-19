@@ -1,5 +1,5 @@
 # Task v4-033 : Analytics avancé — funnel par canal, cohorts, attribution RDV, cost/meeting
-**Status**: ⬜ À faire
+**Status**: 🚧 Partiel — 2026-05-19
 
 ## Autonomie
 🤖 **Claude 100%** — extension WF6 + dashboard analytics.
@@ -15,20 +15,20 @@ Dashboard `/dashboard/data` étendu avec les KPIs v4 : funnel multi-canal, meeti
 ## Requirements
 
 ### Must Have
-- [ ] Nouveaux KPIs dans `/dashboard/data` :
-  - `connection_rate_li` : invited / accepted (%)
-  - `setter_response_rate` : replies handled by Setter / total replies (%)
-  - `meeting_rate` : meetings booked / leads qualified (%)
-  - `cost_per_meeting` : (tokens Anthropic × $0.003/1k + Unipile calls × cost) / meetings booked
-- [ ] Funnel email : leads_sourced → leads_qualified → emails_sent → replies → meetings
-- [ ] Funnel LI : profiles_sourced → invited → accepted → dm_sent → replied → meetings
-- [ ] Attribution RDV : pie chart email vs linkedin
-- [ ] Cohort par template : quel template email/LI génère le plus de replies et meetings
+- [x] Nouveaux KPIs dans `/dashboard/data` :
+  - [x] `connection_rate_li` : invited / accepted (%) — calculé depuis leads data (source_channel=linkedin + statut_li)
+  - [x] `setter_response_rate` : replies handled by Setter / total replies (%)
+  - [x] `meeting_rate` : meetings booked / leads qualified (%)
+  - [x] `cost_per_meeting` : estimation locale (setter_calls × 800 tokens × $0.003/1k) / meetings
+- [x] Funnel email : leads_sourced → leads_qualified → emails_sent → replies → meetings
+- [x] Funnel LI : profiles_sourced → invited → accepted → dm_sent → replied → meetings (données complètes après Unipile Phase 2)
+- [x] Attribution RDV : email vs LI répartition (barres avec %)
+- [ ] Cohort par template LI : nécessite données Unipile Phase 2
 
 **WF6 étendu** :
-- [ ] Loop tab Conversations (enfant) → calcule setter_response_rate, meeting_rate
-- [ ] Loop tab Meetings → compte booked_via (setter/manual), channel (email/linkedin)
-- [ ] Update Index Campagnes : 4 nouvelles colonnes (connection_rate_li, setter_response_rate, meeting_rate, cost_per_meeting)
+- [ ] Loop tab Conversations (enfant) → calcule setter_response_rate, meeting_rate — 🚧 nécessite Phase 2 stable
+- [ ] Loop tab Meetings → compte booked_via (setter/manual), channel (email/linkedin) — 🚧 nécessite Phase 2 stable
+- [x] Schema Index Campagnes : 4 nouvelles colonnes ajoutées (connection_rate_li, setter_response_rate, meeting_rate, cost_per_meeting) — range A:N → A:R
 
 ### Must NOT
 - Pas de calcul temps réel coûteux — WF6 tourne toutes les 6h (cron existant)
@@ -47,10 +47,14 @@ const costPerMeeting = totalMeetings > 0 ? cost / totalMeetings : 0
 ```
 
 ## Acceptance Criteria
-- [ ] `/dashboard/data` affiche les 4 nouveaux KPIs
-- [ ] Funnel email + LI visible (barres ou chiffres)
-- [ ] Attribution RDV : email vs LI répartition
-- [ ] WF6 étendu s'exécute sans erreur (test manuel)
+- [x] `/dashboard/data` affiche les 4 nouveaux KPIs (section "Métriques avancées v4")
+- [x] Funnel email + LI visible (barres animées)
+- [x] Attribution RDV : email vs LI répartition (barres avec %)
+- [ ] WF6 étendu s'exécute sans erreur (test manuel) — 🚧 après Phase 2 Unipile
+
+## Reste à faire
+- WF6 n8n extension : Loop Conversations + Meetings → écriture 4 colonnes Index (après v4-028)
+- Cohort template LI (après données Unipile)
 
 ## Dependencies
 **Blocked By**: v4-002 (schéma Conversations + Meetings), v4-028 (Phase 2 stable)

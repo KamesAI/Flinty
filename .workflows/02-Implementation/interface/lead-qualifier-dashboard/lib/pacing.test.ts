@@ -14,6 +14,14 @@ import {
   shouldIncludeNote,
   LI_CAP_WEEKLY,
   LI_CAP_DAILY_MAX,
+  LI_CAPS,
+  NOTE_RATIO,
+  nextLIDelayMs,
+  checkLIWeeklyCap,
+  getRampUpLimit,
+  checkLIDailyCap,
+  shouldAddNote,
+  typingDurationMs,
   type EmailHealthRow,
 } from "./pacing";
 
@@ -279,5 +287,184 @@ describe("shouldIncludeNote", () => {
     // attendu : ~600, tolérance [500, 700]
     expect(withNote).toBeGreaterThanOrEqual(500);
     expect(withNote).toBeLessThanOrEqual(700);
+  });
+});
+
+// ——— Nouvelles fonctions v4-024 ———
+
+describe("NOTE_RATIO", () => {
+  it("with_note = 0.6", () => {
+    expect(NOTE_RATIO.with_note).toBe(0.6);
+  });
+  it("without_note = 0.4", () => {
+    expect(NOTE_RATIO.without_note).toBe(0.4);
+  });
+  it("somme = 1", () => {
+    expect(NOTE_RATIO.with_note + NOTE_RATIO.without_note).toBe(1);
+  });
+});
+
+describe("LI_CAPS", () => {
+  it("WEEKLY_HARD = 100 (non-overridable)", () => {
+    expect(LI_CAPS.WEEKLY_HARD).toBe(100);
+  });
+  it("DAILY_WARM.invitations = 20", () => {
+    expect(LI_CAPS.DAILY_WARM.invitations).toBe(20);
+  });
+  it("DAILY_WARM.dms = 50", () => {
+    expect(LI_CAPS.DAILY_WARM.dms).toBe(50);
+  });
+  it("DAILY_WARM.views = 200", () => {
+    expect(LI_CAPS.DAILY_WARM.views).toBe(200);
+  });
+  it("DAILY_WARM.removals = 50", () => {
+    expect(LI_CAPS.DAILY_WARM.removals).toBe(50);
+  });
+  it("DAILY_NEW.invitations = 5", () => {
+    expect(LI_CAPS.DAILY_NEW.invitations).toBe(5);
+  });
+  it("DAILY_NEW.dms = 20", () => {
+    expect(LI_CAPS.DAILY_NEW.dms).toBe(20);
+  });
+  it("DAILY_NEW.views = 50", () => {
+    expect(LI_CAPS.DAILY_NEW.views).toBe(50);
+  });
+  it("DAILY_NEW.removals = 10", () => {
+    expect(LI_CAPS.DAILY_NEW.removals).toBe(10);
+  });
+});
+
+describe("nextLIDelayMs", () => {
+  it("invitation → retourne ms ≥ 30000 (clamp 30s)", () => {
+    for (let i = 0; i < 20; i++) {
+      expect(nextLIDelayMs("invitation")).toBeGreaterThanOrEqual(30_000);
+    }
+  });
+  it("dm → retourne ms ≥ 30000", () => {
+    for (let i = 0; i < 20; i++) {
+      expect(nextLIDelayMs("dm")).toBeGreaterThanOrEqual(30_000);
+    }
+  });
+  it("reply → retourne ms ≥ 30000", () => {
+    for (let i = 0; i < 20; i++) {
+      expect(nextLIDelayMs("reply")).toBeGreaterThanOrEqual(30_000);
+    }
+  });
+  it("reply plus court qu'invitation en moyenne (µ 60s vs 360s)", () => {
+    const avg = (action: "invitation" | "dm" | "reply") =>
+      Array.from({ length: 100 }, () => nextLIDelayMs(action)).reduce(
+        (a, b) => a + b
+      ) / 100;
+    expect(avg("reply")).toBeLessThan(avg("invitation"));
+  });
+});
+
+describe("checkLIWeeklyCap", () => {
+  it("99 invits → autorisé", () => {
+    expect(checkLIWeeklyCap(99)).toBe(true);
+  });
+  it("100 invits → bloqué (HARD CAP)", () => {
+    expect(checkLIWeeklyCap(100)).toBe(false);
+  });
+  it("101 invits → bloqué", () => {
+    expect(checkLIWeeklyCap(101)).toBe(false);
+  });
+});
+
+describe("getRampUpLimit", () => {
+  it("compte créé il y a 6j → sem 0 → 5 invits/j", () => {
+    const createdAt = new Date(Date.now() - 6 * 86_400_000);
+    expect(getRampUpLimit(createdAt, "invitation")).toBe(5);
+  });
+  it("compte créé il y a 8j → sem 1 → 10 invits/j", () => {
+    const createdAt = new Date(Date.now() - 8 * 86_400_000);
+    expect(getRampUpLimit(createdAt, "invitation")).toBe(10);
+  });
+  it("compte créé il y a 15j → sem 2 → 15 invits/j", () => {
+    const createdAt = new Date(Date.now() - 15 * 86_400_000);
+    expect(getRampUpLimit(createdAt, "invitation")).toBe(15);
+  });
+  it("compte créé il y a 28j → sem 3+ → 20 invits/j (plafond)", () => {
+    const createdAt = new Date(Date.now() - 28 * 86_400_000);
+    expect(getRampUpLimit(createdAt, "invitation")).toBe(20);
+  });
+});
+
+describe("checkLIDailyCap", () => {
+  const newAccount = new Date(Date.now() - 3 * 86_400_000); // 3j → sem 0
+  const warmAccount = new Date(Date.now() - 60 * 86_400_000); // 60j → sem 8+
+
+  it("compte new, 0 invits → autorisé", () => {
+    expect(checkLIDailyCap("invitation", 0, newAccount)).toBe(true);
+  });
+  it("compte new sem 0, 5 invits → bloqué (ramp cap = 5)", () => {
+    expect(checkLIDailyCap("invitation", 5, newAccount)).toBe(false);
+  });
+  it("compte warm, 19 invits → autorisé", () => {
+    expect(checkLIDailyCap("invitation", 19, warmAccount)).toBe(true);
+  });
+  it("compte warm, 20 invits → bloqué (DAILY_WARM.invitations = 20)", () => {
+    expect(checkLIDailyCap("invitation", 20, warmAccount)).toBe(false);
+  });
+  it("compte warm, 49 dms → autorisé", () => {
+    expect(checkLIDailyCap("dm", 49, warmAccount)).toBe(true);
+  });
+  it("compte warm, 50 dms → bloqué", () => {
+    expect(checkLIDailyCap("dm", 50, warmAccount)).toBe(false);
+  });
+  it("compte warm, 199 views → autorisé", () => {
+    expect(checkLIDailyCap("view", 199, warmAccount)).toBe(true);
+  });
+  it("compte warm, 200 views → bloqué", () => {
+    expect(checkLIDailyCap("view", 200, warmAccount)).toBe(false);
+  });
+  it("compte new, 19 dms → bloqué (DAILY_NEW.dms = 20, 19 < 20 → autorisé)", () => {
+    expect(checkLIDailyCap("dm", 19, newAccount)).toBe(true);
+  });
+  it("compte new, 20 dms → bloqué (DAILY_NEW.dms = 20)", () => {
+    expect(checkLIDailyCap("dm", 20, newAccount)).toBe(false);
+  });
+});
+
+describe("shouldAddNote", () => {
+  it("identique à shouldIncludeNote — même résultat", () => {
+    for (let i = 0; i < 20; i++) {
+      expect(shouldAddNote(i)).toBe(shouldIncludeNote(i));
+    }
+  });
+  it("sur 10 appels consécutifs → 6 true, 4 false", () => {
+    let count = 0;
+    for (let i = 0; i < 10; i++) {
+      if (shouldAddNote(i)) count++;
+    }
+    expect(count).toBe(6);
+  });
+  it("distribution ~60% sur 1000 appels", () => {
+    let withNote = 0;
+    for (let i = 0; i < 1000; i++) {
+      if (shouldAddNote(i)) withNote++;
+    }
+    expect(withNote).toBeGreaterThanOrEqual(500);
+    expect(withNote).toBeLessThanOrEqual(700);
+  });
+});
+
+describe("typingDurationMs", () => {
+  it("'Bonjour Thomas' → ≥ 2000ms", () => {
+    expect(typingDurationMs("Bonjour Thomas")).toBeGreaterThanOrEqual(2000);
+  });
+  it("texte 1 mot → ≥ 2000ms (clamp)", () => {
+    expect(typingDurationMs("Oui")).toBeGreaterThanOrEqual(2000);
+  });
+  it("texte long > texte court en moyenne", () => {
+    const avg = (text: string) =>
+      Array.from({ length: 50 }, () => typingDurationMs(text)).reduce(
+        (a, b) => a + b
+      ) / 50;
+    const short = avg("Bonjour");
+    const long = avg(
+      "Bonjour Thomas, je voulais vous contacter concernant votre profil très intéressant sur LinkedIn"
+    );
+    expect(long).toBeGreaterThan(short);
   });
 });

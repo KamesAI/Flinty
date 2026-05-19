@@ -113,6 +113,15 @@ function matchesStatusGroup(status: Campaign["statut"], statusGroup: AnalyticsSt
   return isArchivedCampaign(status);
 }
 
+// v4 cost constants
+const ANTHROPIC_COST_PER_1K_TOKENS = 0.003;
+const AVG_TOKENS_PER_SETTER_CALL = 800;
+
+// statut_li values that indicate an invitation was accepted
+const LI_ACCEPTED_STATUSES = new Set(["connected", "dm_sent", "replied", "meeting_booked"]);
+// statut_li values that indicate a DM was sent
+const LI_DM_SENT_STATUSES = new Set(["dm_sent", "replied", "meeting_booked"]);
+
 export function buildDataDashboardModel({
   campaigns,
   leads,
@@ -166,6 +175,76 @@ export function buildDataDashboardModel({
     (meeting) => meeting.status === "scheduled"
   ).length;
 
+  // ——— v4 KPIs ———
+
+  const totalMeetingsCount = filteredMeetings.length;
+
+  // meeting_rate : meetings / qualifiedLeads × 100
+  const meetingRate = totalQualifiedLeads > 0
+    ? round((totalMeetingsCount / totalQualifiedLeads) * 100)
+    : 0;
+
+  // setter_response_rate : leads avec setter_action / leads replied × 100
+  const repliedLeads = filteredLeads.filter((l) => l.statut_email === "replied");
+  const setterHandled = repliedLeads.filter((l) => (l.setter_action ?? "").trim().length > 0).length;
+  const setterResponseRate = repliedLeads.length > 0
+    ? round((setterHandled / repliedLeads.length) * 100)
+    : 0;
+
+  // connection_rate_li : priorité colonne WF6 Index, sinon calcul local leads
+  const liLeads = filteredLeads.filter((l) => (l.source_channel ?? "") === "linkedin");
+  const liInvited = liLeads.length;
+  const liAccepted = liLeads.filter((l) => LI_ACCEPTED_STATUSES.has(l.statut_li ?? "")).length;
+  const connectionRateLI = liInvited > 0 ? round((liAccepted / liInvited) * 100) : 0;
+
+  // cost_per_meeting (estimation locale — WF6 écrira la valeur exacte dans l'Index)
+  const totalSetterCalls = filteredLeads.filter((l) => (l.setter_action ?? "").trim().length > 0).length;
+  const totalCost = totalSetterCalls * AVG_TOKENS_PER_SETTER_CALL / 1000 * ANTHROPIC_COST_PER_1K_TOKENS;
+  const costPerMeeting = totalMeetingsCount > 0 ? round(totalCost / totalMeetingsCount, 3) : 0;
+
+  // attribution RDV par canal (email / linkedin / unknown)
+  const leadByIdMap = new Map(filteredLeads.map((l) => [l.lead_id, l]));
+  const attributionRdv = { email: 0, linkedin: 0, unknown: 0 };
+  for (const m of filteredMeetings) {
+    const lead = leadByIdMap.get(m.lead_id);
+    const ch = (lead?.source_channel ?? "").trim();
+    if (ch === "email") attributionRdv.email++;
+    else if (ch === "linkedin") attributionRdv.linkedin++;
+    else attributionRdv.unknown++;
+  }
+
+  // funnel email
+  const emailReplies = filteredLeads.filter(
+    (l) => l.statut_email === "replied" && (l.source_channel ?? "") !== "linkedin"
+  ).length;
+  const emailMeetings = filteredMeetings.filter((m) => {
+    const lead = leadByIdMap.get(m.lead_id);
+    return !lead || (lead.source_channel ?? "") !== "linkedin";
+  }).length;
+  const funnelEmail = {
+    leadsSourced: totalRawLeads,
+    leadsQualified: totalQualifiedLeads,
+    emailsSent: totalEmailsSent,
+    replies: emailReplies,
+    meetings: emailMeetings,
+  };
+
+  // funnel LI (données partielles avant Phase 2 Unipile)
+  const liDmSent = liLeads.filter((l) => LI_DM_SENT_STATUSES.has(l.statut_li ?? "")).length;
+  const liReplied = liLeads.filter((l) => l.statut_email === "replied" || l.statut_li === "replied").length;
+  const liMeetings = filteredMeetings.filter((m) => {
+    const lead = leadByIdMap.get(m.lead_id);
+    return lead && (lead.source_channel ?? "") === "linkedin";
+  }).length;
+  const funnelLI = {
+    profilesSourced: liLeads.length,
+    invited: liInvited,
+    accepted: liAccepted,
+    dmSent: liDmSent,
+    replied: liReplied,
+    meetings: liMeetings,
+  };
+
   const topTemplateMap = new Map<string, number>();
   for (const snapshot of filteredSnapshots) {
     if (!snapshot.top_template) continue;
@@ -192,6 +271,7 @@ export function buildDataDashboardModel({
       const emailsSent = toNumber(campaign.emails_envoyés);
       const repliesCount = campaignLeads.filter((lead) => lead.statut_email === "replied").length;
 
+      const qLeads = toNumber(campaign.total_leads_qualified);
       return {
         campaignId: campaign.campaign_id,
         campaignName: campaign.nom,
@@ -199,11 +279,12 @@ export function buildDataDashboardModel({
         secteur: campaign.secteur,
         localisation: campaign.localisation,
         rawLeads: toNumber(campaign.total_leads_raw),
-        qualifiedLeads: toNumber(campaign.total_leads_qualified),
+        qualifiedLeads: qLeads,
         emailsSent,
         openRate: toNumber(campaign.taux_ouverture),
         replyRate: emailsSent > 0 ? round((repliesCount / emailsSent) * 100) : 0,
         bookingRate: emailsSent > 0 ? round((campaignMeetings.length / emailsSent) * 100) : 0,
+        meetingRate: qLeads > 0 ? round((campaignMeetings.length / qLeads) * 100) : 0,
       };
     })
     .sort((a, b) => b.qualifiedLeads - a.qualifiedLeads);
@@ -268,6 +349,12 @@ export function buildDataDashboardModel({
       repliesPending,
       upcomingMeetings: scheduledMeetings,
       topTemplateAvailable: topTemplates.length > 0,
+      // v4
+      meetingRate,
+      setterResponseRate,
+      connectionRateLI,
+      costPerMeeting,
+      attributionRdv,
     },
     businessRows,
     marketingRows: businessRows.map((row) => ({
@@ -280,5 +367,7 @@ export function buildDataDashboardModel({
     commercialRows,
     segmentRows,
     topTemplates,
+    funnelEmail,
+    funnelLI,
   };
 }

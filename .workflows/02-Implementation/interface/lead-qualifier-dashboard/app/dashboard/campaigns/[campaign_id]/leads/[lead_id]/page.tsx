@@ -70,9 +70,9 @@ export default async function LeadDetailPage({
     <div className="p-4 sm:p-8 max-w-3xl space-y-4">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-zinc-400">
-        <Link href="/dashboard" className="hover:text-zinc-900 transition-colors">Campagnes</Link>
+        <Link href="/dashboard" className="hover:text-[#006596] transition-colors">Campagnes</Link>
         <span>/</span>
-        <Link href={`/dashboard/campaigns/${campaign_id}`} className="hover:text-zinc-900 transition-colors">
+        <Link href={`/dashboard/campaigns/${campaign_id}`} className="hover:text-[#006596] transition-colors">
           {campaign.nom}
         </Link>
         <span>/</span>
@@ -80,7 +80,7 @@ export default async function LeadDetailPage({
       </div>
 
       {/* Header card */}
-      <div className="bg-white border border-zinc-200 rounded-xl p-6">
+      <div className="bg-white border border-zinc-200 rounded-xl p-6 border-l-4 border-l-[#006596]">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
             {lead.secteur && (
@@ -105,8 +105,8 @@ export default async function LeadDetailPage({
               )}
             </div>
           </div>
-          <div className={`shrink-0 text-center px-4 py-2 rounded-xl border ${scoreBgColor(score)}`}>
-            <p className="text-xs text-zinc-400 uppercase tracking-widest mb-0.5">Score IA</p>
+          <div className={`shrink-0 text-center px-4 py-2 rounded-xl border-2 ${scoreBgColor(score)}`}>
+            <p className="text-xs font-semibold text-zinc-500 uppercase tracking-widest mb-0.5">Score IA</p>
             <p className={`text-3xl font-bold ${scoreColor(score)}`}>
               {lead.score}
               <span className="text-sm text-zinc-400">/100</span>
@@ -117,8 +117,8 @@ export default async function LeadDetailPage({
 
       {/* Hook personnalisé */}
       {lead.personalized_hook && (
-        <div className="bg-white border border-zinc-200 rounded-xl p-6">
-          <p className="text-xs font-semibold tracking-widest uppercase text-zinc-400 mb-3">
+        <div className="bg-[#006596]/5 border border-[#006596]/20 rounded-xl p-6 border-l-4 border-l-[#006596]">
+          <p className="text-xs font-semibold tracking-widest uppercase text-[#006596] mb-3">
             Hook personnalisé
           </p>
           <div className="flex items-start gap-3">
@@ -131,14 +131,14 @@ export default async function LeadDetailPage({
       )}
 
       {/* Signaux d'achat */}
-      <div className="bg-white border border-zinc-200 rounded-xl p-6">
-        <p className="text-xs font-semibold tracking-widest uppercase text-zinc-400 mb-4">
+      <div className="bg-white border border-zinc-200 rounded-xl p-6 border-l-4 border-l-amber-400">
+        <p className="text-xs font-semibold tracking-widest uppercase text-amber-600 mb-4">
           Signaux d&apos;achat
         </p>
         <div className="space-y-3">
           {lead.growth_stage && (
             <div className="flex items-start gap-3">
-              <span className="text-xs text-zinc-400 uppercase tracking-widest w-28 shrink-0 pt-0.5">
+              <span className="text-xs text-zinc-500 uppercase tracking-widest w-28 shrink-0 pt-0.5">
                 Maturité
               </span>
               <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${growthBadgeClass(lead.growth_stage)}`}>
@@ -148,7 +148,7 @@ export default async function LeadDetailPage({
           )}
           {lead.buying_signal && (
             <div className="flex items-start gap-3">
-              <span className="text-xs text-zinc-400 uppercase tracking-widest w-28 shrink-0 pt-0.5">
+              <span className="text-xs text-zinc-500 uppercase tracking-widest w-28 shrink-0 pt-0.5">
                 Achat
               </span>
               <p className="text-zinc-900 text-sm">{lead.buying_signal}</p>
@@ -156,7 +156,7 @@ export default async function LeadDetailPage({
           )}
           {lead.hiring_signals && (
             <div className="flex items-start gap-3">
-              <span className="text-xs text-zinc-400 uppercase tracking-widest w-28 shrink-0 pt-0.5">
+              <span className="text-xs text-zinc-500 uppercase tracking-widest w-28 shrink-0 pt-0.5">
                 Recrutement
               </span>
               <p className="text-zinc-700 text-sm">{lead.hiring_signals}</p>
@@ -164,7 +164,7 @@ export default async function LeadDetailPage({
           )}
           {lead.web_quality_signals && (
             <div className="flex items-start gap-3">
-              <span className="text-xs text-zinc-400 uppercase tracking-widest w-28 shrink-0 pt-0.5">
+              <span className="text-xs text-zinc-500 uppercase tracking-widest w-28 shrink-0 pt-0.5">
                 Autres
               </span>
               <p className="text-zinc-500 text-sm">{lead.web_quality_signals}</p>
@@ -174,18 +174,18 @@ export default async function LeadDetailPage({
       </div>
 
       {/* Qualité web */}
-      <div className="bg-white border border-zinc-200 rounded-xl p-6">
+      <div className="bg-white border border-zinc-200 rounded-xl p-6 border-l-4 border-l-green-500">
         <div className="flex items-center justify-between mb-4">
-          <p className="text-xs font-semibold tracking-widest uppercase text-zinc-400">
+          <p className="text-xs font-semibold tracking-widest uppercase text-green-700">
             Qualité web
           </p>
           <span className={`text-lg font-bold ${scoreColor(webQScore)}`}>
             {webQScore}<span className="text-xs text-zinc-400">/100</span>
           </span>
         </div>
-        <div className="w-full bg-zinc-200 rounded-full h-1.5 mb-4">
+        <div className="w-full bg-zinc-200 rounded-full h-2 mb-4">
           <div
-            className={`h-1.5 rounded-full transition-all ${
+            className={`h-2 rounded-full transition-all ${
               webQScore >= 70 ? "bg-green-500" : webQScore >= 50 ? "bg-yellow-500" : "bg-zinc-400"
             }`}
             style={{ width: `${webQScore}%` }}
@@ -196,7 +196,7 @@ export default async function LeadDetailPage({
             {webSignals.map((signal) => (
               <span
                 key={signal}
-                className="text-xs px-2 py-0.5 rounded bg-zinc-100 text-zinc-600"
+                className="text-xs px-2 py-0.5 rounded-full bg-green-50 text-green-700 border border-green-200"
               >
                 {signal}
               </span>
@@ -207,8 +207,8 @@ export default async function LeadDetailPage({
 
       {/* Raison du score */}
       {lead.score_reason && (
-        <div className="bg-white border border-zinc-200 rounded-xl p-6">
-          <p className="text-xs font-semibold tracking-widest uppercase text-zinc-400 mb-2">
+        <div className="bg-white border border-zinc-200 rounded-xl p-6 border-l-4 border-l-[#006596]">
+          <p className="text-xs font-semibold tracking-widest uppercase text-[#006596] mb-2">
             Analyse IA
           </p>
           <p className="text-zinc-700 text-sm leading-relaxed">{lead.score_reason}</p>
@@ -216,8 +216,8 @@ export default async function LeadDetailPage({
       )}
 
       {/* Infos contact */}
-      <div className="bg-white border border-zinc-200 rounded-xl p-6">
-        <p className="text-xs font-semibold tracking-widest uppercase text-zinc-400 mb-4">
+      <div className="bg-white border border-zinc-200 rounded-xl p-6 border-l-4 border-l-zinc-400">
+        <p className="text-xs font-semibold tracking-widest uppercase text-zinc-500 mb-4">
           Infos contact
         </p>
         <div className="space-y-4">
@@ -293,7 +293,7 @@ export default async function LeadDetailPage({
             ].map(({ label, value }) => (
               <div key={label}>
                 <p className="text-xs text-zinc-400 uppercase tracking-widest mb-1">{label}</p>
-                <p className="text-zinc-900 text-sm">{value || "—"}</p>
+                <p className="text-zinc-900 text-sm font-medium">{value || "—"}</p>
               </div>
             ))}
           </div>
@@ -302,19 +302,19 @@ export default async function LeadDetailPage({
       </div>
 
       {/* Timeline */}
-      <div className="bg-white border border-zinc-200 rounded-xl p-6">
+      <div className="bg-white border border-zinc-200 rounded-xl p-6 border-l-4 border-l-[#006596]">
         <div className="flex items-center justify-between mb-4">
-          <p className="text-xs font-semibold tracking-widest uppercase text-zinc-400">
+          <p className="text-xs font-semibold tracking-widest uppercase text-[#006596]">
             Timeline interactions
           </p>
-          <span className="text-xs text-zinc-400">
+          <span className="text-xs bg-[#006596]/10 text-[#006596] px-2 py-0.5 rounded-full font-medium">
             {timeline.length} événement{timeline.length !== 1 ? "s" : ""}
           </span>
         </div>
         {timeline.length === 0 ? (
           <p className="text-zinc-400 text-sm">Aucune interaction enregistrée.</p>
         ) : (
-          <ol className="relative border-l border-zinc-200 ml-2 space-y-5">
+          <ol className="relative border-l-2 border-[#006596]/20 ml-2 space-y-5">
             {timeline.map((item) => {
               const date = new Date(item.timestamp);
               const formattedDate = date.toLocaleDateString("fr-FR", {
@@ -330,7 +330,7 @@ export default async function LeadDetailPage({
               const badge = getTimelineChannelBadge(item);
               return (
                 <li key={item.id} className="ml-4">
-                  <div className="absolute -left-1.5 w-3 h-3 rounded-full bg-zinc-300 border border-zinc-200" />
+                  <div className="absolute -left-1.5 w-3 h-3 rounded-full bg-[#006596] border-2 border-white shadow-sm" />
                   <div className="flex items-start gap-3">
                     <span className="text-base leading-none mt-0.5">{icon}</span>
                     <div className="flex-1 min-w-0">

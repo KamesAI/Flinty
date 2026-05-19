@@ -220,25 +220,34 @@ export default async function InboxPage({
                 className="grid gap-4 rounded-lg border border-border bg-slate-50 p-4 shadow-sm lg:grid-cols-[minmax(0,1fr)_380px]"
               >
                 <div className="min-w-0">
-                  <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                  <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
                     <div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <h2 className="text-base font-bold text-slate-950">
+                      <div className="flex flex-wrap items-baseline gap-2">
+                        <h2 className="text-lg font-bold text-slate-950">
                           {item.lead.prénom ? `${item.lead.prénom} ` : ""}{item.lead.nom}
                         </h2>
-                        <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-800">
-                          {item.draft.intent || "intent inconnu"}
-                        </span>
+                        {item.lead.email ? (
+                          <span className="text-xs text-muted-foreground">{item.lead.email}</span>
+                        ) : null}
                       </div>
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        {item.lead.poste || "Lead"} · {item.campaign.nom} · {relativeDate(item.draft.sent_at)}
-                      </p>
+                      <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                        <span className="rounded-md bg-[#006596]/10 px-2 py-0.5 text-xs font-semibold text-[#006596]">
+                          {item.campaign.nom}
+                        </span>
+                        {item.lead.poste ? (
+                          <span className="text-xs text-muted-foreground">{item.lead.poste}</span>
+                        ) : null}
+                        {item.lead.secteur ? (
+                          <span className="text-xs text-muted-foreground">· {item.lead.secteur}</span>
+                        ) : null}
+                        <span className="text-xs text-muted-foreground">· {relativeDate(item.draft.sent_at)}</span>
+                      </div>
                     </div>
                     <Link
                       href={`/dashboard/campaigns/${item.campaign.campaign_id}/leads/${item.lead.lead_id}`}
-                      className="text-xs font-semibold text-[#006596] hover:underline"
+                      className="shrink-0 text-xs font-semibold text-[#006596] hover:underline"
                     >
-                      Fiche lead
+                      Fiche lead →
                     </Link>
                   </div>
                   {item.lastProspectTurn ? (

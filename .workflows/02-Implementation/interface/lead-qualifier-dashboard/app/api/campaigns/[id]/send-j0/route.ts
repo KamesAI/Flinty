@@ -51,6 +51,7 @@ export async function POST(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       campaign_id,
+      sheet_id: campaign.sheet_id,
       leads_count: leadsToSend.length,
       warmup_campaign: configBool(config.warmup_campaign, false),
       warmup_day: warmup.day,

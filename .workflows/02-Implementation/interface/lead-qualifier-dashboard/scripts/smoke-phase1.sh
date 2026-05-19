@@ -7,17 +7,25 @@ SMOKE_EMAIL_ID="${SMOKE_EMAIL_ID:-smoke-phase1-$(date +%Y%m%d%H%M%S)}"
 SMOKE_FROM_EMAIL="${SMOKE_FROM_EMAIL:-thomas+smoke@kamesai.com}"
 SMOKE_TO_EMAIL="${SMOKE_TO_EMAIL:-thomas@outreach.kamesai.com}"
 SMOKE_SUBJECT="${SMOKE_SUBJECT:-Re: [TEST SMOKE] Votre offre}"
+SMOKE_CAMPAIGN_ID="${SMOKE_CAMPAIGN_ID:-}"
 
 curl -sS -X POST "$N8N_WF7_WEBHOOK" \
   -H "Content-Type: application/json" \
   -d "{
     \"event\": \"email.replied\",
+    \"campaign_id\": \"$SMOKE_CAMPAIGN_ID\",
     \"data\": {
       \"email_id\": \"$SMOKE_EMAIL_ID\",
+      \"from\": \"$SMOKE_FROM_EMAIL\",
       \"from_email\": \"$SMOKE_FROM_EMAIL\",
+      \"to\": [\"$SMOKE_TO_EMAIL\"],
       \"to_email\": \"$SMOKE_TO_EMAIL\",
       \"subject\": \"$SMOKE_SUBJECT\",
-      \"text\": \"Bonjour, votre offre m interesse mais je veux en savoir plus sur les tarifs. Quand pouvez-vous m appeler ?\"
+      \"plain_text\": \"Bonjour, votre offre m interesse mais je veux en savoir plus sur les tarifs. Quand pouvez-vous m appeler ?\",
+      \"text\": \"Bonjour, votre offre m interesse mais je veux en savoir plus sur les tarifs. Quand pouvez-vous m appeler ?\",
+      \"tags\": {
+        \"campaign_id\": \"$SMOKE_CAMPAIGN_ID\"
+      }
     }
   }"
 

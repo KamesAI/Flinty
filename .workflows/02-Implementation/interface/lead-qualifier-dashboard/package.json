@@ -11,6 +11,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
+    "export:frank-daily-brief": "node scripts/export-frank-daily-brief.mjs",
+    "sync:frank-daily-brief": "node scripts/sync-frank-daily-brief-to-vps.mjs",
     "test:all": "npm run test && npm run test:e2e"
   },
   "dependencies": {

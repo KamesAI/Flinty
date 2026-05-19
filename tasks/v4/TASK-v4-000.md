@@ -2,7 +2,7 @@
 **Status**: ✅ Complété (2026-05-06)
 
 ## Autonomie
-✅ **Déjà fait par Thomas** — aucune action supplémentaire requise sauf les 2 points restants ci-dessous.
+✅ **Déjà fait par Thomas** — aucune action supplémentaire requise côté domaine. Rotation API key Resend effectuée le 2026-05-19 ; Thomas prévoit une rotation générale de toutes les clés avant mise en production.
 
 ## Context
 Flinty v4 ajoute un AI Setter qui répondra aux prospects via email. Pour isoler la réputation cold email du domaine principal `kamesai.com`, un sous-domaine dédié `outreach.kamesai.com` est provisionné sur Resend.
@@ -27,7 +27,7 @@ Domaine outreach.kamesai.com opérationnel sur Resend avec isolation complète d
 - [x] Score mail-tester ≥8/10 (obtenu 10/10)
 - [x] `RESEND_FROM=Thomas <thomas@outreach.kamesai.com>` en `.env.local`
 - [ ] **RESTE** : Variables d'env Vercel (staging + prod) à mettre à jour : `RESEND_FROM` → nouvelle valeur
-- [ ] **RESTE** : Rotation API key Resend compromise (si applicable)
+- [x] Rotation API key Resend effectuée le 2026-05-19
 
 ### Must NOT
 - Ne jamais envoyer cold email depuis `kamesai.com` (domaine principal transactionnel)
@@ -45,7 +45,7 @@ DNS à configurer sur Hostinger panel :
 - [x] Domaine vert dans Resend dashboard
 - [x] mail-tester.com score ≥8/10
 - [ ] Variable `RESEND_FROM` mise à jour sur Vercel staging + prod
-- [ ] Test envoi depuis `thomas@outreach.kamesai.com` → inbox Gmail Thomas → header `From` correct
+- [x] Test envoi depuis `thomas@outreach.kamesai.com` → warm-up Gmail réel lancé le 2026-05-19 via WF3 / Resend API
 
 ## Dependencies
 **Blocked By**: aucune

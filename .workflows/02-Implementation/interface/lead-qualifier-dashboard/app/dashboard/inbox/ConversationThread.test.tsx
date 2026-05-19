@@ -41,7 +41,33 @@ describe("ConversationThread", () => {
     expect(html).toContain("Conversation avec Jeanne Dupont");
     expect(html).toContain("LinkedIn");
     expect(html).toContain("Email");
-    expect(html).toContain("Draft — en attente de validation");
+    expect(html).toContain("En attente de validation");
+    expect(html).toContain("Intéressé");
     expect(html).toContain("il y a");
+  });
+
+  it("affiche '✓ Envoyé' sur un message setter validé", () => {
+    const html = renderToStaticMarkup(
+      <ConversationThread
+        turns={[
+          {
+            turn_id: "turn_1",
+            lead_id: "lead_1",
+            channel: "email",
+            role: "setter",
+            content: "Voici ma réponse.",
+            sent_at: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+            intent: "meeting_ready",
+            validated_by: "Thomas",
+            edited_from_draft: "false",
+          },
+        ]}
+        leadName="Jean Martin"
+      />
+    );
+
+    expect(html).toContain("Envoyé");
+    expect(html).toContain("Prêt pour RDV");
+    expect(html).not.toContain("En attente de validation");
   });
 });

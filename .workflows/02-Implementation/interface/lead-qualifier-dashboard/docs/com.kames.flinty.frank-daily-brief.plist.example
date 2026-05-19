@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  LaunchAgent macOS — sync Frank daily brief → VPS
+  Déclenché chaque jour à 07:55 heure locale.
+
+  Installation :
+    mkdir -p ~/Library/LaunchAgents
+    cp docs/com.kames.flinty.frank-daily-brief.plist.example \
+       ~/Library/LaunchAgents/com.kames.flinty.frank-daily-brief.plist
+    launchctl load ~/Library/LaunchAgents/com.kames.flinty.frank-daily-brief.plist
+    launchctl start com.kames.flinty.frank-daily-brief
+
+  Désinstallation :
+    launchctl unload ~/Library/LaunchAgents/com.kames.flinty.frank-daily-brief.plist
+    rm ~/Library/LaunchAgents/com.kames.flinty.frank-daily-brief.plist
+
+  Debug :
+    launchctl list | grep com.kames.flinty.frank-daily-brief
+    tail -n 100 /Users/callendreau/Dev/Flinty/tmp/frank/frank-daily-brief-sync.log
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.kames.flinty.frank-daily-brief</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/zsh</string>
+    <string>-lc</string>
+    <string>cd /Users/callendreau/Dev/Flinty/.workflows/02-Implementation/interface/lead-qualifier-dashboard &amp;&amp; npm run sync:frank-daily-brief</string>
+  </array>
+
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Hour</key>
+    <integer>7</integer>
+    <key>Minute</key>
+    <integer>55</integer>
+  </dict>
+
+  <key>StandardOutPath</key>
+  <string>/Users/callendreau/Dev/Flinty/tmp/frank/launchd-stdout.log</string>
+
+  <key>StandardErrorPath</key>
+  <string>/Users/callendreau/Dev/Flinty/tmp/frank/launchd-stderr.log</string>
+
+  <key>RunAtLoad</key>
+  <false/>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>/usr/local/bin:/usr/bin:/bin:/opt/homebrew/bin</string>
+  </dict>
+</dict>
+</plist>
