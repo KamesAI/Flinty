@@ -1,13 +1,13 @@
 ---
 description: Next.js dashboard Flinty — API, lib, UI, Sheets, n8n, BLOCs
 paths:
-  - "02-Implementation/interface/lead-qualifier-dashboard/**/*.ts"
-  - "02-Implementation/interface/lead-qualifier-dashboard/**/*.tsx"
+  - ".workflows/02-Implementation/interface/lead-qualifier-dashboard/**/*.ts"
+  - ".workflows/02-Implementation/interface/lead-qualifier-dashboard/**/*.tsx"
 ---
 
 # Flinty — dashboard (lead-qualifier-dashboard)
 
-**Chemin** : `02-Implementation/interface/lead-qualifier-dashboard/`  
+**Chemin** : `.workflows/02-Implementation/interface/lead-qualifier-dashboard/`  
 Commandes : `npm run dev` | `npm run test` | `npm run build` | `npm run lint`
 
 ## Stack

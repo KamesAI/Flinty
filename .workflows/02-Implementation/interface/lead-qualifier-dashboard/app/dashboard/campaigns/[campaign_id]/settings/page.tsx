@@ -26,6 +26,7 @@ function settingsFromConfig(config: Record<string, string>): CampaignSettingsSta
     setter_tone: config.setter_tone === "casual" ? "casual" : "formal",
     setter_signature: config.setter_signature || "Thomas",
     calendly_event_uri: config.calendly_event_uri || process.env.CALENDLY_EVENT_TYPE_URI || "",
+    loom_video_url: config.loom_video_url || "",
   };
 }
 
@@ -60,7 +61,7 @@ export default async function CampaignSettingsPage({
 
       <div className="mb-6">
         <h1 className="text-2xl font-semibold tracking-tight text-slate-950">Paramètres campagne</h1>
-        <p className="mt-1 text-sm text-slate-500">AI Setter, warm-up, validation humaine et Calendly.</p>
+        <p className="mt-1 text-sm text-slate-500">AI Setter, warm-up, validation humaine, Calendly et Loom.</p>
       </div>
 
       <SettingsForm campaignId={campaign_id} initialSettings={settings} />

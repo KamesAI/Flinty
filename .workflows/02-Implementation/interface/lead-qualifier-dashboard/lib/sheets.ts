@@ -33,6 +33,14 @@ import {
   parseEmailHealthRows,
   type EmailHealthRow,
 } from "@/lib/pacing";
+import {
+  COST_TRACKING_HEADER,
+  COST_TRACKING_SHEET_NAME,
+  costTrackingRowFromUsage,
+  parseCostTrackingRows,
+  type CostTrackingRow,
+  type TokenUsage,
+} from "@/lib/cost-monitoring";
 
 const SPREADSHEET_ID = process.env.GOOGLE_INDEX_SHEET_ID!;
 
@@ -280,6 +288,23 @@ export async function ensureEmailEventsSheet() {
 
 export async function ensureEmailHealthSheet() {
   await ensureSheetExists(EMAIL_HEALTH_SHEET_NAME, EMAIL_HEALTH_HEADER);
+}
+
+export async function ensureCostTrackingSheet() {
+  await ensureSheetExists(COST_TRACKING_SHEET_NAME, COST_TRACKING_HEADER);
+}
+
+export async function ensureGlobalConfigSheet() {
+  await ensureSheetExists("Config", ["param_key", "param_value", "description"]);
+  const rows = await getSheetData("Config!A:B");
+  const hasThreshold = rows.some((row, index) => index > 0 && row[0] === "alert_cost_per_meeting_threshold");
+  if (!hasThreshold) {
+    await appendRow("Config!A:C", [
+      "alert_cost_per_meeting_threshold",
+      "15",
+      "Seuil d'alerte coût par meeting en USD",
+    ]);
+  }
 }
 
 /** Ajoute une ligne dans un GSheet enfant (spreadsheetId = fichier campagne). */
@@ -540,6 +565,38 @@ export async function getEmailHealthRows(): Promise<EmailHealthRow[]> {
 export async function getEmailHealth(domain = "outreach.kamesai.com"): Promise<EmailHealthRow | null> {
   const rows = await getEmailHealthRows();
   return rows.find((row) => row.domain === domain) ?? null;
+}
+
+export async function getCostTrackingRows(): Promise<CostTrackingRow[]> {
+  await ensureCostTrackingSheet();
+  const lastColumn = getColumnLetter(COST_TRACKING_HEADER.length);
+  const rows = await getSheetData(`${COST_TRACKING_SHEET_NAME}!A:${lastColumn}`);
+  return parseCostTrackingRows(rows);
+}
+
+export async function appendCostTrackingUsage(input: {
+  campaignId: string;
+  usage: TokenUsage;
+  unipileActions?: number;
+  calendlyCalls?: number;
+}): Promise<void> {
+  await ensureCostTrackingSheet();
+  const lastColumn = getColumnLetter(COST_TRACKING_HEADER.length);
+  await appendRow(
+    `${COST_TRACKING_SHEET_NAME}!A:${lastColumn}`,
+    costTrackingRowFromUsage(input)
+  );
+}
+
+export async function getGlobalConfig(): Promise<Record<string, string>> {
+  await ensureGlobalConfigSheet();
+  const rows = await getSheetData("Config!A:B");
+  const [, ...data] = rows;
+  return Object.fromEntries(
+    data
+      .filter((row) => (row[0] ?? "").trim())
+      .map((row) => [row[0] ?? "", row[1] ?? ""])
+  );
 }
 
 export async function getLeadEmailEvents(leadId: string): Promise<EmailEvent[]> {
@@ -830,6 +887,18 @@ export const LI_HEALTH_HEADER = [
   "acceptance_rate_7d",
 ] as const;
 
+export const LI_HEALTH_HISTORY_SHEET_NAME = "LI_Health_History";
+export const LI_HEALTH_HISTORY_HEADER = [
+  "account_id",
+  "status",
+  "reason",
+  "pause_started_at",
+  "last_check_at",
+  "acceptance_rate_7d",
+  "invites_sent_7d",
+  "invites_accepted_7d",
+] as const;
+
 export interface LinkedInHealthRow {
   account_id: string;
   status: "active" | "paused_captcha" | "paused_warning" | "paused_low_accept" | "paused_follow_mode";
@@ -837,6 +906,11 @@ export interface LinkedInHealthRow {
   pause_started_at: string;
   last_check_at: string;
   acceptance_rate_7d: string;
+}
+
+export interface LinkedInHealthHistoryRow extends LinkedInHealthRow {
+  invites_sent_7d: string;
+  invites_accepted_7d: string;
 }
 
 /** Lecture directe de l'onglet Campagnes (sans cache — TASK-022 s'en chargera). */
@@ -911,6 +985,10 @@ export async function ensureLinkedInHealthSheet() {
   await ensureSheetExists(LI_HEALTH_SHEET_NAME, LI_HEALTH_HEADER);
 }
 
+export async function ensureLinkedInHealthHistorySheet() {
+  await ensureSheetExists(LI_HEALTH_HISTORY_SHEET_NAME, LI_HEALTH_HISTORY_HEADER);
+}
+
 export function parseLinkedInHealthRows(rows: string[][]): LinkedInHealthRow[] {
   if (!rows.length) return [];
   const [, ...data] = rows;
@@ -926,6 +1004,23 @@ export function parseLinkedInHealthRows(rows: string[][]): LinkedInHealthRow[] {
     }));
 }
 
+export function parseLinkedInHealthHistoryRows(rows: string[][]): LinkedInHealthHistoryRow[] {
+  if (!rows.length) return [];
+  const [, ...data] = rows;
+  return data
+    .filter((r) => (r[0] ?? "").trim())
+    .map((r) => ({
+      account_id: r[0] ?? "",
+      status: (r[1] as LinkedInHealthHistoryRow["status"]) || "active",
+      reason: r[2] ?? "",
+      pause_started_at: r[3] ?? "",
+      last_check_at: r[4] ?? "",
+      acceptance_rate_7d: r[5] ?? "",
+      invites_sent_7d: r[6] ?? "",
+      invites_accepted_7d: r[7] ?? "",
+    }));
+}
+
 export async function getLatestLinkedInHealth(): Promise<LinkedInHealthRow | null> {
   await ensureLinkedInHealthSheet();
   const lastColumn = getColumnLetter(LI_HEALTH_HEADER.length);
@@ -933,6 +1028,16 @@ export async function getLatestLinkedInHealth(): Promise<LinkedInHealthRow | nul
   return parseLinkedInHealthRows(rows).sort(
     (a, b) => new Date(b.last_check_at).getTime() - new Date(a.last_check_at).getTime()
   )[0] ?? null;
+}
+
+export async function getLinkedInHealthHistory(accountId?: string): Promise<LinkedInHealthHistoryRow[]> {
+  await ensureLinkedInHealthHistorySheet();
+  const lastColumn = getColumnLetter(LI_HEALTH_HISTORY_HEADER.length);
+  const rows = await getSheetData(`${LI_HEALTH_HISTORY_SHEET_NAME}!A:${lastColumn}`);
+  return parseLinkedInHealthHistoryRows(rows)
+    .filter((row) => !accountId || row.account_id === accountId)
+    .sort((a, b) => new Date(a.last_check_at).getTime() - new Date(b.last_check_at).getTime())
+    .slice(-30);
 }
 
 export async function ensureWorkspacesSheet() {

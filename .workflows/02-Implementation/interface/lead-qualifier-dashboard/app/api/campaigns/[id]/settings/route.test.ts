@@ -63,6 +63,7 @@ describe("/api/campaigns/[id]/settings", () => {
       setter_tone: "casual",
       setter_signature: "Thomas",
       calendly_event_uri: "",
+      loom_video_url: "https://www.loom.com/share/demo",
     });
 
     const res = await GET(req("GET"), { params: Promise.resolve({ id: "cmp_1" }) });
@@ -76,6 +77,7 @@ describe("/api/campaigns/[id]/settings", () => {
       setter_tone: "casual",
       setter_signature: "Thomas",
       calendly_event_uri: "https://calendly.com/kames/demo",
+      loom_video_url: "https://www.loom.com/share/demo",
     });
   });
 
@@ -89,15 +91,17 @@ describe("/api/campaigns/[id]/settings", () => {
       setter_tone: "formal",
       setter_signature: "Thomas Callendreau",
       calendly_event_uri: "https://calendly.com/kames/audit",
+      loom_video_url: "https://www.loom.com/share/demo",
       li_caps_daily: "999",
     }), { params: Promise.resolve({ id: "cmp_1" }) });
 
     expect(res.status).toBe(200);
-    expect(updateConfigValue).toHaveBeenCalledTimes(7);
+    expect(updateConfigValue).toHaveBeenCalledTimes(8);
     expect(updateConfigValue).toHaveBeenCalledWith("sheet_1", "cmp_1", "setter_enabled", "TRUE");
     expect(updateConfigValue).toHaveBeenCalledWith("sheet_1", "cmp_1", "setter_validation", "FALSE");
     expect(updateConfigValue).toHaveBeenCalledWith("sheet_1", "cmp_1", "warmup_campaign", "TRUE");
     expect(updateConfigValue).toHaveBeenCalledWith("sheet_1", "cmp_1", "warmup_started_at", expect.any(String));
+    expect(updateConfigValue).toHaveBeenCalledWith("sheet_1", "cmp_1", "loom_video_url", "https://www.loom.com/share/demo");
     expect(updateConfigValue).not.toHaveBeenCalledWith(
       "sheet_1",
       "cmp_1",

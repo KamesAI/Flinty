@@ -4,7 +4,7 @@
 
 - **`flinty-core.md`** — chargée à chaque session (skills, garde-fous, Thomas).
 - **`flinty-dashboard.md`** — chargée en lazy load quand un fichier du dashboard `*.ts` / `*.tsx` est concerné (BLOCs, n8n, GSheet, TDD).
-- **`flinty-tasks.md`** — lazy load pour `tasks/v3/**` et `02-Implementation/Dev-Log.md`.
+- **`flinty-tasks.md`** — lazy load pour `tasks/v3/**` et `.workflows/02-Implementation/Dev-Log.md`.
 
 Le hub humain reste [`../CLAUDE.md`](../CLAUDE.md) à la racine du repo.
 

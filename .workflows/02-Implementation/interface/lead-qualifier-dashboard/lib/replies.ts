@@ -105,6 +105,7 @@ export function campaignToSetterCampaign(
     setter_tone: config.setter_tone === "casual" ? "casual" : "formal",
     setter_signature: config.setter_signature || "Thomas Callendreau, Kames AI",
     icp_md: config.icp_md || "",
+    loom_video_url: config.loom_video_url || "",
   };
 }
 

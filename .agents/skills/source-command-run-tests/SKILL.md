@@ -12,7 +12,7 @@ Use this skill when the user asks to run the migrated source command `run-tests`
 Exécute la suite de tests du dashboard depuis la racine du repo :
 
 ```bash
-cd /Users/callendreau/Dev/Flinty/02-Implementation/interface/lead-qualifier-dashboard && npm run test
+cd /Users/callendreau/Dev/Flinty/.workflows/02-Implementation/interface/lead-qualifier-dashboard && npm run test
 ```
 
 (Adapte le chemin si le clone n’est pas sous `~/Dev/Flinty`.)

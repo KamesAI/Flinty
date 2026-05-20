@@ -973,6 +973,27 @@ curl -X POST https://staging-n8n.kamesai.com/webhook/flinty-wf1-launch \
 - `setter_validation=false` appliqué automatiquement après warm-up.
 - Accuracy intent sur 50 turns : 100.0%.
 
+## 2026-05-20 — v4 Unipile trial prep sans credentials
+
+**Tâches** : v4-020 partiel, v4-027 ✅, v4-028 partiel, v4-024b partiel, v4-029 ✅, v4-032 partiel.
+
+**Changements** :
+- `lib/unipile.ts` : DSN court/URL complète, retries uniquement timeout/5xx avec backoff 1s/2s/4s, HMAC timing-safe, types `UnipileInvitation`/`UnipileDM`/`UnipileAccountStatus`.
+- Inbox : badges Email/LinkedIn dans `ConversationThread`, bordure bleue LinkedIn, canal du dernier message prospect dans `À valider` et `À répondre`.
+- Smoke Phase 2 : `scripts/smoke-phase2.sh` + `scripts/smoke-phase2-checklist.md` avec payloads `message.received`, `invitation.accepted`, `paused_captcha`.
+- Santé LI : `lib/li-health.ts` (circuit breaker testable), `LI_Health_History` dans `lib/sheets.ts`, page `/dashboard/settings/linkedin/health` avec warning orange 20–35% et graphiques CSS.
+- Loom : `loom_video_url` dans settings campagne API/UI, helpers Setter, embed HTML email et lien texte LinkedIn.
+
+**Preuves** :
+- `npm run test -- lib/li-health.test.ts lib/setter.test.ts app/api/campaigns/[id]/settings/route.test.ts lib/unipile.test.ts app/dashboard/inbox/ConversationThread.test.tsx app/dashboard/inbox/page.test.tsx` → 6 fichiers, 70 tests ✅.
+- `npm run test` → 87 fichiers, 514 tests ✅.
+- `npm run build` → OK ✅.
+
+**Reste bloqué par Unipile réel** :
+- Test live `getAccountStatus` / `/users/me`.
+- WF12 n8n live : polling compte + invitations, append `LI_Health_History`, email alerte Thomas.
+- Smoke staging Phase 2 avec compte LinkedIn connecté et webhooks réels.
+
 ---
 
 ## Session 2026-05-19 — TASK v4-036 Daily brief Frank/Hermes
@@ -1059,3 +1080,40 @@ curl -X POST https://staging-n8n.kamesai.com/webhook/flinty-wf1-launch \
 ### 2026-05-18 — Auto-graduation Setter cmp_1
 - `setter_validation=false` appliqué automatiquement après warm-up.
 - Accuracy intent sur 50 turns : 100.0%.
+
+### 2026-05-18 — Auto-graduation Setter cmp_1
+- `setter_validation=false` appliqué automatiquement après warm-up.
+- Accuracy intent sur 50 turns : 100.0%.
+
+### 2026-05-18 — Auto-graduation Setter cmp_1
+- `setter_validation=false` appliqué automatiquement après warm-up.
+- Accuracy intent sur 50 turns : 100.0%.
+
+### 2026-05-18 — Auto-graduation Setter cmp_1
+- `setter_validation=false` appliqué automatiquement après warm-up.
+- Accuracy intent sur 50 turns : 100.0%.
+
+### 2026-05-18 — Auto-graduation Setter cmp_1
+- `setter_validation=false` appliqué automatiquement après warm-up.
+- Accuracy intent sur 50 turns : 100.0%.
+
+### 2026-05-18 — Auto-graduation Setter cmp_1
+- `setter_validation=false` appliqué automatiquement après warm-up.
+- Accuracy intent sur 50 turns : 100.0%.
+
+### 2026-05-18 — Auto-graduation Setter cmp_1
+- `setter_validation=false` appliqué automatiquement après warm-up.
+- Accuracy intent sur 50 turns : 100.0%.
+### 2026-05-20 — TASK-v4-035 Monitoring coûts tokens / Unipile / Calendly
+- Mise à jour chemins projet après déplacement du dashboard sous `.workflows/02-Implementation/interface/lead-qualifier-dashboard/` : `AGENTS.md`, `CLAUDE.md`, règles/hooks/commands/skills actifs.
+- Ajout monitoring coûts :
+  - `lib/cost-monitoring.ts` + tests : header `Cost_Tracking`, extraction usage Anthropic/OpenRouter, coût Sonnet, projections mensuelles, alerte seuil sur les 7 derniers meetings.
+  - `lib/sheets.ts` : création on-demand `Cost_Tracking`, Config global, `alert_cost_per_meeting_threshold=15`, lecture/append coûts.
+  - `lib/setter.ts` : tracking tokens après `classifyIntent`, `generateResponse` et follow-up tool Calendly, sans bloquer le pipeline si Sheets échoue.
+  - `app/api/monitoring/costs/route.ts` : `GET /api/monitoring/costs?workspace_id=...` avec projection + déclenchement email Resend si seuil dépassé.
+  - `app/dashboard/data/*` : section "Coûts" avec tokens mois, coût/meeting, projection et alerte UI.
+- Suivi v4 : `TASK-v4-035` et `TASKS.md` passés en `🚧 Partiel — 2026-05-20` car WF14/smoke Sheets/email réels restent à valider.
+- Preuves :
+  - `npm run test -- lib/cost-monitoring.test.ts app/api/monitoring/costs/route.test.ts lib/setter.test.ts` → OK (42 tests).
+  - `npm run build` → OK.
+  - `npm run test` → OK (89 files, 522 tests).

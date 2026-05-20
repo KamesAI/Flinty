@@ -19,7 +19,7 @@ Event type actif : **"30 Minute Meeting"** (`calendly.com/kames-ai/30min`)
 ### Étape restante — Ajouter sur Vercel ⬜
 
 ```bash
-cd /Users/callendreau/Dev/Flinty/02-Implementation/interface/lead-qualifier-dashboard
+cd /Users/callendreau/Dev/Flinty/.workflows/02-Implementation/interface/lead-qualifier-dashboard
 
 vercel env add CALENDLY_TOKEN
 # coller la valeur du .env.local → choisir "Preview" ET "Production"

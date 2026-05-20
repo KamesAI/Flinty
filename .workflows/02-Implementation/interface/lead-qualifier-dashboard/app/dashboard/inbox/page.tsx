@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Bot, CalendarCheck, Inbox, MessageSquareReply } from "lucide-react";
+import { Bot, CalendarCheck, Inbox, Linkedin, Mail, MessageSquareReply } from "lucide-react";
 import { getMeetings } from "@/lib/sheets";
 import { listEscalatedSetterThreads, listSetterDraftQueue } from "@/lib/replies";
 import { ConversationThread } from "./ConversationThread";
@@ -62,6 +62,27 @@ function getLeadName(lead: { prénom?: string; nom?: string }) {
 function getEscalationReason(value: string) {
   const [, , reason] = value.split(":");
   return reason || "Escalade manuelle";
+}
+
+function LastMessageChannel({
+  channel,
+}: {
+  channel?: "email" | "linkedin" | string;
+}) {
+  const isLinkedIn = channel === "linkedin";
+  const Icon = isLinkedIn ? Linkedin : Mail;
+  return (
+    <span
+      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+        isLinkedIn
+          ? "bg-[#0a66c2]/10 text-[#0a66c2]"
+          : "bg-slate-100 text-slate-700"
+      }`}
+    >
+      <Icon className="size-3" />
+      {isLinkedIn ? "LinkedIn" : "Email"}
+    </span>
+  );
 }
 
 function getWeekStart(dateInput: string) {
@@ -255,6 +276,9 @@ export default async function InboxPage({
                       <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                         Dernier message prospect
                       </p>
+                      <div className="mb-2">
+                        <LastMessageChannel channel={item.lastProspectTurn.channel} />
+                      </div>
                       <p className="whitespace-pre-wrap text-sm leading-6 text-slate-900">
                         {item.lastProspectTurn.content}
                       </p>
@@ -302,6 +326,9 @@ export default async function InboxPage({
                     <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                       Dernier message prospect
                     </p>
+                    <div className="mb-2">
+                      <LastMessageChannel channel={item.lastProspectTurn.channel} />
+                    </div>
                     <p className="whitespace-pre-wrap text-sm leading-6 text-slate-900">
                       {item.lastProspectTurn.content}
                     </p>

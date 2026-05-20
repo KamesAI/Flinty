@@ -1,5 +1,7 @@
 import { getAvailableSlots, formatSlotsNatural, getCalendlySchedulingUrl } from "./calendly";
 import { CLAUDE_SONNET, getOpenRouter } from "./openrouter";
+import { extractTokenUsage } from "./cost-monitoring";
+import { appendCostTrackingUsage } from "./sheets";
 import type { IntentLabel, IntentResult, CalendlySlot } from "./types";
 
 // ——— Constants ———
@@ -60,6 +62,7 @@ export interface SetterCampaign {
   setter_tone: "formal" | "casual";
   setter_signature: string;
   icp_md: string;
+  loom_video_url?: string;
 }
 
 export interface SetterContext {
@@ -83,6 +86,12 @@ export interface SetterGenerateResult {
   escalated: boolean;
   ai_disclosure?: boolean;
   slots_proposed?: boolean;
+}
+
+export interface LoomContext {
+  include: boolean;
+  url: string;
+  thumbnailUrl: string;
 }
 
 // ——— Pure helpers (testables sans API) ———
@@ -155,6 +164,59 @@ ${campaign.icp_md}
 `.trim();
 }
 
+export function extractLoomId(loomUrl: string): string {
+  try {
+    const url = new URL(loomUrl);
+    const shareMatch = url.pathname.match(/\/share\/([^/?#]+)/);
+    if (shareMatch?.[1]) return shareMatch[1];
+    const embedMatch = url.pathname.match(/\/embed\/([^/?#]+)/);
+    return embedMatch?.[1] ?? "";
+  } catch {
+    return "";
+  }
+}
+
+export function getLoomThumbnailUrl(loomUrl: string): string {
+  const loomId = extractLoomId(loomUrl);
+  return loomId ? `https://www.loom.com/thumbnails/${loomId}.jpg` : "";
+}
+
+export function shouldIncludeLoom(
+  loomVideoUrl: string | undefined,
+  intent: IntentLabel | string,
+  followUpCount = 0
+): boolean {
+  if (!loomVideoUrl?.trim()) return false;
+  return followUpCount >= 4 || ["interested", "demande_info", "interested_wants_more"].includes(intent);
+}
+
+export function buildLoomContext(
+  loomVideoUrl: string | undefined,
+  intent: IntentLabel | string,
+  followUpCount = 0
+): LoomContext {
+  if (!shouldIncludeLoom(loomVideoUrl, intent, followUpCount)) {
+    return { include: false, url: "", thumbnailUrl: "" };
+  }
+  const url = loomVideoUrl!.trim();
+  return { include: true, url, thumbnailUrl: getLoomThumbnailUrl(url) };
+}
+
+export function appendLoomToDraft(draft: string, channel: "email" | "linkedin", loom: LoomContext): string {
+  if (!loom.include || !loom.url || draft.includes(loom.url)) return draft;
+  if (channel === "linkedin") {
+    return `${draft.trim()}\n\nJ'ai aussi enregistré une courte vidéo de 2 min : ${loom.url}`;
+  }
+  const thumbnail = loom.thumbnailUrl || loom.url;
+  return `${draft.trim()}
+
+<p>Regardez cette vidéo de 2 min :</p>
+<a href="${loom.url}" target="_blank" rel="noopener noreferrer">
+  <img src="${thumbnail}" width="480" alt="Vidéo 2 min - Thomas" style="border-radius:8px;border:1px solid #eee;max-width:100%;height:auto"/>
+</a>
+<p><a href="${loom.url}" target="_blank" rel="noopener noreferrer">${loom.url}</a></p>`;
+}
+
 export function buildSystemPrompt(tone: "formal" | "casual"): string {
   const toneInstruction =
     tone === "formal"
@@ -203,13 +265,33 @@ RÉPONDS UNIQUEMENT LE JSON`.trim();
 
 // ——— API calls ———
 
+async function trackSetterUsage(campaignId: string | undefined, response: unknown, calendlyCalls = 0) {
+  if (!campaignId) return;
+  const usage = extractTokenUsage(response);
+  if (usage.totalTokens <= 0) return;
+
+  try {
+    await appendCostTrackingUsage({
+      campaignId,
+      usage,
+      calendlyCalls,
+    });
+  } catch (error) {
+    console.warn(
+      "[setter] Cost_Tracking append failed:",
+      error instanceof Error ? error.message : String(error)
+    );
+  }
+}
+
 /**
  * Classifie l'intent du dernier message prospect.
  * Prompt caching sur le system prompt (invariant).
  */
 export async function classifyIntent(
   thread: ConversationMessage[],
-  campaignContext: string
+  campaignContext: string,
+  options?: { campaignId?: string }
 ): Promise<IntentResult> {
   const client = getOpenRouter();
 
@@ -229,6 +311,7 @@ export async function classifyIntent(
       { role: "user", content: userContent },
     ],
   });
+  await trackSetterUsage(options?.campaignId, response);
 
   const raw = response.choices[0]?.message?.content ?? "";
   return parseIntentResponse(raw);
@@ -243,7 +326,7 @@ export async function generateResponse(
   thread: ConversationMessage[],
   ctx: SetterContext,
   intent: IntentLabel,
-  options?: { eventTypeUri?: string; workspaceId?: string }
+  options?: { eventTypeUri?: string; workspaceId?: string; followUpCount?: number; channel?: "email" | "linkedin" }
 ): Promise<{ draft: string; slots_proposed: boolean }> {
   const model =
     intent === "objection_trust"
@@ -253,6 +336,8 @@ export async function generateResponse(
   const client = getOpenRouter();
   const campaignCtx = buildConversationContext(ctx);
   const systemPrompt = buildSystemPrompt(ctx.campaign.setter_tone);
+  const channel = options?.channel ?? thread.at(-1)?.channel ?? "email";
+  const loom = buildLoomContext(ctx.campaign.loom_video_url, intent, options?.followUpCount ?? 0);
 
   const recentThread = thread
     .slice(-8)
@@ -282,7 +367,12 @@ export async function generateResponse(
     },
   ];
 
-  const userContent = `${campaignCtx}\n\n## Thread\n${recentThread}\n\n## Intent classifié\n${intent}\n\n## Signature\n${ctx.campaign.setter_signature}\n\nRédige la réponse maintenant.`;
+  const loomInstruction = loom.include
+    ? channel === "linkedin"
+      ? `\n\n## Loom\nInclure ce lien Loom en texte simple dans la réponse : ${loom.url}`
+      : `\n\n## Loom\nPrévoir une transition naturelle vers une vidéo Loom de 2 min. Le bloc HTML cliquable sera ajouté automatiquement.`
+    : "";
+  const userContent = `${campaignCtx}\n\n## Thread\n${recentThread}\n\n## Intent classifié\n${intent}\n\n## Signature\n${ctx.campaign.setter_signature}${loomInstruction}\n\nRédige la réponse maintenant.`;
 
   let draft = "";
   let slots_proposed = false;
@@ -297,6 +387,7 @@ export async function generateResponse(
       { role: "user", content: userContent },
     ],
   });
+  await trackSetterUsage(ctx.campaign.campaign_id, response);
 
   // Handle tool use
   const assistantMessage = response.choices[0]?.message;
@@ -347,6 +438,7 @@ export async function generateResponse(
           },
         ],
       });
+      await trackSetterUsage(ctx.campaign.campaign_id, followUp, slots_proposed ? 1 : 0);
 
       draft = followUp.choices[0]?.message?.content ?? "";
     } catch {
@@ -356,7 +448,7 @@ export async function generateResponse(
     draft = assistantMessage?.content ?? "";
   }
 
-  return { draft: draft.trim(), slots_proposed };
+  return { draft: appendLoomToDraft(draft.trim(), channel, loom), slots_proposed };
 }
 
 /**
@@ -375,7 +467,9 @@ export async function runSetterPipeline(
   const aiDisclosure = lastMsg ? isAiQuestion(lastMsg.content) : false;
 
   // Classification intent
-  const intentResult = await classifyIntent(thread, campaignCtx);
+  const intentResult = await classifyIntent(thread, campaignCtx, {
+    campaignId: ctx.campaign.campaign_id,
+  });
   const action = routeIntent(intentResult.intent, intentResult.confidence);
 
   if (action === "escalate") {

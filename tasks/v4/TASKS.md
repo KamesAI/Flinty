@@ -47,18 +47,18 @@
 | # | Task | Owner | Priority | Status | Deps | Est. |
 |---|------|-------|----------|--------|------|------|
 | v4-019 | Souscription Unipile + API key + DSN + webhooks secret | 🧑 | P0 | ⬜ | — | 1h |
-| v4-020 | `lib/unipile.ts` client + retries + signature verify | 🤖 | P0 | ⬜ | v4-019 | 3h |
+| v4-020 | `lib/unipile.ts` client + retries + signature verify | 🤖 | P0 | 🚧 Partiel — 2026-05-20 (client + tests mock livrés ; test live `/users/me` en attente credentials) | v4-019 | 3h |
 | v4-021 | Hosted auth flow : `/dashboard/settings/linkedin/connect` + callback `/api/unipile/callback` + tab `Accounts` Index | 🤖 | P0 | 🚧 Partiel — 2026-05-18 | v4-020 | 3h |
 | v4-022 | WF9 LI Sourcing — search/post_engagers/profile_visitors/external_post → Leads_Raw + dedup Registry étendu | 🤖 | P0 | ⬜ | v4-020 | 6h |
 | v4-023 | UI sourcing LI sur page campagne — sélecteur canal + params | 🤖 | P0 | 🚧 Partiel — 2026-05-18 | v4-022 | 3h |
 | v4-024 | `lib/pacing.ts` — Gauss délais + caps daily warm/new + **cap weekly 100** + **ramp-up 4 sem** + human hours 9h–19h + note 60/40 + removal cap 50/j + typing speed | 🤖 | P0 | ✅ | v4-020 | 5h |
-| v4-024b | WF12 NEW — Health monitor LI : polling Unipile + parsing inbox compte → détecte captcha/warning email/acceptance<20%/bouton Suivre → auto-pause + alerte UI + email Thomas. Tab `LI_Health` Index | 🤖 | P0 | ⬜ | v4-024 | 4h |
+| v4-024b | WF12 NEW — Health monitor LI : polling Unipile + parsing inbox compte → détecte captcha/warning email/acceptance<20%/bouton Suivre → auto-pause + alerte UI + email Thomas. Tab `LI_Health` Index | 🤖 | P0 | 🚧 Partiel — 2026-05-20 (helpers circuit breaker + tests + smoke payload prêts ; WF12 live en attente Unipile) | v4-024 | 4h |
 | v4-024c | Bandeau dashboard `<LIHealthBanner>` rouge si status != active + raison + ETA reprise | 🤖 | P0 | 🚧 Partiel — 2026-05-18 | v4-024b | 2h |
 | v4-025 | WF10 LI Outreach — invitation perso IA + cold DM post-acceptance + pacing + appel `checkHealth()` avant chaque action | 🤖 | P0 | ⬜ | v4-024, v4-024b, v4-022 | 5h |
 | v4-025b | WF10 mix d'actions organiques — 1 like + 1 profile view toutes les N invits (pattern humain) | 🤖 | P0 | ⬜ | v4-025 | 2h |
 | v4-026 | WF11 Setter LI — webhook `message.received` → réutilise pipeline Setter (channel=linkedin) | 🤖 | P0 | ⬜ | v4-005, v4-020 | 4h |
-| v4-027 | Inbox unifié email + LI dans `<ConversationThread>` (channel badge) | 🤖 | P0 | ⬜ | v4-013, v4-026 | 2h |
-| v4-028 | Tests + E2E Phase 2 : sourcing → invitation → DM → reply → Setter LI → Calendly + smoke captcha simulé → pause auto | 🤝 | P0 | ⬜ | v4-022→027 | 4h |
+| v4-027 | Inbox unifié email + LI dans `<ConversationThread>` (channel badge) | 🤖 | P0 | ✅ | v4-013, v4-026 | 2h |
+| v4-028 | Tests + E2E Phase 2 : sourcing → invitation → DM → reply → Setter LI → Calendly + smoke captcha simulé → pause auto | 🤝 | P0 | 🚧 Partiel — 2026-05-20 (script + checklist + tests mock prêts ; smoke staging réel à exécuter) | v4-022→027 | 4h |
 
 **Total Phase 2** : ~42h
 
@@ -66,13 +66,13 @@
 
 | # | Task | Owner | Priority | Status | Deps | Est. |
 |---|------|-------|----------|--------|------|------|
-| v4-029 | Vidéo perso Loom embed (auto-trigger follow-up #4 ou demande) | 🤖 | P1 | ⬜ | v4-005 | 3h |
+| v4-029 | Vidéo perso Loom embed (auto-trigger follow-up #4 ou demande) | 🤖 | P1 | ✅ | v4-005 | 3h |
 | v4-030 | Workspaces tab Index + scope routes (multi-tenant agence) | 🤖 | P1 | ✅ | v4-021 | 6h |
 | v4-031 | OAuth Calendly v2 (remplace PAT) — multi-event types par workspace | 🤖 | P1 | ✅ | v4-008, v4-030 | 4h |
-| v4-032 | Pacing fin avancé : tuning ramp-up (déjà livré v4-024) + alertes santé granulaires + dashboards LI_Health historiques | 🤖 | P1 | ⬜ | v4-024, v4-024b | 2h |
+| v4-032 | Pacing fin avancé : tuning ramp-up (déjà livré v4-024) + alertes santé granulaires + dashboards LI_Health historiques | 🤖 | P1 | 🚧 Partiel — 2026-05-20 (page + warning orange + lecture historique prêts ; données WF12 live en attente) | v4-024, v4-024b | 2h |
 | v4-033 | Analytics avancé : funnel par canal, cohorts, attribution RDV, cost/meeting | 🤖 | P1 | 🚧 2026-05-19 | v4-002 | 5h |
 | v4-034 | API publique + webhooks CRM (HubSpot/Pipedrive) | 🤖 | P2 | ⬜ | v4-030 | 5h |
-| v4-035 | Monitoring tokens Anthropic/Unipile/Calendly + alertes seuils | 🤖 | P1 | ⬜ | v4-005, v4-020 | 2h |
+| v4-035 | Monitoring tokens Anthropic/Unipile/Calendly + alertes seuils | 🤖 | P1 | 🚧 Partiel — 2026-05-20 (code TS/API/UI livré ; WF14 + smoke Sheets/email réels à faire) | v4-005, v4-020 | 2h |
 | v4-036 | MVP “Flinty daily brief export” pour Frank/Hermes — JSON read-only `daily-pipeline.json`, fonction `generateDailyPipelineBriefData()`, script `npm run export:frank-daily-brief`, endpoint `GET /api/frank/daily-brief-data`, doc sécurité | 🤖 | P1 | ✅ | v4-003, v4-011 | 2h |
 
 **Total Phase 3** : ~28h

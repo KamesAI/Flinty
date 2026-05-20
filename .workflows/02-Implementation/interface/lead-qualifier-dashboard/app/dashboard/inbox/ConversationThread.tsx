@@ -100,7 +100,7 @@ export function ConversationThread({ turns, thread, leadName = "ce lead" }: Conv
                     : isDraft
                       ? "border-amber-300 bg-amber-50 text-slate-950"
                       : "border-[hsl(var(--primary)/0.25)] bg-[hsl(var(--primary)/0.06)] text-slate-950"
-              }`}
+              } ${turn.channel === "linkedin" ? "border-l-4 border-l-[#0a66c2] bg-[#0a66c2]/[0.03]" : "border-l-4 border-l-slate-300"}`}
             >
               <div className="mb-2 flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                 <span>{roleLabel(turn.role)}</span>

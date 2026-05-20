@@ -1,3 +1,5 @@
+import { createHmac, timingSafeEqual } from "node:crypto";
+
 // ——— Types ———
 
 export type LIAccountStatus =
@@ -15,6 +17,8 @@ export interface UnipileAccount {
   name?: string;
   linkedin_id?: string;
 }
+
+export type UnipileAccountStatus = UnipileAccount;
 
 export interface UnipileMessage {
   id: string;
@@ -34,6 +38,14 @@ export interface UnipileProfile {
   last_name?: string;
   headline?: string;
   profile_url?: string;
+}
+
+export interface UnipileInvitation {
+  id: string;
+}
+
+export interface UnipileDM {
+  id: string;
 }
 
 export interface UnipileConfig {
@@ -76,23 +88,51 @@ export class UnipileHTTPError extends Error {
   }
 }
 
+export class UnipileTransientHTTPError extends UnipileHTTPError {
+  constructor(status: number, message: string) {
+    super(status, message);
+    this.name = "UnipileTransientHTTPError";
+  }
+}
+
 // ——— Retry ———
 
-async function withRetry<T>(fn: () => Promise<T>, maxRetries = 3): Promise<T> {
+const RETRY_DELAYS_MS = [1000, 2000, 4000] as const;
+
+function isTimeoutError(err: unknown) {
+  if (!(err instanceof Error)) return false;
+  return (
+    err.name === "AbortError" ||
+    err.name === "TimeoutError" ||
+    /\b(timeout|timed out)\b/i.test(err.message)
+  );
+}
+
+async function withRetry<T>(
+  fn: () => Promise<T>,
+  maxRetries = RETRY_DELAYS_MS.length
+): Promise<T> {
   let lastError: unknown;
-  for (let attempt = 0; attempt < maxRetries; attempt++) {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
       return await fn();
     } catch (err) {
       lastError = err;
-      // HTTP errors (4xx/5xx) are not transient — don't retry
-      if (err instanceof UnipileHTTPError) throw err;
-      if (attempt < maxRetries - 1) {
-        await new Promise((r) => setTimeout(r, 1000 * Math.pow(2, attempt)));
-      }
+      const retryable =
+        err instanceof UnipileTransientHTTPError || isTimeoutError(err);
+      if (!retryable || attempt === maxRetries) throw err;
+      await new Promise((r) => setTimeout(r, RETRY_DELAYS_MS[attempt]));
     }
   }
   throw lastError;
+}
+
+function normalizeUnipileBaseUrl(dsn: string) {
+  const trimmed = dsn.trim().replace(/\/+$/, "");
+  if (/^https?:\/\//i.test(trimmed)) {
+    return trimmed.endsWith("/api/v1") ? trimmed : `${trimmed}/api/v1`;
+  }
+  return `https://${trimmed}.unipile.com:13465/api/v1`;
 }
 
 // ——— Client ———
@@ -102,7 +142,7 @@ export class UnipileClient {
   private apiKey: string;
 
   constructor(config: UnipileConfig) {
-    this.baseUrl = `https://${config.dsn}.unipile.com:13465/api/v1`;
+    this.baseUrl = normalizeUnipileBaseUrl(config.dsn);
     this.apiKey = config.apiKey;
   }
 
@@ -119,9 +159,14 @@ export class UnipileClient {
 
     if (!response.ok) {
       const body = await response.text();
+      const message =
+        `Unipile ${options.method ?? "GET"} ${path} → ${response.status}: ${body}`;
+      if (response.status >= 500) {
+        throw new UnipileTransientHTTPError(response.status, message);
+      }
       throw new UnipileHTTPError(
         response.status,
-        `Unipile ${options.method ?? "GET"} ${path} → ${response.status}: ${body}`
+        message
       );
     }
 
@@ -132,9 +177,9 @@ export class UnipileClient {
     return withRetry(() => this.request<UnipileAccount>(`/accounts/${accountId}`));
   }
 
-  async sendInvitation(params: SendInvitationParams): Promise<{ id: string }> {
+  async sendInvitation(params: SendInvitationParams): Promise<UnipileInvitation> {
     return withRetry(() =>
-      this.request<{ id: string }>("/linkedin/invitations", {
+      this.request<UnipileInvitation>("/linkedin/invitations", {
         method: "POST",
         body: JSON.stringify({
           account_id: params.accountId,
@@ -145,9 +190,9 @@ export class UnipileClient {
     );
   }
 
-  async sendDM(params: SendDMParams): Promise<{ id: string }> {
+  async sendDM(params: SendDMParams): Promise<UnipileDM> {
     return withRetry(() =>
-      this.request<{ id: string }>(`/chats/${params.chatId}/messages`, {
+      this.request<UnipileDM>(`/chats/${params.chatId}/messages`, {
         method: "POST",
         body: JSON.stringify({
           account_id: params.accountId,
@@ -191,26 +236,29 @@ export class UnipileClient {
 
 // ——— Webhook verification ———
 
-export async function verifyUnipileSignature(
+export function verifyUnipileSignature(
   rawBody: string,
   signature: string,
   secret: string
-): Promise<boolean> {
-  const encoder = new TextEncoder();
-  const key = await crypto.subtle.importKey(
-    "raw",
-    encoder.encode(secret),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"]
-  );
-  const mac = await crypto.subtle.sign("HMAC", key, encoder.encode(rawBody));
-  const expected =
-    "sha256=" +
-    Array.from(new Uint8Array(mac))
-      .map((b) => b.toString(16).padStart(2, "0"))
-      .join("");
-  return expected === signature;
+): boolean {
+  if (!secret || !signature) return false;
+  const expectedHex = createHmac("sha256", secret).update(rawBody).digest("hex");
+  const normalizedSignature = signature.startsWith("sha256=")
+    ? signature.slice("sha256=".length)
+    : signature;
+
+  if (!/^[a-f0-9]+$/i.test(normalizedSignature)) return false;
+
+  const expected = Buffer.from(expectedHex, "hex");
+  const actual = Buffer.from(normalizedSignature, "hex");
+  if (expected.length !== actual.length) return false;
+  return timingSafeEqual(expected, actual);
+}
+
+export function verifyUnipileWebhook(body: string, signature: string): boolean {
+  const secret = process.env.UNIPILE_WEBHOOK_SECRET;
+  if (!secret) return false;
+  return verifyUnipileSignature(body, signature, secret);
 }
 
 // ——— Factory ———

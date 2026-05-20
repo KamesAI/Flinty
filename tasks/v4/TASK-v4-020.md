@@ -1,5 +1,5 @@
 # Task v4-020 : `lib/unipile.ts` — client Unipile + retries + signature verify
-**Status**: ⬜ À faire
+**Status**: 🚧 Partiel — 2026-05-20
 
 ## Autonomie
 🤖 **Claude 100%** — code TypeScript + tests Vitest (TDD).
@@ -15,12 +15,12 @@ Module client Unipile utilisé par WF9 (sourcing), WF10 (outreach), WF11 (Setter
 ## Requirements
 
 ### Must Have
-- [ ] `UnipileClient` class ou fonctions nommées : `sendInvitation`, `sendDM`, `searchProfiles`, `getMessages`, `getAccountStatus`
-- [ ] Toutes les requêtes : header `X-API-KEY: UNIPILE_API_KEY`, base URL = `UNIPILE_DSN`
-- [ ] Retry 3x avec backoff exponentiel (1s, 2s, 4s) sur erreurs 5xx ou timeout
-- [ ] `verifyUnipileWebhook(body: string, signature: string): boolean` — HMAC-SHA256 sur `UNIPILE_WEBHOOK_SECRET`
-- [ ] Types : `UnipileProfile`, `UnipileInvitation`, `UnipileDM`, `UnipileAccountStatus`
-- [ ] Tests Vitest : `verifyUnipileWebhook` (valid/invalid), mock fetch sur sendInvitation + retry
+- [x] `UnipileClient` class ou fonctions nommées : `sendInvitation`, `sendDM`, `searchProfiles`, `getMessages`, `getAccountStatus`
+- [x] Toutes les requêtes : header `X-API-KEY: UNIPILE_API_KEY`, base URL = `UNIPILE_DSN`
+- [x] Retry 3x avec backoff exponentiel (1s, 2s, 4s) sur erreurs 5xx ou timeout
+- [x] `verifyUnipileWebhook(body: string, signature: string): boolean` — HMAC-SHA256 sur `UNIPILE_WEBHOOK_SECRET`
+- [x] Types : `UnipileProfile`, `UnipileInvitation`, `UnipileDM`, `UnipileAccountStatus`
+- [x] Tests Vitest : `verifyUnipileWebhook` (valid/invalid), mock fetch sur sendInvitation + retry
 
 ### Must NOT
 - Ne pas exposer `UNIPILE_API_KEY` côté client browser
@@ -65,10 +65,22 @@ export function verifyUnipileWebhook(body: string, signature: string): boolean {
 ```
 
 ## Acceptance Criteria
-- [ ] `npm run test` — tests lib/unipile.ts passent
-- [ ] `sendInvitation` avec mock → retourne 200, retry 3x sur 503
-- [ ] `verifyUnipileWebhook` retourne false sur mauvaise signature
+- [x] `npm run test` — tests lib/unipile.ts passent
+- [x] `sendInvitation` avec mock → retourne 200, retry 3x sur 503
+- [x] `verifyUnipileWebhook` retourne false sur mauvaise signature
 - [ ] `getAccountStatus` retourne statut du compte LI connecté
+
+## Avancement
+
+### 2026-05-20 — Client mock-ready, test live en attente Unipile
+- `lib/unipile.ts` durci : retries uniquement sur timeouts et 5xx, backoff 1s/2s/4s, 4xx sans retry.
+- Support `UNIPILE_DSN` court (`api1`) ou URL complète (`https://.../api/v1`).
+- HMAC webhook via `node:crypto` + `timingSafeEqual`, avec wrapper `verifyUnipileWebhook`.
+- Types ajoutés : `UnipileInvitation`, `UnipileDM`, alias `UnipileAccountStatus`.
+- Tests Vitest couvrent `sendInvitation`, `sendDM`, `searchProfiles`, `getMessages`, `getAccountStatus`, signature valid/invalid, retry 503, timeout, non-retry réseau non-timeout.
+
+**Reste avant ✅** :
+- Exécuter un appel live `getAccountStatus` / `/users/me` avec `UNIPILE_API_KEY`, `UNIPILE_DSN` et compte LinkedIn connecté.
 
 ## Dependencies
 **Blocked By**: v4-019 (UNIPILE_API_KEY + DSN disponibles)

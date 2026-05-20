@@ -29,7 +29,7 @@ if fp.endswith(".d.ts"):
 
 ctx = (
     "The lead-qualifier-dashboard app uses Vitest; the command is `npm run test` "
-    "run from `02-Implementation/interface/lead-qualifier-dashboard/`. "
+    "run from `.workflows/02-Implementation/interface/lead-qualifier-dashboard/`. "
     "Flinty convention: new or changed `lib/*.ts` and `app/**/*.ts` should have "
     "tests updated in the same change."
 )

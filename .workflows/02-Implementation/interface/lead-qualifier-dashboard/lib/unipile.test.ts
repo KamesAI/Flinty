@@ -1,6 +1,7 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import {
   verifyUnipileSignature,
+  verifyUnipileWebhook,
   UnipileClient,
   UnipileHTTPError,
   createUnipileClient,
@@ -12,36 +13,46 @@ import {
 // ——— verifyUnipileSignature ———
 
 describe("verifyUnipileSignature", () => {
-  it("accepte une signature valide", async () => {
+  it("accepte une signature valide", () => {
     const secret = "test-webhook-secret";
     const body = JSON.stringify({ event: "message.received", account_id: "acc_123" });
-    const encoder = new TextEncoder();
-    const key = await crypto.subtle.importKey(
-      "raw",
-      encoder.encode(secret),
-      { name: "HMAC", hash: "SHA-256" },
-      false,
-      ["sign"]
-    );
-    const mac = await crypto.subtle.sign("HMAC", key, encoder.encode(body));
-    const expected = "sha256=" + Array.from(new Uint8Array(mac))
-      .map((b) => b.toString(16).padStart(2, "0"))
-      .join("");
+    const expected =
+      "sha256=d0ae0f7d23640364d4bf1058fe9be2515a9f041c21756fd3431bec1e1496e7ce";
 
-    const result = await verifyUnipileSignature(body, expected, secret);
+    const result = verifyUnipileSignature(body, expected, secret);
     expect(result).toBe(true);
   });
 
-  it("rejette une signature falsifiée", async () => {
+  it("rejette une signature falsifiée", () => {
     const body = JSON.stringify({ event: "message.received" });
-    const result = await verifyUnipileSignature(body, "sha256=deadbeef", "real-secret");
+    const result = verifyUnipileSignature(body, "sha256=deadbeef", "real-secret");
     expect(result).toBe(false);
   });
 
-  it("rejette une signature sans préfixe sha256=", async () => {
+  it("accepte une signature hex sans préfixe sha256=", () => {
     const body = "payload";
-    const result = await verifyUnipileSignature(body, "badbadbadbad", "secret");
+    const result = verifyUnipileSignature(
+      body,
+      "b82fcb791acec57859b989b430a826488ce2e479fdf92326bd0a2e8375a42ba4",
+      "secret"
+    );
+    expect(result).toBe(true);
+  });
+
+  it("rejette une signature de longueur invalide sans throw timingSafeEqual", () => {
+    const body = "payload";
+    const result = verifyUnipileSignature(body, "sha256=badbadbadbad", "secret");
     expect(result).toBe(false);
+  });
+
+  it("verifyUnipileWebhook utilise UNIPILE_WEBHOOK_SECRET", () => {
+    process.env.UNIPILE_WEBHOOK_SECRET = "hook-secret";
+    const body = JSON.stringify({ event: "invitation.accepted" });
+    const signature =
+      "sha256=978b210c722a60d937ff1edbb36bf96ccf5f1c068b1350e01463930f94531765";
+
+    expect(verifyUnipileWebhook(body, signature)).toBe(true);
+    expect(verifyUnipileWebhook(body, "sha256=deadbeef")).toBe(false);
   });
 });
 
@@ -53,9 +64,11 @@ describe("UnipileClient", () => {
   beforeEach(() => {
     client = new UnipileClient({ apiKey: "test-key", dsn: "api1" });
     vi.stubGlobal("fetch", vi.fn());
+    vi.useFakeTimers();
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     vi.unstubAllGlobals();
   });
 
@@ -97,6 +110,20 @@ describe("UnipileClient", () => {
       mockFetch(account);
       const result = await client.getAccountStatus("acc_456");
       expect(result.status).toBe("ACTION_NEEDED");
+    });
+
+    it("supporte UNIPILE_DSN en URL complète", async () => {
+      client = new UnipileClient({
+        apiKey: "test-key",
+        dsn: "https://api1.unipile.com:13465/api/v1",
+      });
+      mockFetch({ id: "acc_123", type: "LINKEDIN", status: "OK" });
+
+      await client.getAccountStatus("acc_123");
+      expect(fetch).toHaveBeenCalledWith(
+        "https://api1.unipile.com:13465/api/v1/accounts/acc_123",
+        expect.anything()
+      );
     });
   });
 
@@ -190,17 +217,21 @@ describe("UnipileClient", () => {
   });
 
   describe("retry (exponential backoff)", () => {
-    it("retente 3x sur erreur puis lève une exception", async () => {
-      vi.mocked(fetch).mockRejectedValue(new Error("Network error"));
+    it("retente 3x sur timeout puis lève une exception", async () => {
+      vi.mocked(fetch).mockRejectedValue(new DOMException("timed out", "TimeoutError"));
 
-      await expect(client.getAccountStatus("acc_fail")).rejects.toThrow("Network error");
-      expect(fetch).toHaveBeenCalledTimes(3);
-    }, 10_000);
+      const promise = client.getAccountStatus("acc_fail");
+      const assertion = expect(promise).rejects.toThrow("timed out");
+      await vi.advanceTimersByTimeAsync(7000);
+
+      await assertion;
+      expect(fetch).toHaveBeenCalledTimes(4);
+    });
 
     it("réussit au 2ème essai", async () => {
       const account: UnipileAccount = { id: "acc_ok", type: "LINKEDIN", status: "OK", name: "OK" };
       vi.mocked(fetch)
-        .mockRejectedValueOnce(new Error("Timeout"))
+        .mockRejectedValueOnce(new DOMException("timed out", "TimeoutError"))
         .mockResolvedValueOnce({
           ok: true,
           status: 200,
@@ -208,9 +239,43 @@ describe("UnipileClient", () => {
           text: async () => JSON.stringify(account),
         } as Response);
 
-      const result = await client.getAccountStatus("acc_ok");
+      const promise = client.getAccountStatus("acc_ok");
+      await vi.advanceTimersByTimeAsync(1000);
+
+      const result = await promise;
       expect(result.status).toBe("OK");
       expect(fetch).toHaveBeenCalledTimes(2);
+    });
+
+    it("retente sur 503 puis réussit", async () => {
+      const account: UnipileAccount = { id: "acc_ok", type: "LINKEDIN", status: "OK", name: "OK" };
+      vi.mocked(fetch)
+        .mockResolvedValueOnce({
+          ok: false,
+          status: 503,
+          json: async () => ({ error: "busy" }),
+          text: async () => "busy",
+        } as Response)
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => account,
+          text: async () => JSON.stringify(account),
+        } as Response);
+
+      const promise = client.getAccountStatus("acc_ok");
+      await vi.advanceTimersByTimeAsync(1000);
+
+      const result = await promise;
+      expect(result.status).toBe("OK");
+      expect(fetch).toHaveBeenCalledTimes(2);
+    });
+
+    it("ne retente pas une erreur réseau non-timeout", async () => {
+      vi.mocked(fetch).mockRejectedValue(new Error("Network error"));
+
+      await expect(client.getAccountStatus("acc_fail")).rejects.toThrow("Network error");
+      expect(fetch).toHaveBeenCalledTimes(1);
     });
   });
 

@@ -3,24 +3,32 @@ import {
   type AnalyticsPeriod,
 } from "../../../lib/analytics";
 import {
+  buildCostMonitoringSummary,
+  DEFAULT_COST_PER_MEETING_THRESHOLD_USD,
+} from "../../../lib/cost-monitoring";
+import {
   getAnalyticsDailySnapshots,
   getMeetings,
   readIndex,
   parseIndexCampaigns,
   getAllLeadsV3,
   indexCampaignToCampaign,
+  getCostTrackingRows,
+  getGlobalConfig,
 } from "../../../lib/sheets";
 import DataPageClient from "./DataPageClient";
 
 export default async function DataPage({
   searchParams,
 }: {
-  searchParams: Promise<{ period?: string }>;
+  searchParams: Promise<{ period?: string; workspace_id?: string }>;
 }) {
   const params = await searchParams;
   const period = (params.period as AnalyticsPeriod | undefined) ?? "30d";
+  const workspaceId = params.workspace_id ?? "kames-default";
 
   let model = null;
+  let costSummary = null;
   let error = false;
 
   try {
@@ -41,6 +49,19 @@ export default async function DataPage({
       snapshots,
       statusGroup: "all",
       period,
+    });
+
+    const [costRows, globalConfig] = await Promise.all([
+      getCostTrackingRows().catch((e) => { console.error("[DataPage] getCostTrackingRows failed:", e); return []; }),
+      getGlobalConfig().catch((e): Record<string, string> => { console.error("[DataPage] getGlobalConfig failed:", e); return {}; }),
+    ]);
+    const thresholdUsd = Number(globalConfig.alert_cost_per_meeting_threshold) || DEFAULT_COST_PER_MEETING_THRESHOLD_USD;
+    costSummary = buildCostMonitoringSummary({
+      rows: costRows,
+      campaigns,
+      meetings,
+      workspaceId,
+      thresholdUsd,
     });
   } catch (e) {
     console.error("[DataPage] fatal error:", e);
@@ -65,6 +86,7 @@ export default async function DataPage({
       topTemplates={model.topTemplates}
       funnelEmail={model.funnelEmail}
       funnelLI={model.funnelLI}
+      costSummary={costSummary}
     />
   );
 }

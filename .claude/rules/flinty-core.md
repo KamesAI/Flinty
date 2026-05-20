@@ -71,18 +71,10 @@ Skill `local-systematic-debugging` : Phase 1 = root cause ; un changement à la 
 4. Résultat attendu par étape  
 5. Plan B  
 
-### Après correction par Thomas
-
-Entrée dans `tasks/v3/lessons.md` (tableau).
-
 ## Contexte Thomas
 
 Instructions pas à pas ; une voie privilégiée ; ne pas lui faire tester ce que l’agent peut exécuter localement. SSH Hetzner : `ssh kames@<IP>` (utilisateur `kames`). Projets sous `~/Dev/` — Flinty : `/Users/callendreau/Dev/Flinty/`.
 
-## Leçons
+## Règle suivi des tâches v4 et Dev-Log
 
-Source de vérité : `tasks/v3/lessons.md` (ne pas dupliquer ici).
-
-## Règle suivi des tâches v3
-
-Après chaque tâche réalisée : mettre à jour `tasks/v3/TASKS.md`, `tasks/v3/TASK-XXX.md`, et `02-Implementation/Dev-Log.md` (format dans la règle `flinty-tasks.md`).
+Après chaque tâche réalisée : mettre à jour `tasks/v4/TASKS.md`, `tasks/v4/TASK-XXX.md`, et `.workflows/02-Implementation/Dev-Log.md` (format dans la règle `flinty-tasks.md`).

@@ -41,6 +41,7 @@ describe("ConversationThread", () => {
     expect(html).toContain("Conversation avec Jeanne Dupont");
     expect(html).toContain("LinkedIn");
     expect(html).toContain("Email");
+    expect(html).toContain("border-l-[#0a66c2]");
     expect(html).toContain("En attente de validation");
     expect(html).toContain("Intéressé");
     expect(html).toContain("il y a");

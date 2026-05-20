@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { CheckCircle2, LinkIcon, PauseCircle, RefreshCw, Unplug } from "lucide-react";
+import Link from "next/link";
+import { Activity, CheckCircle2, LinkIcon, PauseCircle, RefreshCw, Unplug } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface AccountStatus {
@@ -100,6 +101,13 @@ export function LinkedInConnectClient({
       <div>
         <h1 className="text-2xl font-semibold tracking-tight text-slate-950">Compte LinkedIn</h1>
         <p className="mt-1 text-sm text-slate-500">Connexion via Unipile hosted auth, sans session LinkedIn stockee dans Flinty.</p>
+        <Link
+          href="/dashboard/settings/linkedin/health"
+          className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-[#006596] hover:underline"
+        >
+          <Activity className="size-4" />
+          Santé LinkedIn
+        </Link>
       </div>
 
       {success ? (

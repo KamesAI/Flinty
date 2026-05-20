@@ -8,6 +8,11 @@ import {
   detectsAIQuestion,
   appendAIDisclosure,
   routeIntent,
+  appendLoomToDraft,
+  buildLoomContext,
+  extractLoomId,
+  getLoomThumbnailUrl,
+  shouldIncludeLoom,
   type SetterContext,
 } from "./setter";
 import type { IntentLabel } from "./types";
@@ -130,6 +135,39 @@ describe("appendAIDisclosure", () => {
   it("n'ajoute pas deux fois le disclaimer", () => {
     const draft = "Réponse.\n\n— Cette réponse a été préparée par un assistant IA et validée par Thomas.";
     expect(appendAIDisclosure(draft, "Thomas")).toBe(draft);
+  });
+});
+
+describe("Loom helpers", () => {
+  const loomUrl = "https://www.loom.com/share/abc123";
+
+  it("extrait l'id Loom et construit la miniature", () => {
+    expect(extractLoomId(loomUrl)).toBe("abc123");
+    expect(getLoomThumbnailUrl(loomUrl)).toBe("https://www.loom.com/thumbnails/abc123.jpg");
+  });
+
+  it("inclut Loom au follow-up #4 ou sur demande d'info", () => {
+    expect(shouldIncludeLoom(loomUrl, "objection_timing", 3)).toBe(false);
+    expect(shouldIncludeLoom(loomUrl, "objection_timing", 4)).toBe(true);
+    expect(shouldIncludeLoom(loomUrl, "interested", 1)).toBe(true);
+    expect(shouldIncludeLoom("", "interested", 4)).toBe(false);
+  });
+
+  it("ajoute un embed HTML email cliquable", () => {
+    const loom = buildLoomContext(loomUrl, "interested", 0);
+    const draft = appendLoomToDraft("Bonjour", "email", loom);
+
+    expect(draft).toContain("<img");
+    expect(draft).toContain("https://www.loom.com/thumbnails/abc123.jpg");
+    expect(draft).toContain(loomUrl);
+  });
+
+  it("ajoute seulement un lien texte pour LinkedIn", () => {
+    const loom = buildLoomContext(loomUrl, "interested", 0);
+    const draft = appendLoomToDraft("Bonjour", "linkedin", loom);
+
+    expect(draft).toContain(loomUrl);
+    expect(draft).not.toContain("<img");
   });
 });
 

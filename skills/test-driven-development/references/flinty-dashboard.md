@@ -2,7 +2,7 @@
 
 Chemin absolu du package Next.js :
 
-`02-Implementation/interface/lead-qualifier-dashboard/`
+`.workflows/02-Implementation/interface/lead-qualifier-dashboard/`
 
 | Commande | Rôle |
 |----------|------|

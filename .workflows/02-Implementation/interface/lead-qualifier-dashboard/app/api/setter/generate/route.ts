@@ -33,6 +33,7 @@ const RequestSchema = z.object({
     setter_signature: z.string().default(""),
     icp_md: z.string().default(""),
     workspace_id: z.string().default("kames-default"),
+    loom_video_url: z.string().default(""),
   }),
   lead: z.object({
     lead_id: z.string(),
@@ -48,6 +49,7 @@ const RequestSchema = z.object({
     has_ia_services: z.string().default("false"),
   }),
   event_type_uri: z.string().optional(),
+  follow_up_count: z.number().int().min(0).default(0),
 });
 
 export async function POST(req: Request) {
@@ -63,7 +65,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 422 });
   }
 
-  const { thread, intent, campaign, lead, event_type_uri } = parsed.data;
+  const { thread, intent, campaign, lead, event_type_uri, follow_up_count } = parsed.data;
   const ctx = { lead, campaign };
 
   try {
@@ -74,6 +76,8 @@ export async function POST(req: Request) {
       {
         eventTypeUri: event_type_uri,
         workspaceId: campaign.workspace_id,
+        followUpCount: follow_up_count,
+        channel: thread.at(-1)?.channel ?? "email",
       }
     );
 

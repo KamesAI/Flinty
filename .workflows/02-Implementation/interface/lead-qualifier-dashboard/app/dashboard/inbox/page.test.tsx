@@ -114,6 +114,7 @@ describe("InboxPage", () => {
 
     expect(html).toContain("Jeanne Dupont");
     expect(html).toContain("Oui, ça peut m");
+    expect(html).toContain("Email");
     expect(html).toContain("Merci Jeanne");
     expect(html).toContain("Draft Setter");
   });
@@ -193,6 +194,7 @@ describe("InboxPage", () => {
 
     expect(html).toContain("Sofia Martin");
     expect(html).toContain("Avant de répondre");
+    expect(html).toContain("LinkedIn");
     expect(html).toContain("objection_trust");
     expect(html).toContain("cas sensible");
   });

@@ -1,5 +1,5 @@
 # Task v4-029 : Vidéo perso Loom embed — auto-trigger follow-up #4 ou demande explicite
-**Status**: ⬜ À faire
+**Status**: ✅ Complété
 
 ## Autonomie
 🤖 **Claude 100%** — logique dans Setter + template email.
@@ -15,12 +15,12 @@ Embed Loom dans email HTML (follow-up #4) + lien texte dans DM LinkedIn, déclen
 ## Requirements
 
 ### Must Have
-- [ ] Champ `loom_video_url` dans Config tab enfant (Thomas y colle l'URL Loom 1x par campagne)
-- [ ] UI settings campagne : input "URL vidéo Loom" + preview miniature
-- [ ] Logique Setter : si `follow_up_count >= 4` OU `intent.includes('demande_info')` → inclure Loom dans réponse
-- [ ] Email HTML : embed thumbnail Loom cliquable (`<a href="[loom_url]"><img src="[thumbnail]" /></a>`) + texte "Regardez cette vidéo de 2 min"
-- [ ] LI DM : simple lien texte Loom (LI ne supporte pas embed)
-- [ ] Pas de Loom si `loom_video_url` non configuré (fallback silencieux)
+- [x] Champ `loom_video_url` dans Config tab enfant (Thomas y colle l'URL Loom 1x par campagne)
+- [x] UI settings campagne : input "URL vidéo Loom" + preview miniature
+- [x] Logique Setter : si `follow_up_count >= 4` OU `intent.includes('demande_info')` → inclure Loom dans réponse
+- [x] Email HTML : embed thumbnail Loom cliquable (`<a href="[loom_url]"><img src="[thumbnail]" /></a>`) + texte "Regardez cette vidéo de 2 min"
+- [x] LI DM : simple lien texte Loom (LI ne supporte pas embed)
+- [x] Pas de Loom si `loom_video_url` non configuré (fallback silencieux)
 
 ### Must NOT
 - Ne pas embed la vidéo en autoplay (nuisible délivrabilité email)
@@ -46,10 +46,19 @@ Template email Loom embed :
 ```
 
 ## Acceptance Criteria
-- [ ] Config enfant avec `loom_video_url` configuré → Loom inclus au follow-up #4
-- [ ] Sans `loom_video_url` → follow-up normal sans erreur
-- [ ] Email HTML : thumbnail visible + cliquable vers Loom
-- [ ] DM LinkedIn : lien texte uniquement
+- [x] Config enfant avec `loom_video_url` configuré → Loom inclus au follow-up #4
+- [x] Sans `loom_video_url` → follow-up normal sans erreur
+- [x] Email HTML : thumbnail visible + cliquable vers Loom
+- [x] DM LinkedIn : lien texte uniquement
+
+## Avancement
+
+### 2026-05-20 — Loom configuré et injecté par le Setter
+- `loom_video_url` ajouté aux settings campagne API/UI et persisté en Config.
+- `lib/setter.ts` ajoute helpers `extractLoomId`, `buildLoomContext`, `appendLoomToDraft`.
+- `generateResponse` accepte `followUpCount` + `channel`, enrichit le draft au follow-up #4 ou intent demande d'info.
+- Email : bloc HTML thumbnail cliquable sans autoplay. LinkedIn : lien texte seul.
+- Tests Vitest couvrent fallback sans Loom, thumbnail, embed email et lien LinkedIn.
 
 ## Dependencies
 **Blocked By**: v4-005 (generateResponse base)

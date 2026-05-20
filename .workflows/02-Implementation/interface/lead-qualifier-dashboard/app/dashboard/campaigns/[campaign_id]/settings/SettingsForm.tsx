@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import { Save } from "lucide-react";
+import { Play, Save } from "lucide-react";
 import { toast, Toaster } from "@/components/ui/sonner";
 import { Button } from "@/components/ui/button";
 
@@ -18,6 +18,7 @@ export interface CampaignSettingsState {
   setter_tone: "formal" | "casual";
   setter_signature: string;
   calendly_event_uri: string;
+  loom_video_url: string;
 }
 
 export function SettingsForm({
@@ -29,6 +30,15 @@ export function SettingsForm({
 }) {
   const [settings, setSettings] = useState(initialSettings);
   const [isPending, startTransition] = useTransition();
+  const loomPreviewUrl = useMemo(() => {
+    try {
+      const url = new URL(settings.loom_video_url);
+      const match = url.pathname.match(/\/(?:share|embed)\/([^/?#]+)/);
+      return match?.[1] ? `https://www.loom.com/thumbnails/${match[1]}.jpg` : "";
+    } catch {
+      return "";
+    }
+  }, [settings.loom_video_url]);
 
   const validationLocked = useMemo(() => {
     if (!settings.setter_validation_locked_until) return false;
@@ -52,6 +62,7 @@ export function SettingsForm({
           setter_tone: settings.setter_tone,
           setter_signature: settings.setter_signature,
           calendly_event_uri: settings.calendly_event_uri,
+          loom_video_url: settings.loom_video_url,
         }),
       });
 
@@ -175,6 +186,39 @@ export function SettingsForm({
             className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm"
           />
         </label>
+      </section>
+
+      <section className="space-y-4">
+        <h2 className="text-base font-semibold text-slate-950">Loom</h2>
+        <label className="block space-y-2">
+          <span className="text-sm font-medium text-slate-900">URL vidéo Loom</span>
+          <input
+            value={settings.loom_video_url}
+            onChange={(event) => update("loom_video_url", event.target.value)}
+            placeholder="https://www.loom.com/share/..."
+            className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm"
+          />
+        </label>
+        {settings.loom_video_url ? (
+          <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
+            {loomPreviewUrl ? (
+              <img
+                src={loomPreviewUrl}
+                alt="Miniature Loom"
+                className="aspect-video w-full object-cover"
+              />
+            ) : null}
+            <a
+              href={settings.loom_video_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-3 py-2 text-sm font-semibold text-[#006596] hover:underline"
+            >
+              <Play className="size-4" />
+              Prévisualiser la vidéo
+            </a>
+          </div>
+        ) : null}
       </section>
 
       <section className="space-y-4">

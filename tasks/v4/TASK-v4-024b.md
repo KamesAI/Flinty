@@ -1,5 +1,5 @@
 # Task v4-024b : WF12 NEW — Health monitor LI : polling Unipile + détecte signaux pré-ban → auto-pause + alerte
-**Status**: ⬜ À faire
+**Status**: 🚧 Partiel — 2026-05-20
 
 ## Autonomie
 🤖 **Claude 100%** — via MCP n8n + route API.
@@ -18,7 +18,7 @@ WF12 opérationnel en staging : polling Unipile + mise à jour LI_Health + auto-
 - [ ] Trigger cron n8n : toutes les 10 minutes
 - [ ] Node Unipile : `GET /api/v1/users/{account_id}` → statut compte (captcha ?, suspended ?)
 - [ ] Node Unipile : `GET /api/v1/users/{account_id}/invitations` → calcule `accept_rate_7d` sur 7j glissants
-- [ ] Logique pause :
+- [x] Logique pause :
   - Captcha détecté → `status=paused_captcha`, pause 24h
   - Email LI "activité inhabituelle" → `status=paused_warning`, pause 14j
   - `accept_rate_7d < 20%` sur ≥10 invitations → `status=paused_low_accept`
@@ -26,7 +26,7 @@ WF12 opérationnel en staging : polling Unipile + mise à jour LI_Health + auto-
 - [ ] Node Sheets : update tab LI_Health Index avec tous les champs
 - [ ] Node : si transition vers paused → envoie email Thomas (Resend) avec reason + ETA reprise
 - [ ] Node : update Campagnes Index — si LI_account_id paused → suspend campagnes LI actives
-- [ ] Route `GET /api/li-health?account_id=...` — lit LI_Health → retourne statut pour UI
+- [x] Route `GET /api/li-health?account_id=...` — lit LI_Health → retourne statut pour UI
 
 ### Must NOT
 - Ne pas envoyer l'alerte email à chaque run cron — uniquement au changement de status
@@ -50,6 +50,18 @@ Statuts possibles : `active | paused_captcha | paused_warning | paused_low_accep
 - [ ] Tab LI_Health mis à jour à chaque run (last_health_check_at)
 - [ ] Simulation accept_rate=15% → status passe à paused_low_accept + email Thomas
 - [ ] WF10 (outreach) vérifie status avant chaque action et s'arrête si paused
+
+## Avancement
+
+### 2026-05-20 — Circuit breaker local prêt, WF12 live en attente
+- Ajout `lib/li-health.ts` avec évaluation pure des statuts `paused_captcha`, `paused_warning`, `paused_low_accept`, `paused_follow_mode`.
+- Tests Vitest : captcha simulé, accept_rate 15%, warning 20–35%, mode Suivre, accept rate sans division par zéro.
+- Smoke Phase 2 inclut un payload `paused_captcha` pour WF12 dès que le webhook existe.
+- La route `/api/li-health` et le bandeau dashboard existaient déjà ; la page santé lit maintenant l'historique préparé.
+
+**Reste avant ✅** :
+- Créer/importer WF12 n8n réel : cron 10 min, polling Unipile compte + invitations, append historique, alerte email Thomas sur transition.
+- Brancher WF10 pour stopper toute action si `status != active`.
 
 ## Dependencies
 **Blocked By**: v4-024 (pacing LI), v4-021 (account_id connecté)

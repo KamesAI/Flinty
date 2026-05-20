@@ -13,8 +13,8 @@ Les instructions détaillées sont découpées pour limiter la **context rot** :
 | Fichier | Quand ça charge |
 |---------|-----------------|
 | [`.claude/rules/flinty-core.md`](.claude/rules/flinty-core.md) | Toujours (skills, interdits, Thomas, env, couleur) |
-| [`.claude/rules/flinty-dashboard.md`](.claude/rules/flinty-dashboard.md) | Fichiers sous `02-Implementation/interface/lead-qualifier-dashboard/**/*.ts(x)` |
-| [`.claude/rules/flinty-tasks.md`](.claude/rules/flinty-tasks.md) | `tasks/v3/**`, `tasks/v4/**`, `02-Implementation/Dev-Log.md` |
+| [`.claude/rules/flinty-dashboard.md`](.claude/rules/flinty-dashboard.md) | Fichiers sous `.workflows/02-Implementation/interface/lead-qualifier-dashboard/**/*.ts(x)` |
+| [`.claude/rules/flinty-tasks.md`](.claude/rules/flinty-tasks.md) | `tasks/v3/**`, `tasks/v4/**`, `.workflows/02-Implementation/Dev-Log.md` |
 
 **Skills exécutables** : répertoire [`skills/`](skills/) (préfixe `local-*` côté Claude Code si plugin).  
 **Marketing / contexte Kames** : hub [`skills/flinty-product-marketing-context/SKILL.md`](skills/flinty-product-marketing-context/SKILL.md) ; vendor [Corey Haines marketingskills](https://github.com/coreyhaines31/marketingskills) en sous-module [`external/marketingskills`](external/marketingskills) — index [skills/vendor/marketingskills-INDEX.md](skills/vendor/marketingskills-INDEX.md), stratégie [skills/vendor/README.md](skills/vendor/README.md).  
@@ -58,14 +58,14 @@ Flinty/
 │   ├── hooks/                   ← scripts hooks Claude Code
 │   └── settings.json            ← hooks versionnés (+ settings.local.json local)
 ├── .cursor/rules/flinty.mdc     ← Cursor (miroir partiel)
-├── 02-Implementation/interface/lead-qualifier-dashboard/  ← code Next.js
+├── .workflows/02-Implementation/interface/lead-qualifier-dashboard/  ← code Next.js
 ├── tasks/v3/                    ← TASKS.md, TASK-XXX.md, lessons.md
 ├── tasks/v4/                    ← TASKS.md, TASK-v4-XXX.md
 ├── skills/                      ← skills métier + ingénierie
 └── external/marketingskills/    ← sous-module (Corey Haines — skills marketing)
 ```
 
-**Code principal** : `02-Implementation/interface/lead-qualifier-dashboard/`  
+**Code principal** : `.workflows/02-Implementation/interface/lead-qualifier-dashboard/`  
 `npm run dev` | `npm run test` | `npm run build` depuis ce dossier.
 
 ---
@@ -76,7 +76,7 @@ Après chaque avancée concrète sur une tâche v4, mettre à jour dans le même
 
 1. [`tasks/v4/TASKS.md`](tasks/v4/TASKS.md) — statut global de la ligne concernée (`⬜`, `🚧`, `✅`) et libellé si le périmètre a changé.
 2. Fichier unitaire [`tasks/v4/TASK-v4-XXX.md`](tasks/v4/) — `**Status**`, section d'avancement datée, cases cochées uniquement pour ce qui est réellement livré.
-3. [`02-Implementation/Dev-Log.md`](02-Implementation/Dev-Log.md) ou [`.workflows/02-Implementation/Dev-Log.md`](.workflows/02-Implementation/Dev-Log.md) selon le dossier actif — entrée datée avec résumé des fichiers/zones modifiés et preuves de tests.
+3. [`.workflows/02-Implementation/Dev-Log.md`](.workflows/02-Implementation/Dev-Log.md) — entrée datée avec résumé des fichiers/zones modifiés et preuves de tests.
 
 Règle de cohérence : une tâche passée en `✅` doit avoir toutes ses cases applicables cochées dans `Requirements` et `Acceptance Criteria`. Avant de marquer `✅`, relire le fichier unitaire et cocher chaque requirement réellement livré ; si une case reste décochée, la tâche n'est pas done et doit rester `🚧 Partiel — YYYY-MM-DD` avec le reste à faire listé explicitement.
 

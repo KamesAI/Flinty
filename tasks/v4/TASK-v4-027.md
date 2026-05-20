@@ -1,5 +1,5 @@
 # Task v4-027 : Inbox unifié email + LI dans `<ConversationThread>` (channel badge)
-**Status**: ⬜ À faire
+**Status**: ✅ Complété
 
 ## Autonomie
 🤖 **Claude 100%** — extension composant React + route API.
@@ -15,13 +15,13 @@ Thomas doit voir dans le même thread un email sortant v3, la reply email, le DM
 ## Requirements
 
 ### Must Have
-- [ ] Composant `<ConversationThread>` (v4-013) étendu : chaque turn affiche badge canal
-- [ ] Badge email : 📧 "Email"
-- [ ] Badge linkedin : 💼 "LinkedIn"
-- [ ] Visuel distinct : turns LI avec légère teinte bleu LinkedIn (border left bleu)
-- [ ] Route `GET /api/replies/[lead_id]` (v4-011) : retourne déjà `channel` dans Turn → aucune modification route
-- [ ] Inbox tab "À valider" : dans la liste, afficher canal du dernier message (email ou linkedin)
-- [ ] Si thread mixte (email + LI) : afficher les deux canaux dans un même thread
+- [x] Composant `<ConversationThread>` (v4-013) étendu : chaque turn affiche badge canal
+- [x] Badge email : 📧 "Email"
+- [x] Badge linkedin : 💼 "LinkedIn"
+- [x] Visuel distinct : turns LI avec légère teinte bleu LinkedIn (border left bleu)
+- [x] Route `GET /api/replies/[lead_id]` (v4-011) : retourne déjà `channel` dans Turn → aucune modification route
+- [x] Inbox tab "À valider" : dans la liste, afficher canal du dernier message (email ou linkedin)
+- [x] Si thread mixte (email + LI) : afficher les deux canaux dans un même thread
 
 ### Must NOT
 - Pas de tab "Email" et "LinkedIn" séparés dans l'inbox — tout dans le même thread chronologique
@@ -45,10 +45,18 @@ const channelCfg = CHANNEL_CONFIG[turn.channel]
 ```
 
 ## Acceptance Criteria
-- [ ] Thread avec turns email + linkedin s'affiche chronologiquement dans un seul composant
-- [ ] Badges email/linkedin visibles et distincts sur chaque turn
-- [ ] Turn LI setter draft : badge LinkedIn + fond draft (même que email draft)
-- [ ] Inbox liste : canal du dernier message visible dans chaque item
+- [x] Thread avec turns email + linkedin s'affiche chronologiquement dans un seul composant
+- [x] Badges email/linkedin visibles et distincts sur chaque turn
+- [x] Turn LI setter draft : badge LinkedIn + fond draft (même que email draft)
+- [x] Inbox liste : canal du dernier message visible dans chaque item
+
+## Avancement
+
+### 2026-05-20 — Badges canal + liste inbox livrés
+- `ConversationThread` affiche les badges Email/LinkedIn sur chaque turn et une bordure bleue LinkedIn.
+- La liste inbox affiche le canal du dernier message prospect dans `À valider` et `À répondre`.
+- Fixtures/tests couvrent threads mixtes email + LinkedIn, draft Setter et dernier message LinkedIn.
+- Aucun split de tab canal : thread chronologique unique conservé.
 
 ## Dependencies
 **Blocked By**: v4-013 (ConversationThread base), v4-026 (WF11 génère des turns LI)

@@ -1,5 +1,5 @@
 # Task v4-032 : Pacing fin avancé — alertes santé granulaires + dashboards LI_Health historiques
-**Status**: ⬜ À faire
+**Status**: 🚧 Partiel — 2026-05-20
 
 ## Autonomie
 🤖 **Claude 100%** — UI dashboard + n8n ajustements.
@@ -15,11 +15,11 @@ Page `/dashboard/settings/linkedin/health` avec historique LI_Health sur 30j + a
 ## Requirements
 
 ### Must Have
-- [ ] Page `app/dashboard/settings/linkedin/health/page.tsx` — accessible depuis la page connect LI
-- [ ] Graphique accept_rate_7d sur 30 derniers points (WF12 enregistre l'historique dans LI_Health avec timestamp)
-- [ ] Graphique invits_sent par jour (bar chart)
-- [ ] Alertes intermédiaires (warning non-bloquant) : accept_rate entre 20%-35% → bandeau orange (pas rouge)
-- [ ] ETA reprise si paused : calculé automatiquement selon TTL par status
+- [x] Page `app/dashboard/settings/linkedin/health/page.tsx` — accessible depuis la page connect LI
+- [x] Graphique accept_rate_7d sur 30 derniers points (WF12 enregistre l'historique dans LI_Health avec timestamp)
+- [x] Graphique invits_sent par jour (bar chart)
+- [x] Alertes intermédiaires (warning non-bloquant) : accept_rate entre 20%-35% → bandeau orange (pas rouge)
+- [x] ETA reprise si paused : calculé automatiquement selon TTL par status
 - [ ] WF12 : conserver l'historique (append plutôt qu'update une seule row) → tab `LI_Health_History` dans Index
 
 ### Must NOT
@@ -49,10 +49,22 @@ function AcceptRateChart({ data }: { data: { date: string; rate: number }[] }) {
 Tab `LI_Health_History` dans Index : append chaque run WF12 avec timestamp + métriques complètes.
 
 ## Acceptance Criteria
-- [ ] Page `/dashboard/settings/linkedin/health` accessible
-- [ ] Graphique accept_rate sur ≥7 points historiques
-- [ ] Bandeau orange si accept_rate 20%-35% (warning non-bloquant)
+- [x] Page `/dashboard/settings/linkedin/health` accessible
+- [x] Graphique accept_rate sur ≥7 points historiques
+- [x] Bandeau orange si accept_rate 20%-35% (warning non-bloquant)
 - [ ] LI_Health_History tab : données cumulatives sur 30j
+
+## Avancement
+
+### 2026-05-20 — Page santé LinkedIn livrée côté UI
+- Ajout `/dashboard/settings/linkedin/health` avec lien depuis la page connect LinkedIn.
+- Graphiques CSS sans dépendance externe : accept_rate 7j et invitations 7j sur 30 points.
+- Warning orange non bloquant pour accept_rate 20–35%, ETA de reprise pour statuts `paused_*`.
+- `lib/sheets.ts` prépare `LI_Health_History` + parser/reader 30 derniers points.
+- Fallback local sur 7 points à partir du dernier `LI_Health` tant que WF12 n'a pas encore append l'historique.
+
+**Reste avant ✅** :
+- WF12 réel doit append chaque run dans `LI_Health_History` pour disposer de données cumulatives staging/prod.
 
 ## Dependencies
 **Blocked By**: v4-024b (WF12 source de données), v4-024c (LIHealthBanner pour cohérence UX)

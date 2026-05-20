@@ -12,6 +12,7 @@ const SettingsSchema = z.object({
   setter_tone: z.enum(["formal", "casual"]),
   setter_signature: z.string().trim().min(1).max(120),
   calendly_event_uri: z.string().trim().max(500),
+  loom_video_url: z.string().trim().url().or(z.literal("")).default(""),
 });
 
 function toBool(value: string | undefined, fallback: boolean) {
@@ -34,6 +35,7 @@ function normalizeSettings(config: Record<string, string>) {
     setter_tone: config.setter_tone === "casual" ? "casual" : "formal",
     setter_signature: config.setter_signature || "Thomas",
     calendly_event_uri: config.calendly_event_uri || process.env.CALENDLY_EVENT_TYPE_URI || "",
+    loom_video_url: config.loom_video_url || "",
   };
 }
 
@@ -86,6 +88,7 @@ export async function PUT(
     setter_tone: parsed.data.setter_tone,
     setter_signature: parsed.data.setter_signature,
     calendly_event_uri: parsed.data.calendly_event_uri,
+    loom_video_url: parsed.data.loom_video_url,
   };
 
   await Promise.all(

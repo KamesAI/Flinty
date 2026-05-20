@@ -17,6 +17,7 @@ import {
   DollarSign,
   Bot,
 } from "lucide-react";
+import type { CostMonitoringSummary } from "../../../lib/cost-monitoring";
 
 const ACCENT = "hsl(var(--primary))";
 const TRACK = "hsl(var(--border))";
@@ -88,6 +89,7 @@ export interface DataPageClientProps {
   period: AnalyticsPeriod;
   funnelEmail?: FunnelEmail;
   funnelLI?: FunnelLI;
+  costSummary?: CostMonitoringSummary | null;
 }
 
 function classify(metric: "open" | "reply" | "booking", value: number) {
@@ -273,6 +275,7 @@ export default function DataPageClient({
   period,
   funnelEmail,
   funnelLI,
+  costSummary,
 }: DataPageClientProps) {
   const {
     qualifiedLeads, emailsSent, openRate, replyRate, bookingRate, repliesPending, upcomingMeetings,
@@ -589,6 +592,49 @@ export default function DataPageClient({
           })}
         </div>
       </section>
+
+      {/* ── 7b. Costs ── */}
+      {costSummary && (
+        <section>
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <h2 className="text-lg font-semibold text-foreground">Coûts</h2>
+            {costSummary.alert.triggered && (
+              <span className="rounded-full bg-red-500/10 px-3 py-1 text-xs font-medium text-red-600">
+                Seuil dépassé
+              </span>
+            )}
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {[
+              { label: "Tokens mois", value: costSummary.month.anthropicTokens, suffix: "", decimals: 0 },
+              { label: "Coût / meeting", value: costSummary.costPerMeetingUsd, suffix: "$", decimals: 2 },
+              { label: "Projection mois", value: costSummary.projection.monthlyTotalUsd, suffix: "$", decimals: 2 },
+              { label: "Actions Unipile", value: costSummary.month.unipileActions, suffix: "", decimals: 0 },
+            ].map((k, i) => (
+              <motion.div
+                key={k.label}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35, delay: i * 0.05 }}
+                className="rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-4"
+              >
+                <div className="mb-2 flex items-center gap-2">
+                  <div className="rounded-lg bg-primary/10 p-1.5">
+                    <DollarSign size={14} style={{ color: ACCENT }} />
+                  </div>
+                  <span className="text-[11px] uppercase tracking-wider text-muted-foreground">{k.label}</span>
+                </div>
+                <CountUp
+                  value={k.value}
+                  decimals={k.decimals}
+                  suffix={k.suffix}
+                  className="text-xl font-semibold text-primary tabular-nums"
+                />
+              </motion.div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* ── 8. Funnels email + LI ── */}
       <section className="grid gap-4 md:grid-cols-2">

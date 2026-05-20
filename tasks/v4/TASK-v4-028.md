@@ -1,5 +1,5 @@
 # Task v4-028 : Tests + E2E Phase 2 — sourcing → invitation → DM → reply → Setter LI → Calendly + smoke captcha simulé → pause auto
-**Status**: ⬜ À faire
+**Status**: 🚧 Partiel — 2026-05-20
 
 ## Autonomie
 🤝 **Mixte** — Claude prépare scripts + checklist. Thomas exécute le smoke en staging sur son vrai compte LinkedIn.
@@ -19,8 +19,8 @@ Smoke E2E Phase 2 réussi en staging : sourcing LI → invitation → DM → rep
 
 ### Must Have
 **Tests Vitest Claude** :
-- [ ] `lib/__tests__/unipile.test.ts` complet : sendInvitation, sendDM, verifyWebhookSignature
-- [ ] `lib/__tests__/pacing.li.test.ts` complet : weekly cap, ramp-up, shouldAddNote, typingDurationMs
+- [x] `lib/__tests__/unipile.test.ts` complet : sendInvitation, sendDM, verifyWebhookSignature
+- [x] `lib/__tests__/pacing.li.test.ts` complet : weekly cap, ramp-up, shouldAddNote, typingDurationMs
 
 **Smoke Thomas** :
 - [ ] Compte LI Thomas connecté via Unipile staging
@@ -50,11 +50,22 @@ curl -X POST "$N8N_WF11_WEBHOOK" \
 ```
 
 ## Acceptance Criteria
-- [ ] Tests Vitest lib/unipile.ts + pacing LI : 0 failing
+- [x] Tests Vitest lib/unipile.ts + pacing LI : 0 failing
 - [ ] WF11 run complet < 30s sur payload simulé
 - [ ] Draft Setter LI visible dans inbox avec channel=linkedin
 - [ ] Circuit breaker : status=paused_captcha → WF10 s'arrête + bandeau rouge dashboard
 - [ ] KPIs M2 vérifiables (accept rate Unipile logué)
+
+## Avancement
+
+### 2026-05-20 — Préparation smoke simulé prête
+- Ajout `scripts/smoke-phase2.sh` avec payloads `message.received`, `invitation.accepted` et `paused_captcha`.
+- Ajout `scripts/smoke-phase2-checklist.md` avec prérequis, commandes, outputs attendus et vérifications Sheets/UI.
+- Tests mock Unipile, pacing LI, inbox LinkedIn et circuit breaker local passent.
+
+**Reste avant ✅** :
+- Exécuter le smoke staging avec compte LinkedIn connecté, webhooks n8n réels et lead test consentant.
+- Vérifier WF11 <30s, draft inbox `channel=linkedin`, pause `paused_captcha`, arrêt WF10 et KPI accept rate logué.
 
 ## Dependencies
 **Blocked By**: v4-022 → v4-027 (toute la Phase 2)
