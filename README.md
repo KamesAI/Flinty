@@ -1,15 +1,15 @@
-# Flinty — Dashboard de prospection B2B
+# Flinty — B2B Cold Email Automation Dashboard
 
-> CRM interne de cold email piloté par l'IA — Kames AI  
-> Next.js 15 · Google Sheets · n8n · Claude Sonnet
+> Open-source cold outreach automation stack for solopreneurs and small agencies  
+> Next.js 15 · Google Sheets · n8n · Claude Sonnet (via OpenRouter)
 
 ---
 
-## Ce que c'est
+## What it does
 
-Flinty est un outil de prospection commerciale B2B clé-en-main. Il automatise la génération de leads locaux, leur qualification par IA et l'envoi d'emails cold, le tout piloté depuis un dashboard Next.js avec Google Sheets comme base de données.
+Flinty is a self-hosted B2B lead generation and cold email automation tool. It finds local leads via Google Maps, scores them with AI, sends cold email sequences via Resend, and tracks everything in a real-time Next.js dashboard — with Google Sheets as the database.
 
-**Principe :** zéro SQL, zéro backend custom — Google Sheets stocke tout, n8n orchestre les workflows, Claude score les leads.
+**Zero-SQL, zero custom backend**: Google Sheets stores everything, n8n orchestrates workflows, Claude scores leads.
 
 ---
 
@@ -121,6 +121,6 @@ Les variables d'environnement sont gérées via `vercel env`.
 
 ---
 
-## Licence
+## License
 
-Usage interne — Kames AI · Thomas Callendreau
+MIT — Thomas Callendreau (Kames AI)

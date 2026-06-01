@@ -58,3 +58,11 @@ next-env.d.ts
 .vscode/
 .vercel
 .ai-context/
+
+# Internal strategy & business docs (not for public)
+STRATEGIE-ACQUISITION-90J.md
+CRM-OVERVIEW.md
+context.flinty.json
+
+# Temp files
+tmp/
