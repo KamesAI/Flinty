@@ -1,11 +1,11 @@
 {
-  "date": "2026-05-20",
+  "date": "2026-06-01",
   "summary": {
     "active_campaigns": 4,
     "qualified_leads": 11,
-    "new_replies": 5,
+    "new_replies": 0,
     "followups_due": 5,
-    "blocked_or_stale": 2,
+    "blocked_or_stale": 8,
     "optional_drafts_to_prepare": 5
   },
   "priorities": [
@@ -15,9 +15,9 @@
       "contact_name": "Thomas Smoke",
       "stage": "replied",
       "temperature": "hot",
-      "reason": "Réponse prospect reçue sur les dernières 24h",
+      "reason": "Action commerciale à reprendre ou relance à préparer",
       "last_interaction": "2026-05-19T14:34:12.846Z",
-      "next_action_due": "2026-05-20",
+      "next_action_due": "2026-06-01",
       "recommended_action": "Préparer une réponse contextualisée pour validation.",
       "channel": "email",
       "message_summary": "Signal: meeting_ready | Hook: A repondu au smoke test Setter Phase 1 | Dernier message: Reply positive warm-up confirmée manuellement par Thomas."
@@ -28,9 +28,9 @@
       "contact_name": "Thomas Smoke",
       "stage": "replied",
       "temperature": "hot",
-      "reason": "Réponse prospect reçue sur les dernières 24h",
+      "reason": "Action commerciale à reprendre ou relance à préparer",
       "last_interaction": "2026-05-19T14:34:12.846Z",
-      "next_action_due": "2026-05-20",
+      "next_action_due": "2026-06-01",
       "recommended_action": "Préparer une réponse contextualisée pour validation.",
       "channel": "email",
       "message_summary": "Signal: meeting_ready | Hook: A repondu au smoke test Setter Phase 1 | Dernier message: Reply positive warm-up confirmée manuellement par Thomas."
@@ -41,9 +41,9 @@
       "contact_name": "Thomas Smoke",
       "stage": "replied",
       "temperature": "hot",
-      "reason": "Réponse prospect reçue sur les dernières 24h",
+      "reason": "Action commerciale à reprendre ou relance à préparer",
       "last_interaction": "2026-05-19T14:34:12.846Z",
-      "next_action_due": "2026-05-20",
+      "next_action_due": "2026-06-01",
       "recommended_action": "Préparer une réponse contextualisée pour validation.",
       "channel": "email",
       "message_summary": "Signal: meeting_ready | Hook: A repondu au smoke test Setter Phase 1 | Dernier message: Reply positive warm-up confirmée manuellement par Thomas."
@@ -54,9 +54,9 @@
       "contact_name": "Thomas Smoke",
       "stage": "replied",
       "temperature": "hot",
-      "reason": "Réponse prospect reçue sur les dernières 24h",
+      "reason": "Action commerciale à reprendre ou relance à préparer",
       "last_interaction": "2026-05-19T14:34:12.846Z",
-      "next_action_due": "2026-05-20",
+      "next_action_due": "2026-06-01",
       "recommended_action": "Préparer une réponse contextualisée pour validation.",
       "channel": "email",
       "message_summary": "Signal: meeting_ready | Hook: A repondu au smoke test Setter Phase 1 | Dernier message: Reply positive warm-up confirmée manuellement par Thomas."
@@ -67,9 +67,9 @@
       "contact_name": "Thomas Smoke",
       "stage": "replied",
       "temperature": "hot",
-      "reason": "Réponse prospect reçue sur les dernières 24h",
+      "reason": "Action commerciale à reprendre ou relance à préparer",
       "last_interaction": "2026-05-19T14:34:12.846Z",
-      "next_action_due": "2026-05-20",
+      "next_action_due": "2026-06-01",
       "recommended_action": "Préparer une réponse contextualisée pour validation.",
       "channel": "email",
       "message_summary": "Signal: meeting_ready | Hook: A repondu au smoke test Setter Phase 1 | Dernier message: Reply positive warm-up confirmée manuellement par Thomas."
@@ -99,6 +99,19 @@
       "recommended_action": "Vérifier le blocage campagne avant action.",
       "channel": "unknown",
       "message_summary": "Signal: meeting_ready | Hook: A repondu au smoke test Setter Phase 1"
+    },
+    {
+      "id": "smoke_m1_20260518193456_hy3o_lead_smoke_001",
+      "company": "Kames Smoke Fixture",
+      "contact_name": "Thomas Smoke",
+      "stage": "unknown",
+      "temperature": "hot",
+      "reason": "Lead bloqué, campagne pausée ou interaction ancienne",
+      "last_interaction": "2026-05-18T19:41:20.696Z",
+      "next_action_due": null,
+      "recommended_action": "Préparer ou vérifier la prochaine relance.",
+      "channel": "email",
+      "message_summary": "Signal: meeting_ready | Hook: A repondu au smoke test Setter Phase 1 | Dernier message: Bonjour, votre offre m interesse mais je veux en savoir plus sur les tarifs. Quand pouvez-vous m appeler ?"
     }
   ],
   "followups_due": [
@@ -110,7 +123,7 @@
       "temperature": "hot",
       "reason": "Action commerciale à reprendre ou relance à préparer",
       "last_interaction": "2026-05-19T14:34:12.846Z",
-      "next_action_due": "2026-05-20",
+      "next_action_due": "2026-06-01",
       "recommended_action": "Préparer une réponse contextualisée pour validation.",
       "channel": "email",
       "message_summary": "Signal: meeting_ready | Hook: A repondu au smoke test Setter Phase 1 | Dernier message: Reply positive warm-up confirmée manuellement par Thomas."
@@ -123,7 +136,7 @@
       "temperature": "hot",
       "reason": "Action commerciale à reprendre ou relance à préparer",
       "last_interaction": "2026-05-19T14:34:12.846Z",
-      "next_action_due": "2026-05-20",
+      "next_action_due": "2026-06-01",
       "recommended_action": "Préparer une réponse contextualisée pour validation.",
       "channel": "email",
       "message_summary": "Signal: meeting_ready | Hook: A repondu au smoke test Setter Phase 1 | Dernier message: Reply positive warm-up confirmée manuellement par Thomas."
@@ -136,7 +149,7 @@
       "temperature": "hot",
       "reason": "Action commerciale à reprendre ou relance à préparer",
       "last_interaction": "2026-05-19T14:34:12.846Z",
-      "next_action_due": "2026-05-20",
+      "next_action_due": "2026-06-01",
       "recommended_action": "Préparer une réponse contextualisée pour validation.",
       "channel": "email",
       "message_summary": "Signal: meeting_ready | Hook: A repondu au smoke test Setter Phase 1 | Dernier message: Reply positive warm-up confirmée manuellement par Thomas."
@@ -149,7 +162,7 @@
       "temperature": "hot",
       "reason": "Action commerciale à reprendre ou relance à préparer",
       "last_interaction": "2026-05-19T14:34:12.846Z",
-      "next_action_due": "2026-05-20",
+      "next_action_due": "2026-06-01",
       "recommended_action": "Préparer une réponse contextualisée pour validation.",
       "channel": "email",
       "message_summary": "Signal: meeting_ready | Hook: A repondu au smoke test Setter Phase 1 | Dernier message: Reply positive warm-up confirmée manuellement par Thomas."
@@ -162,79 +175,13 @@
       "temperature": "hot",
       "reason": "Action commerciale à reprendre ou relance à préparer",
       "last_interaction": "2026-05-19T14:34:12.846Z",
-      "next_action_due": "2026-05-20",
+      "next_action_due": "2026-06-01",
       "recommended_action": "Préparer une réponse contextualisée pour validation.",
       "channel": "email",
       "message_summary": "Signal: meeting_ready | Hook: A repondu au smoke test Setter Phase 1 | Dernier message: Reply positive warm-up confirmée manuellement par Thomas."
     }
   ],
-  "new_replies": [
-    {
-      "id": "smoke_m1_20260519101708_mvok_warmup_01",
-      "company": "Kames Smoke Fixture",
-      "contact_name": "Thomas Smoke",
-      "stage": "replied",
-      "temperature": "hot",
-      "reason": "Réponse prospect reçue sur les dernières 24h",
-      "last_interaction": "2026-05-19T14:34:12.846Z",
-      "next_action_due": "2026-05-20",
-      "recommended_action": "Préparer une réponse contextualisée pour validation.",
-      "channel": "email",
-      "message_summary": "Signal: meeting_ready | Hook: A repondu au smoke test Setter Phase 1 | Dernier message: Reply positive warm-up confirmée manuellement par Thomas."
-    },
-    {
-      "id": "smoke_m1_20260519101708_mvok_warmup_02",
-      "company": "Kames Smoke Fixture",
-      "contact_name": "Thomas Smoke",
-      "stage": "replied",
-      "temperature": "hot",
-      "reason": "Réponse prospect reçue sur les dernières 24h",
-      "last_interaction": "2026-05-19T14:34:12.846Z",
-      "next_action_due": "2026-05-20",
-      "recommended_action": "Préparer une réponse contextualisée pour validation.",
-      "channel": "email",
-      "message_summary": "Signal: meeting_ready | Hook: A repondu au smoke test Setter Phase 1 | Dernier message: Reply positive warm-up confirmée manuellement par Thomas."
-    },
-    {
-      "id": "smoke_m1_20260519101708_mvok_warmup_03",
-      "company": "Kames Smoke Fixture",
-      "contact_name": "Thomas Smoke",
-      "stage": "replied",
-      "temperature": "hot",
-      "reason": "Réponse prospect reçue sur les dernières 24h",
-      "last_interaction": "2026-05-19T14:34:12.846Z",
-      "next_action_due": "2026-05-20",
-      "recommended_action": "Préparer une réponse contextualisée pour validation.",
-      "channel": "email",
-      "message_summary": "Signal: meeting_ready | Hook: A repondu au smoke test Setter Phase 1 | Dernier message: Reply positive warm-up confirmée manuellement par Thomas."
-    },
-    {
-      "id": "smoke_m1_20260519101708_mvok_warmup_04",
-      "company": "Kames Smoke Fixture",
-      "contact_name": "Thomas Smoke",
-      "stage": "replied",
-      "temperature": "hot",
-      "reason": "Réponse prospect reçue sur les dernières 24h",
-      "last_interaction": "2026-05-19T14:34:12.846Z",
-      "next_action_due": "2026-05-20",
-      "recommended_action": "Préparer une réponse contextualisée pour validation.",
-      "channel": "email",
-      "message_summary": "Signal: meeting_ready | Hook: A repondu au smoke test Setter Phase 1 | Dernier message: Reply positive warm-up confirmée manuellement par Thomas."
-    },
-    {
-      "id": "smoke_m1_20260519101708_mvok_warmup_05",
-      "company": "Kames Smoke Fixture",
-      "contact_name": "Thomas Smoke",
-      "stage": "replied",
-      "temperature": "hot",
-      "reason": "Réponse prospect reçue sur les dernières 24h",
-      "last_interaction": "2026-05-19T14:34:12.846Z",
-      "next_action_due": "2026-05-20",
-      "recommended_action": "Préparer une réponse contextualisée pour validation.",
-      "channel": "email",
-      "message_summary": "Signal: meeting_ready | Hook: A repondu au smoke test Setter Phase 1 | Dernier message: Reply positive warm-up confirmée manuellement par Thomas."
-    }
-  ],
+  "new_replies": [],
   "blocked_or_stale": [
     {
       "id": "smoke_m1_20260518161356_wb45_lead_smoke_001",
@@ -261,6 +208,84 @@
       "recommended_action": "Vérifier le blocage campagne avant action.",
       "channel": "unknown",
       "message_summary": "Signal: meeting_ready | Hook: A repondu au smoke test Setter Phase 1"
+    },
+    {
+      "id": "smoke_m1_20260518193456_hy3o_lead_smoke_001",
+      "company": "Kames Smoke Fixture",
+      "contact_name": "Thomas Smoke",
+      "stage": "unknown",
+      "temperature": "hot",
+      "reason": "Lead bloqué, campagne pausée ou interaction ancienne",
+      "last_interaction": "2026-05-18T19:41:20.696Z",
+      "next_action_due": null,
+      "recommended_action": "Préparer ou vérifier la prochaine relance.",
+      "channel": "email",
+      "message_summary": "Signal: meeting_ready | Hook: A repondu au smoke test Setter Phase 1 | Dernier message: Bonjour, votre offre m interesse mais je veux en savoir plus sur les tarifs. Quand pouvez-vous m appeler ?"
+    },
+    {
+      "id": "smoke_m1_20260519101708_mvok_warmup_01",
+      "company": "Kames Smoke Fixture",
+      "contact_name": "Thomas Smoke",
+      "stage": "replied",
+      "temperature": "hot",
+      "reason": "Lead bloqué, campagne pausée ou interaction ancienne",
+      "last_interaction": "2026-05-19T14:34:12.846Z",
+      "next_action_due": "2026-06-01",
+      "recommended_action": "Préparer une réponse contextualisée pour validation.",
+      "channel": "email",
+      "message_summary": "Signal: meeting_ready | Hook: A repondu au smoke test Setter Phase 1 | Dernier message: Reply positive warm-up confirmée manuellement par Thomas."
+    },
+    {
+      "id": "smoke_m1_20260519101708_mvok_warmup_02",
+      "company": "Kames Smoke Fixture",
+      "contact_name": "Thomas Smoke",
+      "stage": "replied",
+      "temperature": "hot",
+      "reason": "Lead bloqué, campagne pausée ou interaction ancienne",
+      "last_interaction": "2026-05-19T14:34:12.846Z",
+      "next_action_due": "2026-06-01",
+      "recommended_action": "Préparer une réponse contextualisée pour validation.",
+      "channel": "email",
+      "message_summary": "Signal: meeting_ready | Hook: A repondu au smoke test Setter Phase 1 | Dernier message: Reply positive warm-up confirmée manuellement par Thomas."
+    },
+    {
+      "id": "smoke_m1_20260519101708_mvok_warmup_03",
+      "company": "Kames Smoke Fixture",
+      "contact_name": "Thomas Smoke",
+      "stage": "replied",
+      "temperature": "hot",
+      "reason": "Lead bloqué, campagne pausée ou interaction ancienne",
+      "last_interaction": "2026-05-19T14:34:12.846Z",
+      "next_action_due": "2026-06-01",
+      "recommended_action": "Préparer une réponse contextualisée pour validation.",
+      "channel": "email",
+      "message_summary": "Signal: meeting_ready | Hook: A repondu au smoke test Setter Phase 1 | Dernier message: Reply positive warm-up confirmée manuellement par Thomas."
+    },
+    {
+      "id": "smoke_m1_20260519101708_mvok_warmup_04",
+      "company": "Kames Smoke Fixture",
+      "contact_name": "Thomas Smoke",
+      "stage": "replied",
+      "temperature": "hot",
+      "reason": "Lead bloqué, campagne pausée ou interaction ancienne",
+      "last_interaction": "2026-05-19T14:34:12.846Z",
+      "next_action_due": "2026-06-01",
+      "recommended_action": "Préparer une réponse contextualisée pour validation.",
+      "channel": "email",
+      "message_summary": "Signal: meeting_ready | Hook: A repondu au smoke test Setter Phase 1 | Dernier message: Reply positive warm-up confirmée manuellement par Thomas."
+    },
+    {
+      "id": "smoke_m1_20260519101708_mvok_warmup_05",
+      "company": "Kames Smoke Fixture",
+      "contact_name": "Thomas Smoke",
+      "stage": "replied",
+      "temperature": "hot",
+      "reason": "Lead bloqué, campagne pausée ou interaction ancienne",
+      "last_interaction": "2026-05-19T14:34:12.846Z",
+      "next_action_due": "2026-06-01",
+      "recommended_action": "Préparer une réponse contextualisée pour validation.",
+      "channel": "email",
+      "message_summary": "Signal: meeting_ready | Hook: A repondu au smoke test Setter Phase 1 | Dernier message: Reply positive warm-up confirmée manuellement par Thomas."
     }
   ],
   "market_signals": [

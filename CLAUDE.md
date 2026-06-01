@@ -23,6 +23,45 @@ Les instructions détaillées sont découpées pour limiter la **context rot** :
 
 ---
 
+## Vault Obsidian Kames — base de connaissance locale
+
+Le vault Obsidian Kames est disponible localement via :
+
+`.ai-context/obsidian-kames`
+
+Ce dossier est un lien symbolique vers le vault personnel Kames AI de Thomas.
+
+Utilisation autorisée :
+- comprendre le contexte business de Kames AI ;
+- consulter les offres, décisions, SOP, notes stratégiques et patterns d'automatisation ;
+- retrouver du contexte sur les projets, clients, contenus ou workflows Kames ;
+- utiliser ces informations pour mieux orienter les décisions produit, code, contenu ou automatisation.
+
+Règles strictes :
+- utiliser le vault en lecture seule par défaut ;
+- ne jamais modifier, supprimer, renommer ou déplacer de fichiers dans `.ai-context/obsidian-kames`, sauf demande explicite de Thomas ;
+- ne jamais créer de nouveaux fichiers dans le vault sauf demande explicite ;
+- ne jamais committer `.ai-context/` ;
+- ne jamais copier de secrets, credentials, données client sensibles ou PII depuis le vault vers le code, les logs, les prompts ou les commits ;
+- si une information du vault influence une décision importante, citer le chemin de la note consultée ;
+- si le vault contredit le code actuel ou la demande de Thomas, signaler la contradiction au lieu de trancher seul ;
+- pour toute action destructive, production, client-visible, financière ou irréversible : proposer un plan et attendre validation humaine.
+
+Priorité de contexte :
+1. Demande actuelle de Thomas.
+2. Code et documentation du projet courant.
+3. CLAUDE.md / AGENTS.md.
+4. Vault Obsidian Kames.
+5. Hypothèses de l'agent.
+
+Avant toute tâche importante :
+1. Identifier si le vault est utile.
+2. Consulter seulement les notes nécessaires.
+3. Résumer les notes utilisées si elles influencent la décision.
+4. Proposer un plan avant modification significative.
+
+---
+
 ## Stack (résumé)
 
 | Composant | Valeur |
