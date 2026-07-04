@@ -11,7 +11,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         <Image
           src="/logo-flinty-cropped.png"
           alt="Flinty"
-          width={130}
+          width={86}
           height={38}
           priority
           className="h-9 w-auto"

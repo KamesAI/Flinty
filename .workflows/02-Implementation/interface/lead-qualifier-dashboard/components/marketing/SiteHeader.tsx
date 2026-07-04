@@ -21,7 +21,7 @@ export function SiteHeader() {
           <Image
             src="/logo-flinty-cropped.png"
             alt="Flinty"
-            width={110}
+            width={73}
             height={32}
             priority
             className="h-8 w-auto"
