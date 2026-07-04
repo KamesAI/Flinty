@@ -20,7 +20,7 @@ describe("campaign row theme tokens", () => {
     const tokens = getCampaignRowThemeTokens();
 
     expect(tokens.stageFills.raw).toContain("color-mix");
-    expect(tokens.stageFills.contacted).toContain("#006596");
-    expect(tokens.generatingDot).toBe("#006596");
+    expect(tokens.stageFills.contacted).toContain("#059669");
+    expect(tokens.generatingDot).toBe("#059669");
   });
 });

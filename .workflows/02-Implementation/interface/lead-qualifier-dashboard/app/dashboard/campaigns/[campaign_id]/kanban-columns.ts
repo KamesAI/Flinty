@@ -42,8 +42,8 @@ export const KANBAN_COLUMNS: KanbanColumn[] = [
     label: "Contactés",
     statuts: ["contacted", "relance_1", "relance_2", "opened", "clicked"],
     border: "border-amber-200",
-    text: "text-[#006596]",
-    bg: "bg-[#006596]/5",
+    text: "text-[#059669]",
+    bg: "bg-[#059669]/5",
     scoreColor: scoreColorFn,
   },
   {

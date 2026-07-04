@@ -88,7 +88,7 @@ function InvitesChart({ rows }: { rows: LinkedInHealthHistoryRow[] }) {
         return (
           <div key={`${row.last_check_at}-${index}`} className="flex min-w-0 flex-1 flex-col items-center gap-2">
             <div
-              className="w-full rounded-t bg-[#006596]"
+              className="w-full rounded-t bg-[#059669]"
               style={{ height }}
               title={`${sent} invitations - ${new Date(row.last_check_at).toLocaleDateString("fr-FR")}`}
             />
@@ -110,7 +110,7 @@ export default async function LinkedInHealthPage() {
     <div className="max-w-5xl px-1 py-2 sm:px-2 sm:py-3">
       <Link
         href="/dashboard/settings/linkedin/connect"
-        className="mb-5 inline-flex items-center gap-2 text-sm font-semibold text-[#006596] hover:underline"
+        className="mb-5 inline-flex items-center gap-2 text-sm font-semibold text-[#059669] hover:underline"
       >
         <ArrowLeft className="size-4" />
         Connexion LinkedIn
@@ -118,7 +118,7 @@ export default async function LinkedInHealthPage() {
 
       <div className="mb-7 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="mb-2 text-xs font-semibold uppercase tracking-[0.22em] text-[#006596]">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-[0.22em] text-[#059669]">
             Santé LinkedIn
           </p>
           <h1 className="font-flinty text-3xl font-extrabold tracking-tight text-black">
@@ -151,7 +151,7 @@ export default async function LinkedInHealthPage() {
         <section className="rounded-lg border border-border bg-white p-4">
           <div className="mb-3 flex items-center justify-between gap-3">
             <h2 className="text-base font-bold text-slate-950">Accept rate 7j</h2>
-            <ShieldCheck className="size-5 text-[#006596]" />
+            <ShieldCheck className="size-5 text-[#059669]" />
           </div>
           {history.length ? <AcceptRateChart rows={history} /> : <EmptyChart />}
           <p className="mt-3 text-xs text-muted-foreground">

@@ -34,7 +34,7 @@ export default async function TemplatesPage({
       <div className="px-1 py-2 sm:px-2 sm:py-3">
         <div className="mb-8">
           <div className="max-w-2xl">
-            <p className="mb-2 text-xs font-semibold uppercase tracking-[0.22em] text-[#006596]">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-[0.22em] text-[#059669]">
               Emailing
             </p>
             <h1 className="font-flinty text-3xl font-extrabold tracking-tight text-black">

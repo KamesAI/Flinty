@@ -42,7 +42,7 @@ export default async function CampaignsOverviewPage() {
     <div className="px-1 py-2 sm:px-2 sm:py-3">
       <div className="mb-6">
         <div className="max-w-2xl">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-[0.22em] text-[#006596]">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-[0.22em] text-[#059669]">
             Campaigns
           </p>
           <h1 className="font-flinty text-3xl font-extrabold tracking-tight text-black">
@@ -79,7 +79,7 @@ export default async function CampaignsOverviewPage() {
         <div className="mb-6 rounded-2xl border border-amber-500/25 bg-amber-500/10 px-4 py-3">
           <p className="text-sm text-[var(--dashboard-text-secondary)]">
             Google Sheets non configuré. Renseigne les credentials dans{" "}
-            <code className="text-[#006596] text-xs">.env.local</code>
+            <code className="text-[#059669] text-xs">.env.local</code>
           </p>
         </div>
       )}

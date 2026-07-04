@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Flinty — design system. TrueHorizon blue = hsl(200 100% 29%) = #006596 */
+/* Flinty — design system. Émeraude : primaire #059669, clair #34d399, profond #064e3b (dégradés) */
 
 @layer base {
   :root {
@@ -14,16 +14,16 @@
     --popover: 0 0% 100%;
     --popover-foreground: 220 25% 12%;
 
-    /* Blue Lovable Flinty */
-    --primary: 200 100% 29%;
+    /* Vert émeraude Flinty */
+    --primary: 161 94% 30%;
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 200 100% 42%;
+    --primary-glow: 158 64% 52%;
 
     --secondary: 220 25% 96%;
     --secondary-foreground: 220 25% 12%;
     --muted: 220 20% 96%;
     --muted-foreground: 220 12% 45%;
-    --accent: 200 100% 29%;
+    --accent: 161 94% 30%;
     --accent-foreground: 0 0% 100%;
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
@@ -31,23 +31,24 @@
     --warning: 38 92% 50%;
     --border: 220 20% 90%;
     --input: 220 20% 90%;
-    --ring: 200 100% 29%;
+    --ring: 161 94% 30%;
     --radius: 0.75rem;
 
     --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 220 10% 35%;
-    --sidebar-primary: 200 100% 29%;
+    --sidebar-primary: 161 94% 30%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 220 15% 96%;
     --sidebar-accent-foreground: 220 25% 12%;
     --sidebar-border: 220 15% 92%;
-    --sidebar-ring: 200 100% 29%;
+    --sidebar-ring: 161 94% 30%;
 
     --gradient-card: linear-gradient(135deg, hsl(0 0% 100%) 0%, hsl(0 0% 100%) 100%);
-    --gradient-primary: linear-gradient(135deg, hsl(245 70% 45%) 0%, hsl(210 95% 55%) 100%);
-    --gradient-glow: radial-gradient(60% 80% at 50% 0%, hsl(200 100% 29% / 0.12) 0%, transparent 70%);
+    /* Dégradé émeraude : profond #064e3b → vif #059669 → clair #34d399 */
+    --gradient-primary: linear-gradient(135deg, hsl(166 86% 16%) 0%, hsl(161 94% 30%) 55%, hsl(158 64% 52%) 100%);
+    --gradient-glow: radial-gradient(60% 80% at 50% 0%, hsl(161 94% 30% / 0.14) 0%, transparent 70%);
     --shadow-card: 0 1px 2px 0 hsl(220 15% 80% / 0.10), 0 8px 24px -12px hsl(220 20% 40% / 0.10);
-    --shadow-glow: 0 0 0 1px hsl(200 100% 29% / 0.25), 0 8px 32px -8px hsl(200 100% 29% / 0.30);
+    --shadow-glow: 0 0 0 1px hsl(161 94% 30% / 0.25), 0 8px 32px -8px hsl(161 94% 30% / 0.30);
     --shadow-elevated: 0 16px 40px -16px hsl(220 30% 25% / 0.15);
     --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
 
@@ -68,8 +69,9 @@
   html { color-scheme: light; }
   body {
     @apply bg-background text-foreground antialiased;
-    font-feature-settings: "cv02","cv03","cv04","cv11","ss01";
   }
+  /* Poppins n'a pas de graisse par défaut adaptée aux titres : font-flinty = display semibold */
+  .font-flinty { font-weight: 600; letter-spacing: -0.02em; }
 }
 
 @layer components {
@@ -102,4 +104,9 @@
 
 @layer utilities {
   .tabular-nums { font-variant-numeric: tabular-nums; }
+  /* Fond pointillé façon Mimikflow (sections stats / démo) */
+  .bg-dot-grid {
+    background-image: radial-gradient(hsl(220 20% 88%) 1px, transparent 1px);
+    background-size: 20px 20px;
+  }
 }

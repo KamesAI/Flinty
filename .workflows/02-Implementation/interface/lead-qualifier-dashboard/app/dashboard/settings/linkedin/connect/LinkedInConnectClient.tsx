@@ -103,7 +103,7 @@ export function LinkedInConnectClient({
         <p className="mt-1 text-sm text-slate-500">Connexion via Unipile hosted auth, sans session LinkedIn stockee dans Flinty.</p>
         <Link
           href="/dashboard/settings/linkedin/health"
-          className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-[#006596] hover:underline"
+          className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-[#059669] hover:underline"
         >
           <Activity className="size-4" />
           Santé LinkedIn

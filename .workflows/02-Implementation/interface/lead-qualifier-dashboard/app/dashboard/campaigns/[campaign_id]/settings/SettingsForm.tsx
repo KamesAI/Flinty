@@ -212,7 +212,7 @@ export function SettingsForm({
               href={settings.loom_video_url}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-3 py-2 text-sm font-semibold text-[#006596] hover:underline"
+              className="inline-flex items-center gap-2 px-3 py-2 text-sm font-semibold text-[#059669] hover:underline"
             >
               <Play className="size-4" />
               Prévisualiser la vidéo

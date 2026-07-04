@@ -7,7 +7,7 @@ describe("UpcomingMeetingsCarousel helpers", () => {
   });
 
   it("passe le compteur en orange quand au moins un rendez-vous existe", () => {
-    expect(getMeetingCountTextClass(1)).toBe("text-[#006596]");
-    expect(getMeetingCountTextClass(4)).toBe("text-[#006596]");
+    expect(getMeetingCountTextClass(1)).toBe("text-[#059669]");
+    expect(getMeetingCountTextClass(4)).toBe("text-[#059669]");
   });
 });

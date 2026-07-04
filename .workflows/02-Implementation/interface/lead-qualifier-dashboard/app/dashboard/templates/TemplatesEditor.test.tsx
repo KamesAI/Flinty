@@ -31,7 +31,7 @@ describe("TemplatesEditor", () => {
     );
 
     expect(html).toContain("tracking-[0.22em]");
-    expect(html).toContain("text-[#006596]");
+    expect(html).toContain("text-[#059669]");
     expect(html).toContain("font-flinty");
     expect(html).toContain("text-[var(--dashboard-text-secondary)]");
     expect(html).toContain("sm:text-base");

@@ -160,7 +160,7 @@ export default async function InboxPage({
     <div className="max-w-6xl px-1 py-2 sm:px-2 sm:py-3">
       <div className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="max-w-2xl">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-[0.22em] text-[#006596]">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-[0.22em] text-[#059669]">
             Inbox Setter
           </p>
           <h1 className="font-flinty text-3xl font-extrabold tracking-tight text-black">
@@ -185,7 +185,7 @@ export default async function InboxPage({
               href={`/dashboard/inbox?${params.toString()}`}
               className={`relative flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-colors ${
                 isActive
-                  ? "-mb-px border-b-2 border-[#006596] text-foreground"
+                  ? "-mb-px border-b-2 border-[#059669] text-foreground"
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
@@ -194,7 +194,7 @@ export default async function InboxPage({
               {item.key === "bookings" ? <CalendarCheck className="size-4" /> : null}
               {item.label}
               {counts[item.key] > 0 ? (
-                <span className={isActive ? "rounded-full bg-[#006596] px-1.5 py-0.5 text-xs font-bold leading-none text-white" : "rounded-full bg-muted px-1.5 py-0.5 text-xs font-bold leading-none text-muted-foreground"}>
+                <span className={isActive ? "rounded-full bg-[#059669] px-1.5 py-0.5 text-xs font-bold leading-none text-white" : "rounded-full bg-muted px-1.5 py-0.5 text-xs font-bold leading-none text-muted-foreground"}>
                   {counts[item.key]}
                 </span>
               ) : null}
@@ -219,8 +219,8 @@ export default async function InboxPage({
                 href={`/dashboard/inbox?${params.toString()}`}
                 className={`rounded-md border px-3 py-1 text-xs transition-colors ${
                   selected
-                    ? "border-[#006596] bg-[#006596]/10 text-[#006596]"
-                    : "border-border text-muted-foreground hover:border-[#006596]/40 hover:text-foreground"
+                    ? "border-[#059669] bg-[#059669]/10 text-[#059669]"
+                    : "border-border text-muted-foreground hover:border-[#059669]/40 hover:text-foreground"
                 }`}
               >
                 {campaign.nom}
@@ -252,7 +252,7 @@ export default async function InboxPage({
                         ) : null}
                       </div>
                       <div className="mt-1.5 flex flex-wrap items-center gap-2">
-                        <span className="rounded-md bg-[#006596]/10 px-2 py-0.5 text-xs font-semibold text-[#006596]">
+                        <span className="rounded-md bg-[#059669]/10 px-2 py-0.5 text-xs font-semibold text-[#059669]">
                           {item.campaign.nom}
                         </span>
                         {item.lead.poste ? (
@@ -266,7 +266,7 @@ export default async function InboxPage({
                     </div>
                     <Link
                       href={`/dashboard/campaigns/${item.campaign.campaign_id}/leads/${item.lead.lead_id}`}
-                      className="shrink-0 text-xs font-semibold text-[#006596] hover:underline"
+                      className="shrink-0 text-xs font-semibold text-[#059669] hover:underline"
                     >
                       Fiche lead →
                     </Link>

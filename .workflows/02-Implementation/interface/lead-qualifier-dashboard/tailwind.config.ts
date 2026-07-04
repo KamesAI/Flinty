@@ -16,8 +16,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ["Inter", "ui-sans-serif", "system-ui", "sans-serif"],
-        flinty: ["var(--font-flinty)", "sans-serif"],
+        sans: ["var(--font-poppins)", "Poppins", "ui-sans-serif", "system-ui", "sans-serif"],
+        flinty: ["var(--font-poppins)", "Poppins", "sans-serif"],
       },
       colors: {
         border: "hsl(var(--border))",

@@ -22,7 +22,7 @@ export function CampaignTabNav({ campaignId }: { campaignId: string }) {
           className={[
             "px-4 py-2 text-sm font-medium transition-colors",
             tab.active
-              ? "border-b-2 border-[#006596] text-[#006596] -mb-px"
+              ? "border-b-2 border-[#059669] text-[#059669] -mb-px"
               : "text-zinc-500 hover:text-white",
           ].join(" ")}
         >

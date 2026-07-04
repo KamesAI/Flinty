@@ -74,8 +74,10 @@
 | v4-034 | API publique + webhooks CRM (HubSpot/Pipedrive) | 🤖 | P2 | ⬜ | v4-030 | 5h |
 | v4-035 | Monitoring tokens Anthropic/Unipile/Calendly + alertes seuils | 🤖 | P1 | 🚧 Partiel — 2026-05-20 (code TS/API/UI livré ; WF14 + smoke Sheets/email réels à faire) | v4-005, v4-020 | 2h |
 | v4-036 | MVP “Flinty daily brief export” pour Frank/Hermes — JSON read-only `daily-pipeline.json`, fonction `generateDailyPipelineBriefData()`, script `npm run export:frank-daily-brief`, endpoint `GET /api/frank/daily-brief-data`, doc sécurité | 🤖 | P1 | ✅ | v4-003, v4-011 | 2h |
+| v4-037 | Landing page publique FR sur `/` (hero + quinconce 6 features + pricing + FAQ) + pages `/login` `/signup` UI seule (zod + toast, Supabase Auth ultérieur) | 🤖 | P1 | 🚧 Partiel — 2026-07-04 (livré + vérifié desktop ; reste vérif mobile visuelle, tarifs définitifs, pages légales, Supabase Auth) | — | 6h |
+| v4-038 | Refonte thème site entier (Poppins + dégradé émeraude #059669/#34d399/#064e3b) + sections landing façon Mimikflow (stats+funnel objectifs, comparatif Lemlist/Waalaxy/LGM, book demo placeholder) | 🤖 | P1 | 🚧 Partiel — 2026-07-04 (livré + vérifié desktop ; reste validation comparatif par Thomas, logo PNG à recolorer, lien démo réel, vérif mobile) | v4-037 | 4h |
 
-**Total Phase 3** : ~28h
+**Total Phase 3** : ~32h
 
 ---
 

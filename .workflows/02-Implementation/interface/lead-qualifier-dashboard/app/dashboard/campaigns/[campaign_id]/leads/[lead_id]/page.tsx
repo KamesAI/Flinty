@@ -18,7 +18,7 @@ const GROWTH_BADGE: Record<string, string> = {
   series_b:    "bg-purple-50 text-purple-700 border border-purple-200",
   established: "bg-green-50 text-green-700 border border-green-200",
   mature:      "bg-green-50 text-green-700 border border-green-200",
-  scale:       "bg-[#006596]/10 text-[#006596] border border-[#006596]/20",
+  scale:       "bg-[#059669]/10 text-[#059669] border border-[#059669]/20",
 };
 
 function growthBadgeClass(stage: string): string {
@@ -70,9 +70,9 @@ export default async function LeadDetailPage({
     <div className="p-4 sm:p-8 max-w-3xl space-y-4">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-zinc-400">
-        <Link href="/dashboard" className="hover:text-[#006596] transition-colors">Campagnes</Link>
+        <Link href="/dashboard" className="hover:text-[#059669] transition-colors">Campagnes</Link>
         <span>/</span>
-        <Link href={`/dashboard/campaigns/${campaign_id}`} className="hover:text-[#006596] transition-colors">
+        <Link href={`/dashboard/campaigns/${campaign_id}`} className="hover:text-[#059669] transition-colors">
           {campaign.nom}
         </Link>
         <span>/</span>
@@ -80,11 +80,11 @@ export default async function LeadDetailPage({
       </div>
 
       {/* Header card */}
-      <div className="bg-white border border-zinc-200 rounded-xl p-6 border-l-4 border-l-[#006596]">
+      <div className="bg-white border border-zinc-200 rounded-xl p-6 border-l-4 border-l-[#059669]">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
             {lead.secteur && (
-              <p className="text-xs font-semibold tracking-widest uppercase text-[#006596] mb-1">
+              <p className="text-xs font-semibold tracking-widest uppercase text-[#059669] mb-1">
                 {lead.secteur}
               </p>
             )}
@@ -95,7 +95,7 @@ export default async function LeadDetailPage({
                   href={lead.site}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-[#006596] text-sm hover:underline truncate max-w-xs"
+                  className="text-[#059669] text-sm hover:underline truncate max-w-xs"
                 >
                   {lead.site.replace(/^https?:\/\//, "")}
                 </a>
@@ -117,8 +117,8 @@ export default async function LeadDetailPage({
 
       {/* Hook personnalisé */}
       {lead.personalized_hook && (
-        <div className="bg-[#006596]/5 border border-[#006596]/20 rounded-xl p-6 border-l-4 border-l-[#006596]">
-          <p className="text-xs font-semibold tracking-widest uppercase text-[#006596] mb-3">
+        <div className="bg-[#059669]/5 border border-[#059669]/20 rounded-xl p-6 border-l-4 border-l-[#059669]">
+          <p className="text-xs font-semibold tracking-widest uppercase text-[#059669] mb-3">
             Hook personnalisé
           </p>
           <div className="flex items-start gap-3">
@@ -207,8 +207,8 @@ export default async function LeadDetailPage({
 
       {/* Raison du score */}
       {lead.score_reason && (
-        <div className="bg-white border border-zinc-200 rounded-xl p-6 border-l-4 border-l-[#006596]">
-          <p className="text-xs font-semibold tracking-widest uppercase text-[#006596] mb-2">
+        <div className="bg-white border border-zinc-200 rounded-xl p-6 border-l-4 border-l-[#059669]">
+          <p className="text-xs font-semibold tracking-widest uppercase text-[#059669] mb-2">
             Analyse IA
           </p>
           <p className="text-zinc-700 text-sm leading-relaxed">{lead.score_reason}</p>
@@ -249,7 +249,7 @@ export default async function LeadDetailPage({
                   </span>
                 )}
                 {lead.email_type === "nominatif_gerant" && lead.email_confidence !== "high" && (
-                  <span className="text-xs px-1.5 py-0.5 rounded bg-[#006596]/10 text-[#006596] border border-[#006596]/20">
+                  <span className="text-xs px-1.5 py-0.5 rounded bg-[#059669]/10 text-[#059669] border border-[#059669]/20">
                     Nominatif
                   </span>
                 )}
@@ -302,19 +302,19 @@ export default async function LeadDetailPage({
       </div>
 
       {/* Timeline */}
-      <div className="bg-white border border-zinc-200 rounded-xl p-6 border-l-4 border-l-[#006596]">
+      <div className="bg-white border border-zinc-200 rounded-xl p-6 border-l-4 border-l-[#059669]">
         <div className="flex items-center justify-between mb-4">
-          <p className="text-xs font-semibold tracking-widest uppercase text-[#006596]">
+          <p className="text-xs font-semibold tracking-widest uppercase text-[#059669]">
             Timeline interactions
           </p>
-          <span className="text-xs bg-[#006596]/10 text-[#006596] px-2 py-0.5 rounded-full font-medium">
+          <span className="text-xs bg-[#059669]/10 text-[#059669] px-2 py-0.5 rounded-full font-medium">
             {timeline.length} événement{timeline.length !== 1 ? "s" : ""}
           </span>
         </div>
         {timeline.length === 0 ? (
           <p className="text-zinc-400 text-sm">Aucune interaction enregistrée.</p>
         ) : (
-          <ol className="relative border-l-2 border-[#006596]/20 ml-2 space-y-5">
+          <ol className="relative border-l-2 border-[#059669]/20 ml-2 space-y-5">
             {timeline.map((item) => {
               const date = new Date(item.timestamp);
               const formattedDate = date.toLocaleDateString("fr-FR", {
@@ -330,7 +330,7 @@ export default async function LeadDetailPage({
               const badge = getTimelineChannelBadge(item);
               return (
                 <li key={item.id} className="ml-4">
-                  <div className="absolute -left-1.5 w-3 h-3 rounded-full bg-[#006596] border-2 border-white shadow-sm" />
+                  <div className="absolute -left-1.5 w-3 h-3 rounded-full bg-[#059669] border-2 border-white shadow-sm" />
                   <div className="flex items-start gap-3">
                     <span className="text-base leading-none mt-0.5">{icon}</span>
                     <div className="flex-1 min-w-0">

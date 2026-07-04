@@ -9,6 +9,6 @@ export function getPulseStatsThemeTokens() {
     label: "var(--pulse-label)",
     sublabel: "var(--pulse-sublabel)",
     value: "var(--pulse-value)",
-    accent: "#006596",
+    accent: "#059669",
   };
 }

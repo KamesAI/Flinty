@@ -47,6 +47,14 @@ Règles strictes :
 - si le vault contredit le code actuel ou la demande de Thomas, signaler la contradiction au lieu de trancher seul ;
 - pour toute action destructive, production, client-visible, financière ou irréversible : proposer un plan et attendre validation humaine.
 
+Synchronisation opérationnelle du Brain :
+- `MAJ Brain`, `mets à jour le Brain`, `mets à jour Obsidian` ou équivalent explicite autorise Claude Code à écrire dans `.ai-context/obsidian-kames` ;
+- après une MAJ Brain, synchroniser automatiquement le repo GitHub `git@github.com:KamesAI/kames-obsidian-vault.git` via `/Users/callendreau/Dev/kames-workflows/scripts/sync-obsidian-brain.sh` ;
+- committer uniquement les fichiers Markdown du vault modifiés/créés pendant la tâche courante, jamais les changements préexistants ;
+- ne jamais committer `.obsidian/**`, secrets, credentials, PII, données client sensibles ou fichiers non Markdown sans validation explicite ;
+- après le push GitHub, synchroniser le vault Hermes sur le VPS avec `ssh hermes-vps 'cd /home/kames/KamesOS/obsidian-vault && git pull --rebase origin main'` ;
+- si `ssh hermes-vps` échoue, essayer le fallback explicite `ssh kames@135.181.41.46` ; si le push ou le pull VPS échoue encore, stopper et rapporter l'erreur au lieu de forcer.
+
 Priorité de contexte :
 1. Demande actuelle de Thomas.
 2. Code et documentation du projet courant.

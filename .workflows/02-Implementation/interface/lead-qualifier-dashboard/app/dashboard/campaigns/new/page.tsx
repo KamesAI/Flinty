@@ -9,8 +9,8 @@ import { CAMPAIGN_QUESTIONS } from "./chat-state";
 import { deriveFormDefaults } from "./campaign-launch";
 import { DEFAULT_TARGET_QUALIFIED_LEADS } from "@/lib/lead-targets";
 
-const BRAND = "#006596";
-const BRAND_LIGHT = "#00A8E8";
+const BRAND = "#059669";
+const BRAND_LIGHT = "#34d399";
 const STORAGE_KEY = "flinty.campaigns.new.chat";
 const TOAST_KEY = "flinty.flash_toast";
 
@@ -205,7 +205,7 @@ export default function NewCampaignPage() {
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
                 placeholder={placeholder}
-                className="w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm text-[#111111] placeholder:text-[#aaaaa7] focus:border-[#006596]/40 focus:outline-none focus:ring-2 focus:ring-[#006596]/10"
+                className="w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm text-[#111111] placeholder:text-[#aaaaa7] focus:border-[#059669]/40 focus:outline-none focus:ring-2 focus:ring-[#059669]/10"
               />
             </div>
           ))}
@@ -221,7 +221,7 @@ export default function NewCampaignPage() {
             max={500}
             value={targetQualifiedLeads}
             onChange={(e) => setTargetQualifiedLeads(Number(e.target.value) || DEFAULT_TARGET_QUALIFIED_LEADS)}
-            className="w-40 rounded-lg border border-black/10 bg-white px-3 py-2 text-sm text-[#111111] focus:border-[#006596]/40 focus:outline-none focus:ring-2 focus:ring-[#006596]/10"
+            className="w-40 rounded-lg border border-black/10 bg-white px-3 py-2 text-sm text-[#111111] focus:border-[#059669]/40 focus:outline-none focus:ring-2 focus:ring-[#059669]/10"
           />
           <p className="mt-2 text-xs text-[#6b6b69]">
             Flinty générera assez de leads raw pour viser cet objectif, avec une marge finale de +/- 10%.
@@ -237,7 +237,7 @@ export default function NewCampaignPage() {
               value={searchTerms}
               onChange={(e) => setSearchTerms(e.target.value)}
               placeholder="plomberie, électricité, menuiserie, couverture"
-              className="min-h-[82px] w-full resize-none rounded-lg border border-black/10 bg-white px-3 py-2 text-sm text-[#111111] placeholder:text-[#aaaaa7] focus:border-[#006596]/40 focus:outline-none focus:ring-2 focus:ring-[#006596]/10"
+              className="min-h-[82px] w-full resize-none rounded-lg border border-black/10 bg-white px-3 py-2 text-sm text-[#111111] placeholder:text-[#aaaaa7] focus:border-[#059669]/40 focus:outline-none focus:ring-2 focus:ring-[#059669]/10"
             />
             <p className="mt-2 text-xs text-[#6b6b69]">
               Sépare les métiers par des virgules : WF1 générera une matrice métier x ville.
@@ -251,7 +251,7 @@ export default function NewCampaignPage() {
               value={searchLocations}
               onChange={(e) => setSearchLocations(e.target.value)}
               placeholder="Bordeaux, Mérignac, Pessac, Talence"
-              className="min-h-[82px] w-full resize-none rounded-lg border border-black/10 bg-white px-3 py-2 text-sm text-[#111111] placeholder:text-[#aaaaa7] focus:border-[#006596]/40 focus:outline-none focus:ring-2 focus:ring-[#006596]/10"
+              className="min-h-[82px] w-full resize-none rounded-lg border border-black/10 bg-white px-3 py-2 text-sm text-[#111111] placeholder:text-[#aaaaa7] focus:border-[#059669]/40 focus:outline-none focus:ring-2 focus:ring-[#059669]/10"
             />
             <p className="mt-2 text-xs text-[#6b6b69]">
               Utilise une vraie liste de villes, pas une phrase ICP.
@@ -437,7 +437,7 @@ export default function NewCampaignPage() {
                   >
                     <ArrowLeft className="h-4 w-4" />
                   </button>
-                  <div className="flex-1 flex items-end gap-2 bg-slate-50 hover:bg-slate-100/70 focus-within:bg-white focus-within:ring-2 focus-within:border-[#006596]/40 border border-slate-200 rounded-3xl px-4 py-2 transition-all"
+                  <div className="flex-1 flex items-end gap-2 bg-slate-50 hover:bg-slate-100/70 focus-within:bg-white focus-within:ring-2 focus-within:border-[#059669]/40 border border-slate-200 rounded-3xl px-4 py-2 transition-all"
                     style={{ "--tw-ring-color": `${BRAND}33` } as React.CSSProperties}
                   >
                     <textarea

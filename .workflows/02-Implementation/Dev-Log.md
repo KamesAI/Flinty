@@ -1117,3 +1117,73 @@ curl -X POST https://staging-n8n.kamesai.com/webhook/flinty-wf1-launch \
   - `npm run test -- lib/cost-monitoring.test.ts app/api/monitoring/costs/route.test.ts lib/setter.test.ts` → OK (42 tests).
   - `npm run build` → OK.
   - `npm run test` → OK (89 files, 522 tests).
+
+### 2026-05-18 — Auto-graduation Setter cmp_1
+- `setter_validation=false` appliqué automatiquement après warm-up.
+- Accuracy intent sur 50 turns : 100.0%.
+
+### 2026-05-18 — Auto-graduation Setter cmp_1
+- `setter_validation=false` appliqué automatiquement après warm-up.
+- Accuracy intent sur 50 turns : 100.0%.
+
+### 2026-05-18 — Auto-graduation Setter cmp_1
+- `setter_validation=false` appliqué automatiquement après warm-up.
+- Accuracy intent sur 50 turns : 100.0%.
+
+### 2026-05-18 — Auto-graduation Setter cmp_1
+- `setter_validation=false` appliqué automatiquement après warm-up.
+- Accuracy intent sur 50 turns : 100.0%.
+
+### 2026-07-04 — TASK-v4-037 Landing page publique + pages auth UI
+- Landing marketing FR sur `/` (inspiration mimikflow structure + qualioflow quinconce), dashboard inchangé sur `/dashboard` :
+  - `app/(marketing)/{layout,page}.tsx` (remplace le `redirect("/dashboard")` de `app/page.tsx`, supprimé) ; `app/(auth)/{layout,login/page,signup/page}.tsx`.
+  - `components/marketing/` : SiteHeader (sticky + menu mobile Sheet), Hero, ProblemSection, FeatureZigzag (6 modules 01→06 en quinconce), HowItWorks, ResultsSection, PricingSection (toggle mensuel/annuel −20 %), FaqSection (accordéon), FinalCta, SiteFooter, Reveal (framer-motion + prefers-reduced-motion), mockups CSS (HeroMockup + 6 FeatureMockups).
+  - `lib/marketing-content.ts` (contenu typé source unique), `lib/pricing-model.ts`, `lib/auth-form-model.ts` (zod, messages FR) — TDD, tests écrits avant le code.
+  - `components/ui/accordion.tsx` (Radix `@radix-ui/react-accordion` ajouté) + `components/ui/input.tsx`.
+  - `app/layout.tsx` : Inter via next/font + metadata marketing (title template) ; `app/dashboard/layout.tsx` : metadata « Dashboard » ; `tailwind.config.ts` : `--font-inter` dans `fontFamily.sans`.
+  - Fix : badge « Populaire » rogné (`overflow-hidden` de `.card-premium`) → `overflow-visible` sur la carte pricing.
+- Pages auth = UI seule (décision Thomas) : validation zod champ par champ + toast sonner « bientôt disponible » ; Supabase Auth = tâche ultérieure.
+- Preuves :
+  - `npm run test` → OK (92 fichiers, 537 tests).
+  - `npm run build` → OK (`/` statique, `/login`, `/signup` générées, middleware intact).
+  - Vérif Chrome desktop : landing complète, ancres header, toggle pricing 39/79/119 €, accordéon FAQ, toasts login/signup, `/dashboard` fonctionnel.
+- Reste (tâche 🚧) : vérif mobile visuelle (resize extension inopérant en session), tarifs définitifs, pages légales, branchement Supabase Auth.
+
+### 2026-05-18 — Auto-graduation Setter cmp_1
+- `setter_validation=false` appliqué automatiquement après warm-up.
+- Accuracy intent sur 50 turns : 100.0%.
+
+### 2026-05-18 — Auto-graduation Setter cmp_1
+- `setter_validation=false` appliqué automatiquement après warm-up.
+- Accuracy intent sur 50 turns : 100.0%.
+
+### 2026-05-18 — Auto-graduation Setter cmp_1
+- `setter_validation=false` appliqué automatiquement après warm-up.
+- Accuracy intent sur 50 turns : 100.0%.
+
+### 2026-05-18 — Auto-graduation Setter cmp_1
+- `setter_validation=false` appliqué automatiquement après warm-up.
+- Accuracy intent sur 50 turns : 100.0%.
+
+### 2026-05-18 — Auto-graduation Setter cmp_1
+- `setter_validation=false` appliqué automatiquement après warm-up.
+- Accuracy intent sur 50 turns : 100.0%.
+
+### 2026-05-18 — Auto-graduation Setter cmp_1
+- `setter_validation=false` appliqué automatiquement après warm-up.
+- Accuracy intent sur 50 turns : 100.0%.
+
+### 2026-07-04 — TASK-v4-038 : thème Poppins + dégradé émeraude, sections Mimikflow (landing)
+- **Thème site entier** : Poppins via next/font (`--font-poppins`, corps + titres, `font-flinty` = Poppins 600 ; M PLUS Rounded et Inter supprimées) ; palette émeraude `#059669` (primaire) / `#34d399` (clair) / `#064e3b` (profond) dans `globals.css` (`--primary`, `--primary-glow`, `--gradient-primary` en dégradé 3 tons, `--gradient-glow`, `--shadow-glow`, sidebar, ring, accent) ; 59 occurrences `#006596` + `#00A8E8` en dur du dashboard remplacées (sed, tests inclus). Itérations couleur validées par Thomas : teal #14b8a6 → #124e35 → palette dégradé émeraude.
+- **Landing façon Mimikflow** : `SectionBadge` (pill uppercase à point), utilitaire `.bg-dot-grid` ; `ResultsSection` refondue (4 cartes stats avec barres de progression + funnel campagne type 500→320→58→12 avec `FUNNEL_NOTE` « projection illustrative ») ; nouvelle `ComparisonSection` (Flinty vs Lemlist/Waalaxy/La Growth Machine, ✓/Partiel/✗ + notes + disclaimer daté — **cellules à valider par Thomas avant prod**) ; nouvelle `BookDemoSection` (mockup calendrier CSS placeholder) ; ordre page : Results → Comparison → Pricing → FAQ → BookDemo.
+- **TDD** : `lib/marketing-content.ts` étendu (RESULT_STATS sublabel+progress, FUNNEL_STEPS, COMPARISON_*, BOOK_DEMO) — 4 tests écrits avant le code (rouge confirmé) puis verts.
+- **Preuves** : `npm run test` = 541 tests / 92 fichiers verts (relancé après chaque changement de palette) ; `npm run build` vert ; vérif Chrome desktop : hero dégradé émeraude, stats+funnel, comparatif, pricing, démo, `/dashboard` intact en nouveau thème. Incident : `npm run build` a invalidé le cache `.next` du dev server (ENOENT lucide-react) → redémarrage dev server, root cause identifiée, pas un bug du code.
+- **Reste** : validation cellules comparatif, logo `logo-flinty-cropped.png` à recolorer, lien Calendly/Cal.com réel pour la démo, vérif mobile visuelle.
+
+### 2026-05-18 — Auto-graduation Setter cmp_1
+- `setter_validation=false` appliqué automatiquement après warm-up.
+- Accuracy intent sur 50 turns : 100.0%.
+
+### 2026-05-18 — Auto-graduation Setter cmp_1
+- `setter_validation=false` appliqué automatiquement après warm-up.
+- Accuracy intent sur 50 turns : 100.0%.
