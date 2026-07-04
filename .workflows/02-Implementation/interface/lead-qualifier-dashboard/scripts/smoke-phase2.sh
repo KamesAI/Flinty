@@ -13,6 +13,28 @@ for name in "${required_env[@]}"; do
   fi
 done
 
+PHASE2_DRY_RUN="${PHASE2_DRY_RUN:-true}"
+FLINTY_APP_BASE_URL="${FLINTY_APP_BASE_URL:-}"
+PHASE2_API_BEARER="${PHASE2_API_BEARER:-${CRON_SECRET:-}}"
+TEST_CAMPAIGN_ID="${TEST_CAMPAIGN_ID:-cmp_phase2_smoke}"
+TEST_CAMPAIGN_SHEET_ID="${TEST_CAMPAIGN_SHEET_ID:-}"
+TEST_LEAD_ID="${TEST_LEAD_ID:-lead_phase2_smoke_001}"
+
+case "$PHASE2_DRY_RUN" in
+  true|false) ;;
+  *)
+    echo "PHASE2_DRY_RUN must be true or false" >&2
+    exit 1
+    ;;
+esac
+
+if [[ "$PHASE2_DRY_RUN" == "false" ]]; then
+  if [[ -z "$FLINTY_APP_BASE_URL" || -z "$PHASE2_API_BEARER" ]]; then
+    echo "Persistent smoke requires FLINTY_APP_BASE_URL and PHASE2_API_BEARER or CRON_SECRET." >&2
+    exit 1
+  fi
+fi
+
 signature_header_args() {
   local payload="$1"
   if [[ -z "${UNIPILE_WEBHOOK_SECRET:-}" ]]; then
@@ -47,7 +69,9 @@ if [[ -n "${N8N_WF12_WEBHOOK:-}" ]]; then
   payload=$(cat <<JSON
 {
   "event": "paused_captcha",
-  "dry_run": true,
+  "dry_run": $PHASE2_DRY_RUN,
+  "app_base_url": "$FLINTY_APP_BASE_URL",
+  "api_bearer": "$PHASE2_API_BEARER",
   "account_id": "$UNIPILE_ACCOUNT_ID",
   "status": "ACTION_NEEDED",
   "captcha_detected": true,
@@ -61,18 +85,21 @@ JSON
 )
   post_json "$N8N_WF12_WEBHOOK" "$payload"
   echo
-  echo "Expected: status=paused_captcha, should_alert=true, no persistence unless dry_run=false + app_base_url."
+  echo "Expected: status=paused_captcha, should_alert=true, no persistence unless dry_run=false + app_base_url + api_bearer."
 else
   echo "Skip WF12: N8N_WF12_WEBHOOK is not set."
 fi
 
 if [[ -n "${N8N_WF9_WEBHOOK:-}" ]]; then
   echo
-  echo "== Phase 2 smoke: WF9 LI sourcing dry-run =="
+  echo "== Phase 2 smoke: WF9 LI sourcing =="
   payload=$(cat <<JSON
 {
-  "dry_run": true,
-  "campaign_id": "cmp_phase2_smoke",
+  "dry_run": $PHASE2_DRY_RUN,
+  "app_base_url": "$FLINTY_APP_BASE_URL",
+  "api_bearer": "$PHASE2_API_BEARER",
+  "campaign_id": "$TEST_CAMPAIGN_ID",
+  "sheet_id": "$TEST_CAMPAIGN_SHEET_ID",
   "account_id": "$UNIPILE_ACCOUNT_ID",
   "channel": "linkedin_search",
   "params": { "title": "CEO", "location": "Bordeaux" },
@@ -93,10 +120,14 @@ fi
 
 if [[ -n "${N8N_WF10_WEBHOOK:-}" ]]; then
   echo
-  echo "== Phase 2 smoke: WF10 dry-run weekly cap + organic action =="
+  echo "== Phase 2 smoke: WF10 weekly cap + organic action =="
   payload=$(cat <<JSON
 {
-  "dry_run": true,
+  "dry_run": $PHASE2_DRY_RUN,
+  "app_base_url": "$FLINTY_APP_BASE_URL",
+  "api_bearer": "$PHASE2_API_BEARER",
+  "campaign_id": "$TEST_CAMPAIGN_ID",
+  "sheet_id": "$TEST_CAMPAIGN_SHEET_ID",
   "account_id": "$UNIPILE_ACCOUNT_ID",
   "health_status": "active",
   "invites_sent_today": 0,
@@ -125,7 +156,12 @@ if [[ -n "${N8N_WF11_WEBHOOK:-}" ]]; then
   payload=$(cat <<JSON
 {
     "event": "message.received",
-    "dry_run": true,
+    "dry_run": $PHASE2_DRY_RUN,
+    "app_base_url": "$FLINTY_APP_BASE_URL",
+    "api_bearer": "$PHASE2_API_BEARER",
+    "campaign_id": "$TEST_CAMPAIGN_ID",
+    "sheet_id": "$TEST_CAMPAIGN_SHEET_ID",
+    "lead_id": "$TEST_LEAD_ID",
     "account_id": "$UNIPILE_ACCOUNT_ID",
     "message": {
       "id": "smoke_msg_$(date +%s)",

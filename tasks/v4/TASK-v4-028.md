@@ -77,6 +77,15 @@ curl -X POST "$N8N_WF11_WEBHOOK" \
   - WF10 `paused_captcha` → STOP sans action ; `invites_sent_week=97` → 3 invitations + 1 `organic_action`.
   - WF11 `message.received` → `action=draft_inbox`, `channel=linkedin`, `calendly_mode=text_link_only`, 141ms.
 
+### 2026-07-04 — Mode persistant API/Sheets préparé
+- Ajout des routes internes testées pour les smokes persistants : `POST /api/linkedin/persist-source`, `POST /api/linkedin/outreach-event`, `POST /api/linkedin/setter-li-turns`, `POST /api/unipile/verify-webhook`.
+- `scripts/smoke-phase2.sh` accepte `PHASE2_DRY_RUN=false`, `FLINTY_APP_BASE_URL`, `CRON_SECRET`/`PHASE2_API_BEARER`, `TEST_CAMPAIGN_ID`, `TEST_CAMPAIGN_SHEET_ID`, `TEST_LEAD_ID`.
+- WF9/WF10/WF11 staging sont en mode `persist-ready` et restent no-op côté Sheets tant que `dry_run=true`.
+- Smokes MCP n8n après patch :
+  - WF9 `post_engagers` → 1 doublon filtré, 1 lead normalisé, `should_persist=false`.
+  - WF10 `invites_sent_week=97` → 3 invitations + 1 `organic_action=view`, `should_persist=false`.
+  - WF11 `message.received` → `persist_turns` préparé, `action=draft_inbox`, `should_persist=false`, 144ms.
+
 **Reste avant ✅** :
 - Smoke persistant Sheets/API : `LI_Health` écrit, bandeau dashboard vérifié, draft inbox réel visible.
 - Smoke Unipile réel avec compte LinkedIn connecté et lead test consentant.

@@ -906,6 +906,29 @@ export interface WorkspaceRow {
   default_calendly_event_uri: string;
 }
 
+export const CONTACTS_REGISTRY_SHEET_NAME = "Contacts_Registry";
+export const CONTACTS_REGISTRY_HEADER = [
+  "contact_key",
+  "email",
+  "domain",
+  "linkedin_url",
+  "last_contacted_at",
+  "campaign_id",
+  "statut",
+  "source_channel",
+] as const;
+
+export interface ContactRegistryRow {
+  contact_key: string;
+  email: string;
+  domain: string;
+  linkedin_url: string;
+  last_contacted_at: string;
+  campaign_id: string;
+  statut: string;
+  source_channel: string;
+}
+
 export const LI_HEALTH_SHEET_NAME = "LI_Health";
 export const LI_HEALTH_HEADER = [
   "account_id",
@@ -1142,6 +1165,10 @@ export async function ensureWorkspacesSheet() {
   await ensureSheetExists(WORKSPACES_SHEET_NAME, WORKSPACES_HEADER);
 }
 
+export async function ensureContactsRegistrySheet() {
+  await ensureSheetExists(CONTACTS_REGISTRY_SHEET_NAME, CONTACTS_REGISTRY_HEADER);
+}
+
 export function parseWorkspaceRows(rows: string[][]): WorkspaceRow[] {
   if (!rows.length) return [];
   const [, ...data] = rows;
@@ -1186,6 +1213,53 @@ export async function upsertWorkspace(workspace: WorkspaceRow): Promise<void> {
     return;
   }
   await appendRow(`${WORKSPACES_SHEET_NAME}!A:${lastColumn}`, values);
+}
+
+function normalizeRegistryLinkedInUrl(url: string) {
+  return url.trim().toLowerCase().replace(/\/+$/, "");
+}
+
+export function parseContactRegistryRows(rows: string[][]): ContactRegistryRow[] {
+  if (!rows.length) return [];
+  const [, ...data] = rows;
+  return data
+    .filter((r) => (r[0] ?? r[3] ?? "").trim())
+    .map((r) => ({
+      contact_key: r[0] ?? "",
+      email: r[1] ?? "",
+      domain: r[2] ?? "",
+      linkedin_url: r[3] ?? "",
+      last_contacted_at: r[4] ?? "",
+      campaign_id: r[5] ?? "",
+      statut: r[6] ?? "",
+      source_channel: r[7] ?? "",
+    }));
+}
+
+export async function getContactRegistryLinkedInUrls(campaignId?: string): Promise<Set<string>> {
+  await ensureContactsRegistrySheet();
+  const lastColumn = getColumnLetter(CONTACTS_REGISTRY_HEADER.length);
+  const rows = await getSheetData(`${CONTACTS_REGISTRY_SHEET_NAME}!A:${lastColumn}`);
+  const registry = parseContactRegistryRows(rows)
+    .filter((row) => !campaignId || row.campaign_id === campaignId)
+    .map((row) => normalizeRegistryLinkedInUrl(row.linkedin_url))
+    .filter(Boolean);
+  return new Set(registry);
+}
+
+export async function appendContactRegistryEntry(entry: ContactRegistryRow): Promise<void> {
+  await ensureContactsRegistrySheet();
+  const lastColumn = getColumnLetter(CONTACTS_REGISTRY_HEADER.length);
+  await appendRow(`${CONTACTS_REGISTRY_SHEET_NAME}!A:${lastColumn}`, [
+    entry.contact_key,
+    entry.email,
+    entry.domain,
+    entry.linkedin_url,
+    entry.last_contacted_at,
+    entry.campaign_id,
+    entry.statut,
+    entry.source_channel,
+  ]);
 }
 
 export const API_KEYS_SHEET_NAME = "ApiKeys";

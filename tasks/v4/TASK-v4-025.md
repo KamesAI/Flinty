@@ -22,7 +22,7 @@ WF10 opérationnel en staging : boucle leads → vérif pacing → invitation Un
 - [ ] Node : génère note invitation via Claude Sonnet (≤300 chars) depuis `personalized_hook` v3 du lead
 - [ ] Node Unipile : `POST /api/v1/users/{account_id}/invitations` avec ou sans note (ratio 60/40)
 - [ ] Node Gauss delay entre chaque invitation (µ=360s)
-- [ ] Node : update Leads_Qualified `statut_li=invited`
+- [x] Node/API : update Leads_Qualified `statut_li=invited` (route `POST /api/linkedin/outreach-event` testée ; smoke Sheets réel restant)
 - [x] Trigger Webhook Unipile `invitation.accepted` → Node DM : génère cold DM via Claude → send via Unipile DM → update `statut_li=accepted` puis `dm_sent` (plan dry-run DM ; envoi/update live restent à faire)
 
 ### Must NOT
@@ -62,8 +62,14 @@ Route `GET /api/pacing/li-status` : lit tab LI_Health (invits_sent_today, invits
 - Smoke MCP n8n cap weekly : `invites_sent_week=97` + 4 leads → 3 invitations planifiées et STOP avant 100.
 - Webhook `invitation.accepted` planifie un DM en `draft_inbox`/`dry_run_dm` selon validation/credentials.
 
+### 2026-07-04 — WF10 persist-ready API
+- Ajout route interne `POST /api/linkedin/outreach-event` : auth `CRON_SECRET`, résolution `sheet_id` via Index si besoin, update `statut_li` dans le GSheet enfant via `updateLeadFieldInChild`.
+- WF10 staging renommé `[FLINTY] WF10 - LI Outreach (staging persist-ready)` et branche `dry_run=false` vers cette route pour marquer le lead planifié `invited` ou l'acceptance en `dm_sent`.
+- Tests route : update `statut_li=invited` avec `sheet_id` explicite et rejet `401` si secret invalide.
+
 **Reste avant ✅** :
-- Brancher les lectures `Leads_Qualified` et updates `statut_li` réelles.
+- Brancher la lecture réelle `Leads_Qualified` dans WF10 schedule.
+- Exécuter le smoke persistant pour prouver l'update `statut_li` réelle dans le GSheet enfant.
 - Réactiver le schedule après séparation du chemin schedule/webhook ou suppression du `Respond to Webhook` sur chemin schedule.
 - Appeler réellement `/api/li-health` puis `/api/pacing/li-status` dans WF10 live avant chaque action.
 - Générer la note via IA et appeler Unipile invitations/DM avec compte connecté.

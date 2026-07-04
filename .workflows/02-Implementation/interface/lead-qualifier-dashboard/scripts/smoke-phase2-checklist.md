@@ -33,6 +33,27 @@ TEST_LINKEDIN_PROFILE_ID="..." \
 
 `UNIPILE_WEBHOOK_SECRET` est optionnel pour les dry-runs, mais si présent le script signe chaque payload avec `X-Unipile-Signature: sha256=<hmac>`.
 
+Mode persistant Sheets/API :
+
+```bash
+cd .workflows/02-Implementation/interface/lead-qualifier-dashboard
+PHASE2_DRY_RUN=false \
+FLINTY_APP_BASE_URL="https://flinty.vercel.app" \
+CRON_SECRET="..." \
+TEST_CAMPAIGN_ID="cmp_..." \
+TEST_CAMPAIGN_SHEET_ID="..." \
+TEST_LEAD_ID="lead_..." \
+N8N_WF9_WEBHOOK="https://staging-n8n.kamesai.com/webhook/flinty-wf9-li-source" \
+N8N_WF10_WEBHOOK="https://staging-n8n.kamesai.com/webhook/flinty-wf10-li-outreach" \
+N8N_WF11_WEBHOOK="https://staging-n8n.kamesai.com/webhook/flinty-wf11-setter-li" \
+N8N_WF12_WEBHOOK="https://staging-n8n.kamesai.com/webhook/flinty-wf12-li-health" \
+UNIPILE_ACCOUNT_ID="acc_..." \
+TEST_LINKEDIN_PROFILE_ID="..." \
+./scripts/smoke-phase2.sh
+```
+
+`PHASE2_API_BEARER` peut remplacer `CRON_SECRET` si le token interne n'a pas le même nom dans l'environnement de smoke.
+
 ## Ordre exact de smoke simulé
 
 1. **WF12 pause simulée**
@@ -43,15 +64,25 @@ TEST_LINKEDIN_PROFILE_ID="..." \
 2. **WF9 dry-run sourcing**
    - Canal `linkedin_search` avec profil simulé.
    - Attendu : lead normalisé `{name, linkedin_url, title, company}`, `source_channel=linkedin_search`, cap `max_results=100`, aucun doublon registry.
+   - En mode persistant : WF9 appelle `POST /api/linkedin/persist-source`, append `Leads_Raw`, puis append `Contacts_Registry`.
 
 3. **WF10 dry-run cap weekly**
    - `invites_sent_week=97` + 4 leads `new`.
    - Attendu : 3 invitations maximum, puis `organic_action=view` après la 3e invitation.
    - Variante pause : envoyer `health_status=paused_captcha`; attendu `stopped=true`, `planned_actions=[]`.
+   - En mode persistant : WF10 appelle `POST /api/linkedin/outreach-event` pour marquer le premier lead planifié en `statut_li=invited`.
 
 4. **WF11 draft Setter LI**
    - Payload `message.received`.
    - Attendu : `conversation_event.channel=linkedin`, `action=draft_inbox`, `draft.calendly_mode=text_link_only`.
+   - En mode persistant : WF11 appelle `POST /api/linkedin/setter-li-turns`, append un turn prospect puis un turn setter avec `channel=linkedin`.
+
+## Routes internes couvertes
+
+- `POST /api/linkedin/persist-source` : persiste les leads sourcés dans `Leads_Raw` + `Contacts_Registry`.
+- `POST /api/linkedin/outreach-event` : met à jour `statut_li` depuis WF10.
+- `POST /api/linkedin/setter-li-turns` : écrit les turns prospect/setter LinkedIn dans `Conversations`.
+- `POST /api/unipile/verify-webhook` : vérifie la signature HMAC Unipile sur body brut.
 
 ## Commande legacy manuelle
 

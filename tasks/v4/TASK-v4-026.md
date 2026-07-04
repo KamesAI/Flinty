@@ -16,13 +16,13 @@ WF11 opérationnel : webhook Unipile message → pipeline Setter LI → draft da
 
 ### Must Have
 - [x] Trigger Webhook n8n `POST /flinty-wf11-setter-li` — payload Unipile `message.received` (staging dry-run actif)
-- [ ] Vérification signature HMAC-SHA256 Unipile (via route API)
+- [x] Vérification signature HMAC-SHA256 Unipile (route `POST /api/unipile/verify-webhook` testée)
 - [x] Extract : `account_id`, `message_text`, `sender_profile_id`
 - [ ] Résout `lead_id` + `sheet_id` via `linkedin_url` → Contacts_Registry → Leads_Qualified enfant
 - [ ] Charge thread Conversations (channel=linkedin OU toutes les conversations pour ce lead)
 - [ ] POST `/api/setter/classify` avec `channel: 'linkedin'` dans le payload
 - [ ] POST `/api/setter/generate` — même pipeline Phase 1
-- [ ] Append turns dans Conversations avec `channel=linkedin`
+- [x] Append turns dans Conversations avec `channel=linkedin` (route `POST /api/linkedin/setter-li-turns` testée ; smoke Sheets réel restant)
 - [x] Si `meeting_ready` : Setter propose lien Calendly direct (pas embed LI — LI ne supporte pas) (dry-run)
 - [x] If setter_validation → draft inbox / ELSE → Unipile send DM (routing dry-run)
 
@@ -64,9 +64,16 @@ Pour le lien Calendly dans LI :
 - Smoke MCP n8n `message.received` : `action=draft_inbox`, `draft.channel=linkedin`, intent `pricing_question`, `draft.calendly_mode=text_link_only`, durée 141ms.
 - `scripts/smoke-phase2.sh` signe les payloads en HMAC `sha256=` quand `UNIPILE_WEBHOOK_SECRET` est présent.
 
+### 2026-07-04 — WF11 persist-ready API
+- Ajout route interne `POST /api/linkedin/setter-li-turns` : auth `CRON_SECRET`, résolution `sheet_id`, append turn prospect puis turn setter avec `channel=linkedin`.
+- Ajout route `POST /api/unipile/verify-webhook` : vérification HMAC sur body brut via `verifyUnipileWebhook`.
+- WF11 staging renommé `[FLINTY] WF11 - Setter LI (staging persist-ready)` et branche `dry_run=false` vers `setter-li-turns` si `app_base_url` + `api_bearer` + `lead_id` sont fournis.
+- Smoke MCP n8n dry-run après patch : `should_persist=false`, `persist_turns` préparé, draft `calendly_mode=text_link_only`, durée 144ms.
+
 **Reste avant ✅** :
-- Vérifier réellement la signature HMAC côté workflow/API avec secret Unipile.
-- Résoudre `lead_id`/`sheet_id` via `Contacts_Registry`, lire/append `Conversations`.
+- Brancher la vérification HMAC dans le chemin webhook live Unipile.
+- Résoudre `lead_id`/`sheet_id` via `Contacts_Registry` et charger le thread historique `Conversations`.
+- Exécuter un smoke persistant prouvant les turns `channel=linkedin` dans le GSheet enfant.
 - Appeler `/api/setter/classify` et `/api/setter/generate` live.
 - Envoyer le DM Unipile quand validation OFF et credentials présents.
 

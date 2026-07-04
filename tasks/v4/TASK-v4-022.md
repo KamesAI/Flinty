@@ -20,7 +20,7 @@ WF9 opérationnel en staging : déclenché via route → sourcing Unipile → Le
 - [ ] Canal `post_engagers` : params = `{post_url}` → Unipile `GET /api/v1/posts/{id}/engagers`
 - [ ] Canal `profile_visitors` : aucun param → Unipile `GET /api/v1/users/{account_id}/visitors`
 - [ ] Canal `external_post` : params = `{post_url}` — idem post_engagers mais URL externe
-- [ ] Chaque lead extrait : `{name, linkedin_url, title, company}` → check Contacts_Registry (clé=linkedin_url) → si absent : append Leads_Raw avec `source_channel=linkedin_search|...`
+- [x] Chaque lead extrait : `{name, linkedin_url, title, company}` → check Contacts_Registry (clé=linkedin_url) → si absent : append Leads_Raw avec `source_channel=linkedin_search|...` (route persist-ready testée ; smoke Sheets réel restant)
 - [x] Cap 100 leads/run (éviter flood) (dry-run)
 
 ### Must NOT
@@ -51,9 +51,14 @@ Nodes WF9 :
 - Code node supporte les 4 canaux du tracker, normalise en `{name, linkedin_url, title, company}`, déduplique via `registry_linkedin_urls`, cappe à 100 leads/run.
 - Smoke MCP n8n dry-run `post_engagers` : 1 doublon filtré, 1 lead normalisé retourné.
 
+### 2026-07-04 — WF9 persist-ready API
+- Ajout route interne `POST /api/linkedin/persist-source` : auth `CRON_SECRET`, dedupe `Contacts_Registry.linkedin_url`, append `Leads_Raw`, append `Contacts_Registry`, cap payload 100 leads.
+- WF9 staging renommé `[FLINTY] WF9 - LI Sourcing (staging persist-ready)` et branche `dry_run=false` vers cette route si `app_base_url` + `api_bearer` sont fournis.
+- Tests route : doublons filtrés, lead normalisé persisté et entrée registry créée.
+
 **Reste avant ✅** :
 - Brancher les appels Unipile réels par canal.
-- Lire/écrire `Contacts_Registry` et `Leads_Raw` réels en staging.
+- Exécuter le smoke persistant `Contacts_Registry` / `Leads_Raw` en staging réel.
 - Smoke avec compte LinkedIn connecté et ≥5 profils dans `Leads_Raw`, puis relance sans doublon.
 
 ## Dependencies
