@@ -38,7 +38,7 @@
 | v4-016b | **Auto-graduation Setter** — flip `setter_validation=false` post-warm-up si intent accuracy ≥85% sur 50 turns + cron quotidien + escalade email si <85% après 21j | 🤖 | P0 | ✅ | v4-015, v4-016, v4-018b | 3h |
 | v4-017 | Tests Vitest : setter classify + generate + calendly slots formatter | 🤖 | P0 | ✅ | v4-005, v4-006 | 4h |
 | v4-018 | E2E smoke Phase 1 : reply test → Setter draft → validation → send → Calendly slot → tab Meetings | 🤝 | P0 | ✅ | v4-009→016 | 3h |
-| v4-018b | Mode `warmup_campaign` UI + flag campagne (bypass scoring + cap volume + tag positive replies) + soft warm-up flow 2 sem (5→20 emails/jour vers contacts amis) | 🤖 | P1 | 🚧 Partiel — 2026-05-19 (J1 réel envoyé + 5 replies positives ; attente J14/santé) | v4-015, v4-000 | 3h |
+| v4-018b | Mode `warmup_campaign` UI + flag campagne (bypass scoring + cap volume + tag positive replies) + soft warm-up flow 2 sem (5→20 emails/jour vers contacts amis) | 🤖 | P1 | ✅ (clôturé 2026-07-04 : J46, cap 20, 0 bounce/complaint, 5 replies positives) | v4-015, v4-000 | 3h |
 
 **Total Phase 1** : ~64h (6 tasks ajoutées : v4-000, v4-002b, v4-002c, v4-009b, v4-016b, v4-018b)
 
@@ -71,11 +71,11 @@
 | v4-031 | OAuth Calendly v2 (remplace PAT) — multi-event types par workspace | 🤖 | P1 | ✅ | v4-008, v4-030 | 4h |
 | v4-032 | Pacing fin avancé : tuning ramp-up (déjà livré v4-024) + alertes santé granulaires + dashboards LI_Health historiques | 🤖 | P1 | 🚧 Partiel — 2026-05-20 (page + warning orange + lecture historique prêts ; données WF12 live en attente) | v4-024, v4-024b | 2h |
 | v4-033 | Analytics avancé : funnel par canal, cohorts, attribution RDV, cost/meeting | 🤖 | P1 | 🚧 2026-05-19 | v4-002 | 5h |
-| v4-034 | API publique + webhooks CRM (HubSpot/Pipedrive) | 🤖 | P2 | ⬜ | v4-030 | 5h |
+| v4-034 | API publique + webhooks CRM (HubSpot/Pipedrive) | 🤖 | P2 | 🚧 Partiel — 2026-07-04 (code+tests+doc livrés ; smoke webhook réel restant) | v4-030 | 5h |
 | v4-035 | Monitoring tokens Anthropic/Unipile/Calendly + alertes seuils | 🤖 | P1 | 🚧 Partiel — 2026-05-20 (code TS/API/UI livré ; WF14 + smoke Sheets/email réels à faire) | v4-005, v4-020 | 2h |
 | v4-036 | MVP “Flinty daily brief export” pour Frank/Hermes — JSON read-only `daily-pipeline.json`, fonction `generateDailyPipelineBriefData()`, script `npm run export:frank-daily-brief`, endpoint `GET /api/frank/daily-brief-data`, doc sécurité | 🤖 | P1 | ✅ | v4-003, v4-011 | 2h |
-| v4-037 | Landing page publique FR sur `/` (hero + quinconce 6 features + pricing + FAQ) + pages `/login` `/signup` UI seule (zod + toast, Supabase Auth ultérieur) | 🤖 | P1 | 🚧 Partiel — 2026-07-04 (livré + vérifié desktop ; reste vérif mobile visuelle, tarifs définitifs, pages légales, Supabase Auth) | — | 6h |
-| v4-038 | Refonte thème site entier (Poppins + dégradé émeraude #059669/#34d399/#064e3b) + sections landing façon Mimikflow (stats+funnel objectifs, comparatif Lemlist/Waalaxy/LGM, book demo placeholder) | 🤖 | P1 | 🚧 Partiel — 2026-07-04 (livré + vérifié desktop ; reste validation comparatif par Thomas, logo PNG à recolorer, lien démo réel, vérif mobile) | v4-037 | 4h |
+| v4-037 | Landing page publique FR sur `/` (hero + quinconce 6 features + pricing + FAQ) + pages `/login` `/signup` UI seule (zod + toast, Supabase Auth ultérieur) | 🤖 | P1 | 🚧 Partiel — 2026-07-04 (vérif mobile ✅ + fix hydratation Reveal + favicon + pages légales brouillon ; reste tarifs définitifs, validation légale, Supabase Auth) | — | 6h |
+| v4-038 | Refonte thème site entier (Poppins + dégradé émeraude #059669/#34d399/#064e3b) + sections landing façon Mimikflow (stats+funnel objectifs, comparatif Lemlist/Waalaxy/LGM, book demo placeholder) | 🤖 | P1 | 🚧 Partiel — 2026-07-04 (vérif mobile ✅ ; reste validation comparatif par Thomas, logo PNG à recolorer, lien démo réel) | v4-037 | 4h |
 
 **Total Phase 3** : ~32h
 
@@ -113,7 +113,7 @@ Phase 3 (deps: Phase 2)
 
 ### M1 (Phase 1, fin sem 6) — Setter Email opérationnel
 - [x] Domaine `outreach.kamesai.com` Resend vérifié vert + mail-tester ≥8/10
-- [ ] Soft warm-up 2 sem complété (bounce 0%, ≥3 replies positives)
+- [x] Soft warm-up 2 sem complété (bounce 0%, ≥3 replies positives — vérifié prod 2026-07-04)
 - [x] WF13 Email Health Monitor opérationnel (auto-pause testée)
 - [x] WF7 classifie 100% des replies en <30s
 - [x] Setter génère drafts validables (Voss + NoQuestions)

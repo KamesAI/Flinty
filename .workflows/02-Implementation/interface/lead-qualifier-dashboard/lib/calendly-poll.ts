@@ -17,6 +17,7 @@ import {
   readIndex,
   updateChildSheetValues,
 } from "./sheets";
+import { notifyMeetingBookedSafe } from "./crm-notify";
 
 export const CHILD_MEETINGS_HEADER = [
   "meeting_id",
@@ -186,6 +187,13 @@ export async function processCalendlyEvent(
     childSheetA1Range(match.qualifiedTabName, `${match.statusColumnLetter}${match.leadRowNumber}`),
     [["booked"]]
   );
+
+  await notifyMeetingBookedSafe({
+    campaignId: match.campaignId,
+    sheetId: match.sheetId,
+    inviteeEmail: invitee.email,
+    inviteeName: invitee.name ?? "",
+  });
 
   return { status: "created", meetingId };
 }

@@ -1,5 +1,5 @@
 # Task v4-018b : Mode `warmup_campaign` UI + flag campagne + soft warm-up flow 2 sem
-**Status**: 🚧 Partiel — 2026-05-19 (J1 réel envoyé + 5 replies positives ; attente J14/santé)
+**Status**: ✅ Complété — 2026-07-04
 
 ## Autonomie
 🤖 **Claude 100%** — code UI + logique campagne.
@@ -43,7 +43,7 @@ if (campaign.warmup_campaign) {
 - [x] Toggle warmup_campaign visible dans page settings campagne
 - [x] Campagne warmup : WF2 n'écarte aucun lead (score forcé à 100)
 - [x] Campagne warmup J1 : max 5 emails envoyés
-- [ ] Campagne warmup J14 : max 20 emails envoyés
+- [x] Campagne warmup J14 : max 20 emails envoyés
 - [x] Reply positive taggée manuellement depuis inbox
 
 ## Avancement 2026-05-18
@@ -70,10 +70,14 @@ if (campaign.warmup_campaign) {
 - ✅ 5/5 replies positives confirmées par Thomas le 2026-05-19 ; `scripts/mark-warmup-positive-replies.mjs` a ajouté 5 turns `warmup_positive_reply` dans `Conversations` et mis `Config.warmup_positive_replies=5`.
 - ✅ Preuves : `npm run test -- 'app/api/campaigns/[id]/send-j0/route.test.ts' lib/warmup.test.ts lib/setter-graduation.test.ts` → 3 fichiers / 18 tests ; `npm run build` → OK ; Vercel `dpl_UdsUoS8rkT1VR6fdsgvwWcUCPZty`, puis `dpl_7UmA9Vr7csg4JnH82GQJPS6sTWRX`.
 
-**Reste avant ✅** :
-- Attendre la fin réelle du warm-up 14 jours (J14 attendu le 2026-06-02 si démarrage le 2026-05-19).
-- Confirmer absence de bounce/complaint après les replies et l'observation du domaine.
-- Ne pas relancer `/send-j0` sur cette campagne sauf si de nouveaux contacts warm-up sont ajoutés volontairement.
+## Clôture 2026-07-04 — warm-up terminé et vérifié
+
+- ✅ Vérifié en prod (`https://flinty.vercel.app`) le 2026-07-04 :
+  - `GET /api/campaigns/smoke_m1_20260519101708_mvok/settings` → `warmup_completed: true`, `warmup_day: 46`, `warmup_max_daily_sends: 20`, `warmup_positive_replies: 5`.
+  - `GET /api/email-health?domain=outreach.kamesai.com` → `status: active`, `allowed: true`, `bounce_rate_7d: 0.0000`, `complaint_rate_7d: 0.0000`.
+- Critères : J14 dépassé (démarrage 2026-05-19), cap ramp-up atteint à 20, 0 bounce / 0 complaint, 5 ≥ 3 replies positives → milestone M1 « soft warm-up » validé.
+- ⚠️ Observation à trancher (hors périmètre tâche) : `warmup_campaign` reste `true` dans la Config alors que `warmup_completed=true` — l'auto-switch (cron v4-016b) n'a pas flippé le flag ; pas de write prod sans validation Thomas.
+- Consigne inchangée : ne pas relancer `/send-j0` sur cette campagne sauf nouveaux contacts warm-up volontaires.
 
 ## Dependencies
 **Blocked By**: v4-015 (page settings), v4-000 (domaine Resend prêt)

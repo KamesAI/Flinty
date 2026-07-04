@@ -33,11 +33,15 @@ Décisions validées (AskUserQuestion) : thème sur **tout le site** (dashboard 
 - [ ] **Cellules du comparatif concurrents validées par Thomas avant mise en ligne** (affirmations publiques sur Lemlist/Waalaxy/LGM)
 - [ ] Logo `logo-flinty-cropped.png` refait dans la nouvelle couleur (PNG encore ancien)
 - [ ] Lien démo réel (Calendly/Cal.com) branché à la place du placeholder
-- [ ] Vérif responsive mobile réelle
+- [x] Vérif responsive mobile réelle (2026-07-04 : Playwright 390×844 + 768×1024, overflow-x 0, stats/funnel/comparatif/démo relus sur captures — comparatif lisible avec disclaimer)
 
 ## Avancement
 
 ### 2026-07-04
 - Livré : thème complet + 3 nouvelles sections, vérifié tests/build/navigateur (541 tests, build vert, screenshots desktop).
 - Itérations couleur sur retours Thomas : teal #14b8a6 → émeraude profond #124e35 → palette dégradé émeraude #064e3b/#059669/#34d399 (revérifiée navigateur : hero, funnel, comparatif, dashboard).
-- Reste : validation comparatif par Thomas, logo, lien démo, vérif mobile.
+
+### 2026-07-04 (après-midi) — vérif mobile
+- Vérif mobile Playwright OK (voir TASK-v4-037 pour le détail + fix hydratation `Reveal` trouvé au passage).
+- Le fond blanc du PNG logo ressort sur les fonds émeraude (FinalCta, hero) → renforce l'urgence de l'item « logo recoloré » (Thomas).
+- Reste : validation comparatif par Thomas, logo, lien démo réel.

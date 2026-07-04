@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { updateIndex } from "@/lib/sheets";
+import { notifyLeadsQualifiedSafe } from "@/lib/crm-notify";
 
 interface QualificationCompleteBody {
   campaign_id?: string;
@@ -34,6 +35,11 @@ export async function POST(
   }
 
   await updateIndex(id, patch);
+
+  // Webhook CRM outbound (v4-034) — no-op si crm_webhook_url absent de la Config.
+  if (body.status !== "failed") {
+    await notifyLeadsQualifiedSafe(id);
+  }
 
   return NextResponse.json({
     success: true,

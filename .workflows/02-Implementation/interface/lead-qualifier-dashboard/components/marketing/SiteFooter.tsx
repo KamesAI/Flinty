@@ -10,9 +10,9 @@ const PRODUCT_LINKS = [
 ];
 
 const LEGAL_LINKS = [
-  { href: "#", label: "Mentions légales" },
-  { href: "#", label: "Conditions générales" },
-  { href: "#", label: "Politique de confidentialité" },
+  { href: "/legal/mentions-legales", label: "Mentions légales" },
+  { href: "/legal/cgu", label: "Conditions générales" },
+  { href: "/legal/confidentialite", label: "Politique de confidentialité" },
 ];
 
 export function SiteFooter() {

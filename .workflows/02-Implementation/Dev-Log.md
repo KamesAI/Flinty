@@ -969,10 +969,6 @@ curl -X POST https://staging-n8n.kamesai.com/webhook/flinty-wf1-launch \
 
 ---
 
-### 2026-05-18 — Auto-graduation Setter cmp_1
-- `setter_validation=false` appliqué automatiquement après warm-up.
-- Accuracy intent sur 50 turns : 100.0%.
-
 ## 2026-05-20 — v4 Unipile trial prep sans credentials
 
 **Tâches** : v4-020 partiel, v4-027 ✅, v4-028 partiel, v4-024b partiel, v4-029 ✅, v4-032 partiel.
@@ -1025,85 +1021,6 @@ curl -X POST https://staging-n8n.kamesai.com/webhook/flinty-wf1-launch \
 - `setter_validation=false` appliqué automatiquement après warm-up.
 - Accuracy intent sur 50 turns : 100.0%.
 
-### 2026-05-18 — Auto-graduation Setter cmp_1
-- `setter_validation=false` appliqué automatiquement après warm-up.
-- Accuracy intent sur 50 turns : 100.0%.
-
-### 2026-05-18 — Auto-graduation Setter cmp_1
-- `setter_validation=false` appliqué automatiquement après warm-up.
-- Accuracy intent sur 50 turns : 100.0%.
-
-### 2026-05-18 — Auto-graduation Setter cmp_1
-- `setter_validation=false` appliqué automatiquement après warm-up.
-- Accuracy intent sur 50 turns : 100.0%.
-
-### 2026-05-18 — Auto-graduation Setter cmp_1
-- `setter_validation=false` appliqué automatiquement après warm-up.
-- Accuracy intent sur 50 turns : 100.0%.
-
-### 2026-05-18 — Auto-graduation Setter cmp_1
-- `setter_validation=false` appliqué automatiquement après warm-up.
-- Accuracy intent sur 50 turns : 100.0%.
-
-### 2026-05-18 — Auto-graduation Setter cmp_1
-- `setter_validation=false` appliqué automatiquement après warm-up.
-- Accuracy intent sur 50 turns : 100.0%.
-
-### 2026-05-18 — Auto-graduation Setter cmp_1
-- `setter_validation=false` appliqué automatiquement après warm-up.
-- Accuracy intent sur 50 turns : 100.0%.
-
-### 2026-05-18 — Auto-graduation Setter cmp_1
-- `setter_validation=false` appliqué automatiquement après warm-up.
-- Accuracy intent sur 50 turns : 100.0%.
-
-### 2026-05-18 — Auto-graduation Setter cmp_1
-- `setter_validation=false` appliqué automatiquement après warm-up.
-- Accuracy intent sur 50 turns : 100.0%.
-
-### 2026-05-18 — Auto-graduation Setter cmp_1
-- `setter_validation=false` appliqué automatiquement après warm-up.
-- Accuracy intent sur 50 turns : 100.0%.
-
-### 2026-05-18 — Auto-graduation Setter cmp_1
-- `setter_validation=false` appliqué automatiquement après warm-up.
-- Accuracy intent sur 50 turns : 100.0%.
-
-### 2026-05-18 — Auto-graduation Setter cmp_1
-- `setter_validation=false` appliqué automatiquement après warm-up.
-- Accuracy intent sur 50 turns : 100.0%.
-
-### 2026-05-18 — Auto-graduation Setter cmp_1
-- `setter_validation=false` appliqué automatiquement après warm-up.
-- Accuracy intent sur 50 turns : 100.0%.
-
-### 2026-05-18 — Auto-graduation Setter cmp_1
-- `setter_validation=false` appliqué automatiquement après warm-up.
-- Accuracy intent sur 50 turns : 100.0%.
-
-### 2026-05-18 — Auto-graduation Setter cmp_1
-- `setter_validation=false` appliqué automatiquement après warm-up.
-- Accuracy intent sur 50 turns : 100.0%.
-
-### 2026-05-18 — Auto-graduation Setter cmp_1
-- `setter_validation=false` appliqué automatiquement après warm-up.
-- Accuracy intent sur 50 turns : 100.0%.
-
-### 2026-05-18 — Auto-graduation Setter cmp_1
-- `setter_validation=false` appliqué automatiquement après warm-up.
-- Accuracy intent sur 50 turns : 100.0%.
-
-### 2026-05-18 — Auto-graduation Setter cmp_1
-- `setter_validation=false` appliqué automatiquement après warm-up.
-- Accuracy intent sur 50 turns : 100.0%.
-
-### 2026-05-18 — Auto-graduation Setter cmp_1
-- `setter_validation=false` appliqué automatiquement après warm-up.
-- Accuracy intent sur 50 turns : 100.0%.
-
-### 2026-05-18 — Auto-graduation Setter cmp_1
-- `setter_validation=false` appliqué automatiquement après warm-up.
-- Accuracy intent sur 50 turns : 100.0%.
 ### 2026-05-20 — TASK-v4-035 Monitoring coûts tokens / Unipile / Calendly
 - Mise à jour chemins projet après déplacement du dashboard sous `.workflows/02-Implementation/interface/lead-qualifier-dashboard/` : `AGENTS.md`, `CLAUDE.md`, règles/hooks/commands/skills actifs.
 - Ajout monitoring coûts :
@@ -1117,22 +1034,6 @@ curl -X POST https://staging-n8n.kamesai.com/webhook/flinty-wf1-launch \
   - `npm run test -- lib/cost-monitoring.test.ts app/api/monitoring/costs/route.test.ts lib/setter.test.ts` → OK (42 tests).
   - `npm run build` → OK.
   - `npm run test` → OK (89 files, 522 tests).
-
-### 2026-05-18 — Auto-graduation Setter cmp_1
-- `setter_validation=false` appliqué automatiquement après warm-up.
-- Accuracy intent sur 50 turns : 100.0%.
-
-### 2026-05-18 — Auto-graduation Setter cmp_1
-- `setter_validation=false` appliqué automatiquement après warm-up.
-- Accuracy intent sur 50 turns : 100.0%.
-
-### 2026-05-18 — Auto-graduation Setter cmp_1
-- `setter_validation=false` appliqué automatiquement après warm-up.
-- Accuracy intent sur 50 turns : 100.0%.
-
-### 2026-05-18 — Auto-graduation Setter cmp_1
-- `setter_validation=false` appliqué automatiquement après warm-up.
-- Accuracy intent sur 50 turns : 100.0%.
 
 ### 2026-07-04 — TASK-v4-037 Landing page publique + pages auth UI
 - Landing marketing FR sur `/` (inspiration mimikflow structure + qualioflow quinconce), dashboard inchangé sur `/dashboard` :
@@ -1149,36 +1050,29 @@ curl -X POST https://staging-n8n.kamesai.com/webhook/flinty-wf1-launch \
   - Vérif Chrome desktop : landing complète, ancres header, toggle pricing 39/79/119 €, accordéon FAQ, toasts login/signup, `/dashboard` fonctionnel.
 - Reste (tâche 🚧) : vérif mobile visuelle (resize extension inopérant en session), tarifs définitifs, pages légales, branchement Supabase Auth.
 
-### 2026-05-18 — Auto-graduation Setter cmp_1
-- `setter_validation=false` appliqué automatiquement après warm-up.
-- Accuracy intent sur 50 turns : 100.0%.
-
-### 2026-05-18 — Auto-graduation Setter cmp_1
-- `setter_validation=false` appliqué automatiquement après warm-up.
-- Accuracy intent sur 50 turns : 100.0%.
-
-### 2026-05-18 — Auto-graduation Setter cmp_1
-- `setter_validation=false` appliqué automatiquement après warm-up.
-- Accuracy intent sur 50 turns : 100.0%.
-
-### 2026-05-18 — Auto-graduation Setter cmp_1
-- `setter_validation=false` appliqué automatiquement après warm-up.
-- Accuracy intent sur 50 turns : 100.0%.
-
-### 2026-05-18 — Auto-graduation Setter cmp_1
-- `setter_validation=false` appliqué automatiquement après warm-up.
-- Accuracy intent sur 50 turns : 100.0%.
-
-### 2026-05-18 — Auto-graduation Setter cmp_1
-- `setter_validation=false` appliqué automatiquement après warm-up.
-- Accuracy intent sur 50 turns : 100.0%.
-
 ### 2026-07-04 — TASK-v4-038 : thème Poppins + dégradé émeraude, sections Mimikflow (landing)
 - **Thème site entier** : Poppins via next/font (`--font-poppins`, corps + titres, `font-flinty` = Poppins 600 ; M PLUS Rounded et Inter supprimées) ; palette émeraude `#059669` (primaire) / `#34d399` (clair) / `#064e3b` (profond) dans `globals.css` (`--primary`, `--primary-glow`, `--gradient-primary` en dégradé 3 tons, `--gradient-glow`, `--shadow-glow`, sidebar, ring, accent) ; 59 occurrences `#006596` + `#00A8E8` en dur du dashboard remplacées (sed, tests inclus). Itérations couleur validées par Thomas : teal #14b8a6 → #124e35 → palette dégradé émeraude.
 - **Landing façon Mimikflow** : `SectionBadge` (pill uppercase à point), utilitaire `.bg-dot-grid` ; `ResultsSection` refondue (4 cartes stats avec barres de progression + funnel campagne type 500→320→58→12 avec `FUNNEL_NOTE` « projection illustrative ») ; nouvelle `ComparisonSection` (Flinty vs Lemlist/Waalaxy/La Growth Machine, ✓/Partiel/✗ + notes + disclaimer daté — **cellules à valider par Thomas avant prod**) ; nouvelle `BookDemoSection` (mockup calendrier CSS placeholder) ; ordre page : Results → Comparison → Pricing → FAQ → BookDemo.
 - **TDD** : `lib/marketing-content.ts` étendu (RESULT_STATS sublabel+progress, FUNNEL_STEPS, COMPARISON_*, BOOK_DEMO) — 4 tests écrits avant le code (rouge confirmé) puis verts.
 - **Preuves** : `npm run test` = 541 tests / 92 fichiers verts (relancé après chaque changement de palette) ; `npm run build` vert ; vérif Chrome desktop : hero dégradé émeraude, stats+funnel, comparatif, pricing, démo, `/dashboard` intact en nouveau thème. Incident : `npm run build` a invalidé le cache `.next` du dev server (ENOENT lucide-react) → redémarrage dev server, root cause identifiée, pas un bug du code.
 - **Reste** : validation cellules comparatif, logo `logo-flinty-cropped.png` à recolorer, lien Calendly/Cal.com réel pour la démo, vérif mobile visuelle.
+
+
+### 2026-07-04 — Session autonome : commits 037/038, vérif mobile + fixes, clôture v4-018b, v4-034 API publique, pages légales
+
+- **Commits** : chantier v4-037/038 commité en 2 commits atomiques sur `main` (`12b36b8` landing+auth, `c223463` thème émeraude), puis `6ec3c67` (fixes vérif mobile). **Push bloqué par le garde-fou git Kames (push direct main interdit)** → en attente de validation Thomas.
+- **Vérif mobile v4-037/038 (Playwright, dev server local)** : viewports 390×844 + 768×1024 sur `/`, `/login`, `/signup` + menu mobile — overflow-x 0 partout, 20 captures relues. Cases « vérif mobile » cochées.
+  - **Bug réel corrigé** : `Reveal.tsx` branchait `useReducedMotion` avec un arbre différent serveur/client → hydration mismatch, **page entière invisible (opacity 0) en prefers-reduced-motion**. Fix : motion.div unique + transition duration 0 si reduced. Vérifié : console propre, `opacity chain: all opacity 1`.
+  - Favicon `app/icon.png` généré (émeraude) — `/favicon.ico` était en 404 ; ratio `next/image` du logo aligné sur 629×277 (header/footer/auth), warning supprimé.
+  - Défaut restant : fond blanc du PNG logo sur fonds émeraude → item « logo à recolorer » (Thomas).
+- **v4-018b clôturée ✅** : vérifié en prod (`flinty.vercel.app`) — `warmup_completed:true`, J46, cap 20, 5 replies positives, `email-health` bounce/complaint 0.0000, status active. Milestone M1 « soft warm-up » coché. ⚠️ Observation : `warmup_campaign` reste `true` en Config malgré `warmup_completed=true` (l'auto-switch v4-016b n'a pas flippé le flag) — signalé, pas de write prod sans validation.
+- **v4-034 API publique + webhooks CRM → 🚧 Partiel (code+tests+doc livrés, TDD)** :
+  - `lib/public-api.ts` (clés ApiKeys, isolation workspace, payloads CRM), `lib/public-api-server.ts` (auth x-api-key), `lib/crm-notify.ts` (déclencheurs branchés dans `qualification-complete` + `processCalendlyEvent`, fire-and-forget), `getApiKeyRows()` dans `lib/sheets.ts`, routes `app/api/public/{campaigns,meetings,leads}`, doc `docs/api-public.md`.
+  - Tests d'isolation A/B (campagnes/meetings/leads), 401 clé invalide, 404 campagne hors workspace. Rouge TDD confirmé avant implémentation.
+  - Reste : clé réelle dans l'onglet `ApiKeys` + smoke webhook.site en staging.
+- **Pages légales (brouillon, v4-037)** : `LegalArticle.tsx` + `/legal/{mentions-legales,cgu,confidentialite}` (noindex), liens footer branchés. Placeholders `[À COMPLÉTER]` (SIRET, adresse, emails) — **validation Thomas requise avant de cocher la case**.
+- **Dev-Log nettoyé** : 42 occurrences dupliquées de l'entrée « Auto-graduation Setter cmp_1 » réduites à 1.
+- **Preuves finales** : `npm run test` → **95 fichiers / 569 tests verts** (541 → 569, +28) ; `npm run build` vert (40 pages, dont 3 légales) ; pages légales en 200 sur le dev server.
 
 ### 2026-05-18 — Auto-graduation Setter cmp_1
 - `setter_validation=false` appliqué automatiquement après warm-up.

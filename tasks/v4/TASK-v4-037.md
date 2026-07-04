@@ -34,9 +34,9 @@ Plan approuvé : `~/.claude/plans/actuellement-flinty-v4-est-structured-tarjan.m
 - [x] `npm run test` vert (537 tests, 92 fichiers)
 - [x] `npm run build` vert (`/` statique, `/login`, `/signup` générées)
 - [x] Vérif navigateur desktop : landing complète, ancres, toggle pricing (39/79/119 € en annuel), accordéon FAQ, toasts login/signup, `/dashboard` intact
-- [ ] Vérif responsive mobile réelle (resize navigateur non appliqué par l'extension pendant la session — classes Tailwind mobile-first en place, à confirmer visuellement)
+- [x] Vérif responsive mobile réelle (2026-07-04 : Playwright 390×844 + 768×1024 sur `/`, `/login`, `/signup` + menu mobile — overflow-x 0 partout, 20 captures relues)
 - [ ] Tarifs définitifs validés par Thomas (placeholders actuels)
-- [ ] Pages légales réelles (liens footer en `#` placeholder)
+- [ ] Pages légales réelles — **brouillons livrés le 2026-07-04** (`/legal/mentions-legales`, `/legal/cgu`, `/legal/confidentialite`, liens footer branchés) mais placeholders `[À COMPLÉTER]` (SIRET, adresse, emails) + relecture juridique à valider par Thomas avant de cocher
 - [ ] Branchement Supabase Auth (tâche ultérieure dédiée)
 
 ## Avancement
@@ -44,4 +44,11 @@ Plan approuvé : `~/.claude/plans/actuellement-flinty-v4-est-structured-tarjan.m
 ### 2026-07-04
 - Livré : landing + auth UI complètes (détail fichiers dans Dev-Log).
 - Fix visuel : badge « Populaire » rogné par `overflow-hidden` de `.card-premium` → `overflow-visible` sur la carte pricing.
-- Reste : vérif mobile visuelle, tarifs définitifs, pages légales, Supabase Auth.
+
+### 2026-07-04 (après-midi) — vérif mobile + fixes + pages légales
+- **Bug réel trouvé et corrigé pendant la vérif mobile** : `Reveal` branchait sur `useReducedMotion` avec un arbre différent serveur/client → hydration mismatch, page entière invisible (opacity 0) en `prefers-reduced-motion`. Fix : motion.div unique, `transition duration 0` si reduced (commit `6ec3c67`).
+- Favicon : `app/icon.png` généré (émeraude) — `/favicon.ico` était en 404.
+- Ratio `next/image` du logo aligné sur l'intrinsèque 629×277 (header, footer, auth) — warning console supprimé.
+- Vérif mobile Playwright : 390×844 + 768×1024, overflow-x 0 sur `/`, `/login`, `/signup`, menu mobile OK, 20 captures relues. Défaut restant connu : fond blanc du PNG logo sur fonds teintés (item « logo à recolorer », Thomas).
+- Pages légales brouillon : `LegalArticle.tsx` + 3 pages sous `app/(marketing)/legal/`, `robots: noindex`, liens footer branchés. Placeholders `[À COMPLÉTER]` → validation Thomas requise.
+- Reste : tarifs définitifs, validation contenu légal, Supabase Auth.

@@ -1090,6 +1090,16 @@ export async function upsertWorkspace(workspace: WorkspaceRow): Promise<void> {
   await appendRow(`${WORKSPACES_SHEET_NAME}!A:${lastColumn}`, values);
 }
 
+export const API_KEYS_SHEET_NAME = "ApiKeys";
+export const API_KEYS_SHEET_HEADER = ["api_key", "workspace_id", "label", "created_at"] as const;
+
+/** Onglet ApiKeys (Index) — clés API publiques par workspace (v4-034). */
+export async function getApiKeyRows(): Promise<string[][]> {
+  await ensureSheetExists(API_KEYS_SHEET_NAME, API_KEYS_SHEET_HEADER);
+  const lastColumn = getColumnLetter(API_KEYS_SHEET_HEADER.length);
+  return getSheetData(`${API_KEYS_SHEET_NAME}!A:${lastColumn}`);
+}
+
 /** Ajout d'une ligne dans l'onglet Campagnes de l'Index. */
 export async function appendIndex(row: string[]): Promise<void> {
   const sheets = await getSheets();
