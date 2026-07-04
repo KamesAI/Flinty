@@ -6,6 +6,43 @@
 
 ---
 
+## Session 2026-07-04 — Phase 2 LinkedIn dry-run WF9-WF12 + pacing LI status
+
+**Tâches v4 concernées** : `v4-022`, `v4-024b`, `v4-024c`, `v4-025`, `v4-025b`, `v4-026`, `v4-028`, `v4-032` 🚧 Partiel
+
+**Changements code / scripts** :
+- `app/api/pacing/li-status/route.ts` + tests : nouvelle route `GET /api/pacing/li-status?account_id=...&week_index=...`, retourne `allowed`, `reason`, `remaining_today`, `remaining_week`, compteurs et caps LI ; bloque si `LI_Health.status != active`, cap daily atteint ou cap weekly 100 atteint.
+- `app/api/li-health/route.ts` + tests : `GET` filtre maintenant par `account_id`; ajout `POST /api/li-health` protégé par `CRON_SECRET` si configuré, upsert `LI_Health` et append `LI_Health_History`.
+- `lib/sheets.ts` : extension `LI_Health` / `LI_Health_History` avec `invites_sent_today`, `invites_sent_week`, `organic_action`; ajout `upsertLinkedInHealth()` et `appendLinkedInHealthHistory()`.
+- `scripts/smoke-phase2.sh` : ordre WF12 → WF9 → WF10 → WF11, signature HMAC `X-Unipile-Signature: sha256=<hmac>` quand `UNIPILE_WEBHOOK_SECRET` est présent, dry-run par défaut.
+- `scripts/smoke-phase2-checklist.md` : IDs n8n, paths webhook, outputs attendus, mode persistant avec `app_base_url` + `CRON_SECRET`.
+
+**Workflows n8n staging créés/activés** :
+- WF9 `[FLINTY] WF9 - LI Sourcing (staging dry-run ready)` — `8BC66iPd5NdQ0wxi`, path `/webhook/flinty-wf9-li-source`.
+- WF10 `[FLINTY] WF10 - LI Outreach (staging dry-run ready)` — `32k4hm48Lp4hhubi`, path `/webhook/flinty-wf10-li-outreach`, webhook actif ; cron désactivé jusqu'au branchement live.
+- WF11 `[FLINTY] WF11 - Setter LI (staging dry-run ready)` — `5yBywgtkggNlS3x6`, path `/webhook/flinty-wf11-setter-li`.
+- WF12 `[FLINTY] WF12 - LI Health Monitor (staging dry-run ready)` — `161OqYZPQgClGKAr`, path `/webhook/flinty-wf12-li-health`, webhook actif ; cron 10 min désactivé jusqu'au branchement live.
+
+**Preuves n8n MCP dry-run** :
+- WF12 `paused_captcha` → 200, `health_payload.status=paused_captcha`, `should_alert=true`, `should_persist=false`.
+- WF9 `post_engagers` → 200, 1 doublon registry filtré, 1 lead normalisé `{name, linkedin_url, title, company}`.
+- WF10 `health_status=paused_captcha` → 200, `stopped=true`, `planned_actions=[]`.
+- WF10 `invites_sent_week=97` + 4 leads → 200, 3 invitations planifiées, 1 `organic_action=view`, cap weekly 100 respecté.
+- WF11 `message.received` → 200, `action=draft_inbox`, `conversation_event.channel=linkedin`, `draft.calendly_mode=text_link_only`, durée 141ms.
+- Après désactivation préventive des cron WF10/WF12, re-smoke webhooks OK : WF12 `paused_captcha` → 200 ; WF10 `paused_captcha` → 200 STOP sans action.
+
+**Preuves locales** :
+- `npm run test -- lib/unipile.test.ts lib/pacing.test.ts lib/li-health.test.ts app/api/linkedin/source/route.test.ts app/api/unipile/status/route.test.ts app/api/li-health/route.test.ts app/api/pacing/li-status/route.test.ts` → 7 fichiers / 112 tests ✅.
+- `npm run test` → 97 fichiers / 577 tests ✅.
+- `npm run build` → OK ✅.
+- `bash -n scripts/smoke-phase2.sh` → OK ; exécution sans webhooks configurés → skip propre WF9-WF12.
+
+**Reste avant ✅ strict Phase 2** :
+- Connecter Unipile réel + compte LinkedIn Thomas staging.
+- Passer WF9-WF12 de dry-run à live : appels Unipile, écritures Sheets `Leads_Raw` / `Contacts_Registry` / `Conversations`, invitations/DM réels.
+- Smoke persistant `LI_Health` (`dry_run=false`, `app_base_url`, `CRON_SECRET`) puis vérification bandeau dashboard.
+- Smoke E2E avec lead test consentant : sourcing → invitation → acceptance → DM → reply → draft Setter LI → Calendly.
+
 ## Session 2026-05-19 — v4-033 : Analytics avancé (frontend + schema)
 
 **Tâche v4 concernée** : `v4-033` 🚧 Partiel
@@ -1073,6 +1110,30 @@ curl -X POST https://staging-n8n.kamesai.com/webhook/flinty-wf1-launch \
 - **Pages légales (brouillon, v4-037)** : `LegalArticle.tsx` + `/legal/{mentions-legales,cgu,confidentialite}` (noindex), liens footer branchés. Placeholders `[À COMPLÉTER]` (SIRET, adresse, emails) — **validation Thomas requise avant de cocher la case**.
 - **Dev-Log nettoyé** : 42 occurrences dupliquées de l'entrée « Auto-graduation Setter cmp_1 » réduites à 1.
 - **Preuves finales** : `npm run test` → **95 fichiers / 569 tests verts** (541 → 569, +28) ; `npm run build` vert (40 pages, dont 3 légales) ; pages légales en 200 sur le dev server.
+
+### 2026-05-18 — Auto-graduation Setter cmp_1
+- `setter_validation=false` appliqué automatiquement après warm-up.
+- Accuracy intent sur 50 turns : 100.0%.
+
+### 2026-05-18 — Auto-graduation Setter cmp_1
+- `setter_validation=false` appliqué automatiquement après warm-up.
+- Accuracy intent sur 50 turns : 100.0%.
+
+### 2026-05-18 — Auto-graduation Setter cmp_1
+- `setter_validation=false` appliqué automatiquement après warm-up.
+- Accuracy intent sur 50 turns : 100.0%.
+
+### 2026-05-18 — Auto-graduation Setter cmp_1
+- `setter_validation=false` appliqué automatiquement après warm-up.
+- Accuracy intent sur 50 turns : 100.0%.
+
+### 2026-05-18 — Auto-graduation Setter cmp_1
+- `setter_validation=false` appliqué automatiquement après warm-up.
+- Accuracy intent sur 50 turns : 100.0%.
+
+### 2026-05-18 — Auto-graduation Setter cmp_1
+- `setter_validation=false` appliqué automatiquement après warm-up.
+- Accuracy intent sur 50 turns : 100.0%.
 
 ### 2026-05-18 — Auto-graduation Setter cmp_1
 - `setter_validation=false` appliqué automatiquement après warm-up.

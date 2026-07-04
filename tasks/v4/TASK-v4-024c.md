@@ -1,5 +1,5 @@
 # Task v4-024c : Bandeau dashboard `<LIHealthBanner>` — rouge si status != active + raison + ETA reprise
-**Status**: 🚧 Partiel — 2026-05-18
+**Status**: 🚧 Partiel — 2026-07-04
 
 ## Autonomie
 🤖 **Claude 100%** — composant React TypeScript.
@@ -70,7 +70,15 @@ export function LIHealthBanner() {
 - Tests Vitest des helpers de label/ETA et du rendu initial.
 
 **Reste avant ✅** :
-- Livrer WF12 (`v4-024b`) pour alimenter `LI_Health`, puis smoke pause simulée en staging.
+- Voir mise à jour 2026-07-04 : WF12 dry-run produit `paused_captcha`; reste la persistance Sheets et preuve UI live.
+
+### 2026-07-04 — Source WF12 dry-run disponible
+- WF12 staging actif (`161OqYZPQgClGKAr`) retourne `health_payload.status=paused_captcha` sur payload simulé.
+- `POST /api/li-health` peut persister `LI_Health` et `LI_Health_History` quand `dry_run=false`, `app_base_url` et `CRON_SECRET` sont fournis.
+
+**Reste avant ✅** :
+- Exécuter un smoke persistant qui écrit `status=paused_captcha` dans `LI_Health`.
+- Vérifier le bandeau rouge dans le dashboard sur cette donnée Sheets réelle.
 
 ## Dependencies
 **Blocked By**: v4-024b (WF12 + route /api/li-health)

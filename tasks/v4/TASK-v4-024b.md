@@ -1,5 +1,5 @@
 # Task v4-024b : WF12 NEW — Health monitor LI : polling Unipile + détecte signaux pré-ban → auto-pause + alerte
-**Status**: 🚧 Partiel — 2026-05-20
+**Status**: 🚧 Partiel — 2026-07-04
 
 ## Autonomie
 🤖 **Claude 100%** — via MCP n8n + route API.
@@ -15,7 +15,7 @@ WF12 opérationnel en staging : polling Unipile + mise à jour LI_Health + auto-
 ## Requirements
 
 ### Must Have
-- [ ] Trigger cron n8n : toutes les 10 minutes
+- [ ] Trigger cron n8n : toutes les 10 minutes (node créé mais désactivé jusqu'au branchement live pour éviter les erreurs `Respond to Webhook` hors contexte webhook)
 - [ ] Node Unipile : `GET /api/v1/users/{account_id}` → statut compte (captcha ?, suspended ?)
 - [ ] Node Unipile : `GET /api/v1/users/{account_id}/invitations` → calcule `accept_rate_7d` sur 7j glissants
 - [x] Logique pause :
@@ -23,10 +23,11 @@ WF12 opérationnel en staging : polling Unipile + mise à jour LI_Health + auto-
   - Email LI "activité inhabituelle" → `status=paused_warning`, pause 14j
   - `accept_rate_7d < 20%` sur ≥10 invitations → `status=paused_low_accept`
   - Bouton "Suivre" sur ≥3 profils → `status=paused_follow_mode`, pause 7j
-- [ ] Node Sheets : update tab LI_Health Index avec tous les champs
+- [x] Node/API : update tab LI_Health Index avec tous les champs via `POST /api/li-health`
 - [ ] Node : si transition vers paused → envoie email Thomas (Resend) avec reason + ETA reprise
 - [ ] Node : update Campagnes Index — si LI_account_id paused → suspend campagnes LI actives
 - [x] Route `GET /api/li-health?account_id=...` — lit LI_Health → retourne statut pour UI
+- [x] Route `POST /api/li-health` — upsert `LI_Health` + append `LI_Health_History` pour WF12
 
 ### Must NOT
 - Ne pas envoyer l'alerte email à chaque run cron — uniquement au changement de status
@@ -49,7 +50,7 @@ Statuts possibles : `active | paused_captcha | paused_warning | paused_low_accep
 - [ ] WF12 s'exécute sans erreur sur staging (compte Thomas connecté)
 - [ ] Tab LI_Health mis à jour à chaque run (last_health_check_at)
 - [ ] Simulation accept_rate=15% → status passe à paused_low_accept + email Thomas
-- [ ] WF10 (outreach) vérifie status avant chaque action et s'arrête si paused
+- [x] WF10 (outreach) vérifie status dry-run avant chaque action et s'arrête si paused
 
 ## Avancement
 
@@ -60,8 +61,20 @@ Statuts possibles : `active | paused_captcha | paused_warning | paused_low_accep
 - La route `/api/li-health` et le bandeau dashboard existaient déjà ; la page santé lit maintenant l'historique préparé.
 
 **Reste avant ✅** :
-- Créer/importer WF12 n8n réel : cron 10 min, polling Unipile compte + invitations, append historique, alerte email Thomas sur transition.
-- Brancher WF10 pour stopper toute action si `status != active`.
+- Voir mise à jour 2026-07-04 : WF12 dry-run est créé ; le reste porte sur le polling Unipile/persistance/alertes live.
+
+### 2026-07-04 — WF12 staging dry-run + API persistance prêtes
+- Créé et activé n8n `[FLINTY] WF12 - LI Health Monitor (staging dry-run ready)` (`161OqYZPQgClGKAr`), webhook `/webhook/flinty-wf12-li-health`; cron 10 min présent mais désactivé jusqu'au live.
+- Ajout `POST /api/li-health` protégé par `CRON_SECRET` si configuré : upsert `LI_Health`, append `LI_Health_History`, champs compteurs `invites_sent_today`, `invites_sent_week`, `organic_action`.
+- Smoke MCP n8n dry-run `paused_captcha` : `health_payload.status=paused_captcha`, `should_alert=true`, sans persistance car `dry_run=true`.
+- WF10 dry-run stoppé avec `health_status=paused_captcha` : `planned_actions=[]`.
+
+**Reste avant ✅** :
+- Remplacer le payload simulé par polling Unipile réel compte + invitations.
+- Réactiver le cron après séparation du chemin schedule/webhook ou suppression du `Respond to Webhook` sur chemin cron.
+- Smoke persistant `dry_run=false` avec `app_base_url` + `CRON_SECRET` pour écrire réellement `LI_Health`.
+- Alerte Resend réelle uniquement sur transition vers `paused_*`.
+- Pause des campagnes LI actives dans l'Index.
 
 ## Dependencies
 **Blocked By**: v4-024 (pacing LI), v4-021 (account_id connecté)

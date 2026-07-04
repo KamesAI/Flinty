@@ -1,5 +1,5 @@
 # Task v4-028 : Tests + E2E Phase 2 — sourcing → invitation → DM → reply → Setter LI → Calendly + smoke captcha simulé → pause auto
-**Status**: 🚧 Partiel — 2026-05-20
+**Status**: 🚧 Partiel — 2026-07-04
 
 ## Autonomie
 🤝 **Mixte** — Claude prépare scripts + checklist. Thomas exécute le smoke en staging sur son vrai compte LinkedIn.
@@ -51,9 +51,9 @@ curl -X POST "$N8N_WF11_WEBHOOK" \
 
 ## Acceptance Criteria
 - [x] Tests Vitest lib/unipile.ts + pacing LI : 0 failing
-- [ ] WF11 run complet < 30s sur payload simulé
+- [x] WF11 run complet < 30s sur payload simulé (dry-run MCP n8n : 141ms)
 - [ ] Draft Setter LI visible dans inbox avec channel=linkedin
-- [ ] Circuit breaker : status=paused_captcha → WF10 s'arrête + bandeau rouge dashboard
+- [x] Circuit breaker : status=paused_captcha → WF10 s'arrête (dry-run n8n)
 - [ ] KPIs M2 vérifiables (accept rate Unipile logué)
 
 ## Avancement
@@ -66,6 +66,20 @@ curl -X POST "$N8N_WF11_WEBHOOK" \
 **Reste avant ✅** :
 - Exécuter le smoke staging avec compte LinkedIn connecté, webhooks n8n réels et lead test consentant.
 - Vérifier WF11 <30s, draft inbox `channel=linkedin`, pause `paused_captcha`, arrêt WF10 et KPI accept rate logué.
+
+### 2026-07-04 — Smokes n8n dry-run WF9-WF12
+- Créé/activé WF9 (`8BC66iPd5NdQ0wxi`), WF10 (`32k4hm48Lp4hhubi`), WF11 (`5yBywgtkggNlS3x6`), WF12 (`161OqYZPQgClGKAr`) en staging dry-run.
+- `scripts/smoke-phase2.sh` exécute désormais l'ordre WF12 pause simulée → WF9 sourcing dry-run → WF10 cap weekly/organic dry-run → WF11 draft, avec signature HMAC `sha256=` si `UNIPILE_WEBHOOK_SECRET` est présent.
+- `scripts/smoke-phase2-checklist.md` documente les IDs n8n, paths webhook, outputs attendus et mode persistant `dry_run=false` avec `app_base_url` + `CRON_SECRET`.
+- Smokes MCP n8n :
+  - WF12 `paused_captcha` → `health_payload.status=paused_captcha`, `should_alert=true`.
+  - WF9 `post_engagers` → doublon filtré, 1 lead normalisé.
+  - WF10 `paused_captcha` → STOP sans action ; `invites_sent_week=97` → 3 invitations + 1 `organic_action`.
+  - WF11 `message.received` → `action=draft_inbox`, `channel=linkedin`, `calendly_mode=text_link_only`, 141ms.
+
+**Reste avant ✅** :
+- Smoke persistant Sheets/API : `LI_Health` écrit, bandeau dashboard vérifié, draft inbox réel visible.
+- Smoke Unipile réel avec compte LinkedIn connecté et lead test consentant.
 
 ## Dependencies
 **Blocked By**: v4-022 → v4-027 (toute la Phase 2)
