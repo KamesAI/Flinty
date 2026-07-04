@@ -1,5 +1,5 @@
 # Task v4-022 : WF9 LI Sourcing — 4 canaux → Leads_Raw + dedupe Registry étendu
-**Status**: ⬜ À faire
+**Status**: 🚧 Partiel — 2026-07-04
 
 ## Autonomie
 🤖 **Claude 100%** — via MCP n8n.
@@ -15,13 +15,13 @@ WF9 opérationnel en staging : déclenché via route → sourcing Unipile → Le
 ## Requirements
 
 ### Must Have
-- [ ] Trigger Webhook n8n `POST /flinty-wf9-li-source` — payload : `{campaign_id, channel: 'linkedin_search'|'post_engagers'|'profile_visitors'|'external_post', params}`
+- [x] Trigger Webhook n8n `POST /flinty-wf9-li-source` — payload : `{campaign_id, channel: 'linkedin_search'|'post_engagers'|'profile_visitors'|'external_post', params}` (staging dry-run actif)
 - [ ] Canal `linkedin_search` : params = `{title, industry, company_size, location}` → Unipile `GET /api/v1/users/search?...`
 - [ ] Canal `post_engagers` : params = `{post_url}` → Unipile `GET /api/v1/posts/{id}/engagers`
 - [ ] Canal `profile_visitors` : aucun param → Unipile `GET /api/v1/users/{account_id}/visitors`
 - [ ] Canal `external_post` : params = `{post_url}` — idem post_engagers mais URL externe
-- [ ] Chaque lead extrait : `{name, linkedin_url, title, company}` → check Contacts_Registry (clé=linkedin_url) → si absent : append Leads_Raw avec `source_channel=linkedin_search|...`
-- [ ] Cap 100 leads/run (éviter flood)
+- [x] Chaque lead extrait : `{name, linkedin_url, title, company}` → check Contacts_Registry (clé=linkedin_url) → si absent : append Leads_Raw avec `source_channel=linkedin_search|...` (route persist-ready testée ; smoke Sheets réel restant)
+- [x] Cap 100 leads/run (éviter flood) (dry-run)
 
 ### Must NOT
 - Ne pas re-sourcer un profil déjà en Contacts_Registry pour cette campagne (dedup strict)
@@ -42,7 +42,24 @@ Nodes WF9 :
 - [ ] WF9 déclenché avec channel=linkedin_search → ≥5 profils dans Leads_Raw en staging
 - [ ] Dedup : relancer WF9 même params → 0 nouveaux doublons dans Leads_Raw
 - [ ] Tab Contacts_Registry étendu avec `linkedin_url` des nouveaux leads
-- [ ] Cap 100 leads/run respecté
+- [x] Cap 100 leads/run respecté en dry-run
+
+## Avancement
+
+### 2026-07-04 — WF9 staging dry-run actif
+- Créé et activé n8n `[FLINTY] WF9 - LI Sourcing (staging dry-run ready)` (`8BC66iPd5NdQ0wxi`), webhook `/webhook/flinty-wf9-li-source`.
+- Code node supporte les 4 canaux du tracker, normalise en `{name, linkedin_url, title, company}`, déduplique via `registry_linkedin_urls`, cappe à 100 leads/run.
+- Smoke MCP n8n dry-run `post_engagers` : 1 doublon filtré, 1 lead normalisé retourné.
+
+### 2026-07-04 — WF9 persist-ready API
+- Ajout route interne `POST /api/linkedin/persist-source` : auth `CRON_SECRET`, dedupe `Contacts_Registry.linkedin_url`, append `Leads_Raw`, append `Contacts_Registry`, cap payload 100 leads.
+- WF9 staging renommé `[FLINTY] WF9 - LI Sourcing (staging persist-ready)` et branche `dry_run=false` vers cette route si `app_base_url` + `api_bearer` sont fournis.
+- Tests route : doublons filtrés, lead normalisé persisté et entrée registry créée.
+
+**Reste avant ✅** :
+- Brancher les appels Unipile réels par canal.
+- Exécuter le smoke persistant `Contacts_Registry` / `Leads_Raw` en staging réel.
+- Smoke avec compte LinkedIn connecté et ≥5 profils dans `Leads_Raw`, puis relance sans doublon.
 
 ## Dependencies
 **Blocked By**: v4-020 (lib/unipile.ts), v4-021 (account_id disponible)

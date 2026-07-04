@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   CHILD_QUALIFIED_HEADER,
   CHILD_CONVERSATIONS_HEADER,
@@ -10,6 +10,104 @@ import {
   indexCampaignToCampaign,
 } from "./sheets";
 import { CONVERSATIONS_HEADER } from "./conversations";
+
+const GOOGLE_ENV_KEYS = [
+  "GOOGLE_AUTH_MODE",
+  "GOOGLE_OAUTH_CLIENT_ID",
+  "GOOGLE_OAUTH_CLIENT_SECRET",
+  "GOOGLE_OAUTH_REFRESH_TOKEN",
+  "GOOGLE_SERVICE_ACCOUNT_EMAIL",
+  "GOOGLE_PRIVATE_KEY",
+] as const;
+
+const ORIGINAL_GOOGLE_ENV = Object.fromEntries(
+  GOOGLE_ENV_KEYS.map((key) => [key, process.env[key]])
+);
+
+afterEach(() => {
+  vi.resetModules();
+  vi.restoreAllMocks();
+  vi.unmock("googleapis");
+
+  for (const key of GOOGLE_ENV_KEYS) {
+    const originalValue = ORIGINAL_GOOGLE_ENV[key];
+    if (originalValue === undefined) {
+      delete process.env[key];
+    } else {
+      process.env[key] = originalValue;
+    }
+  }
+});
+
+async function importSheetsWithGoogleMock() {
+  const serviceAccountClient = { auth: "service-account" };
+  const oauthClient = { auth: "oauth", setCredentials: vi.fn() };
+  const googleAuthGetClient = vi.fn(async () => serviceAccountClient);
+  const GoogleAuth = vi.fn(function GoogleAuth(this: unknown) {
+    return { getClient: googleAuthGetClient };
+  });
+  const OAuth2 = vi.fn(function OAuth2(this: unknown) {
+    return oauthClient;
+  });
+  const sheetsFactory = vi.fn(() => ({ mocked: "sheets" }));
+  const driveFactory = vi.fn(() => ({ mocked: "drive" }));
+
+  vi.doMock("googleapis", () => ({
+    google: {
+      auth: { GoogleAuth, OAuth2 },
+      sheets: sheetsFactory,
+      drive: driveFactory,
+    },
+  }));
+
+  const sheetsModule = await import("./sheets");
+  return {
+    sheetsModule,
+    GoogleAuth,
+    OAuth2,
+    googleAuthGetClient,
+    oauthClient,
+    sheetsFactory,
+  };
+}
+
+describe("Google auth selection", () => {
+  it("utilise le service account par défaut quand OAuth et service account sont configurés", async () => {
+    vi.resetModules();
+    process.env.GOOGLE_OAUTH_CLIENT_ID = "oauth-client";
+    process.env.GOOGLE_OAUTH_CLIENT_SECRET = "oauth-secret";
+    process.env.GOOGLE_OAUTH_REFRESH_TOKEN = "oauth-refresh";
+    process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL = "svc@example.iam.gserviceaccount.com";
+    process.env.GOOGLE_PRIVATE_KEY = "line1\\nline2";
+
+    const {
+      sheetsModule,
+      GoogleAuth,
+      OAuth2,
+      googleAuthGetClient,
+      sheetsFactory,
+    } = await importSheetsWithGoogleMock();
+
+    await sheetsModule.getSheets();
+
+    expect(OAuth2).not.toHaveBeenCalled();
+    expect(GoogleAuth).toHaveBeenCalledWith({
+      credentials: {
+        client_email: "svc@example.iam.gserviceaccount.com",
+        private_key: "line1\nline2",
+      },
+      scopes: [
+        "https://www.googleapis.com/auth/spreadsheets",
+        "https://www.googleapis.com/auth/drive",
+      ],
+    });
+    expect(googleAuthGetClient).toHaveBeenCalledOnce();
+    expect(sheetsFactory).toHaveBeenCalledWith({
+      version: "v4",
+      auth: { auth: "service-account" },
+    });
+  });
+});
 
 describe("CHILD_QUALIFIED_HEADER", () => {
   it("contient les 27 colonnes v3 + 6 colonnes v4", () => {

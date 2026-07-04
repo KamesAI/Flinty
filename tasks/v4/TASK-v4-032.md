@@ -1,5 +1,5 @@
 # Task v4-032 : Pacing fin avancé — alertes santé granulaires + dashboards LI_Health historiques
-**Status**: 🚧 Partiel — 2026-05-20
+**Status**: 🚧 Partiel — 2026-07-04
 
 ## Autonomie
 🤖 **Claude 100%** — UI dashboard + n8n ajustements.
@@ -20,7 +20,7 @@ Page `/dashboard/settings/linkedin/health` avec historique LI_Health sur 30j + a
 - [x] Graphique invits_sent par jour (bar chart)
 - [x] Alertes intermédiaires (warning non-bloquant) : accept_rate entre 20%-35% → bandeau orange (pas rouge)
 - [x] ETA reprise si paused : calculé automatiquement selon TTL par status
-- [ ] WF12 : conserver l'historique (append plutôt qu'update une seule row) → tab `LI_Health_History` dans Index
+- [x] WF12 : conserver l'historique (append plutôt qu'update une seule row) → tab `LI_Health_History` dans Index (API prête ; données live restantes)
 
 ### Must NOT
 - Pas de bibliothèque charting externe lourde (Chart.js, Recharts) — SVG simple ou CSS bars
@@ -65,6 +65,14 @@ Tab `LI_Health_History` dans Index : append chaque run WF12 avec timestamp + mé
 
 **Reste avant ✅** :
 - WF12 réel doit append chaque run dans `LI_Health_History` pour disposer de données cumulatives staging/prod.
+
+### 2026-07-04 — Append historique prêt côté API/WF12
+- Ajout `POST /api/li-health` : upsert `LI_Health` et append `LI_Health_History` à chaque appel persistant.
+- Extension des headers/parsers `LI_Health` et `LI_Health_History` avec `invites_sent_today`, `invites_sent_week`, `organic_action`.
+- WF12 dry-run prépare `health_payload` complet avec `acceptance_rate_7d`, `invites_sent_7d`, `invites_accepted_7d`, compteurs jour/semaine.
+
+**Reste avant ✅** :
+- Exécuter WF12 en mode persistant avec app staging et vérifier des lignes cumulatives réelles dans `LI_Health_History`.
 
 ## Dependencies
 **Blocked By**: v4-024b (WF12 source de données), v4-024c (LIHealthBanner pour cohérence UX)

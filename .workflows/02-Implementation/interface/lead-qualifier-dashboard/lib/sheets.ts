@@ -130,18 +130,30 @@ function hasUserOAuthCredentials() {
   );
 }
 
-async function getAuthClient() {
-  if (hasUserOAuthCredentials()) {
-    const oauth2Client = new google.auth.OAuth2(
-      process.env.GOOGLE_OAUTH_CLIENT_ID,
-      process.env.GOOGLE_OAUTH_CLIENT_SECRET
-    );
-    oauth2Client.setCredentials({
-      refresh_token: process.env.GOOGLE_OAUTH_REFRESH_TOKEN,
-    });
-    return oauth2Client;
-  }
+function hasServiceAccountCredentials() {
+  return Boolean(process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL && process.env.GOOGLE_PRIVATE_KEY);
+}
 
+type GoogleAuthMode = "oauth" | "service_account";
+
+function getGoogleAuthMode(): GoogleAuthMode {
+  const forcedMode = process.env.GOOGLE_AUTH_MODE?.trim().toLowerCase();
+  if (forcedMode === "oauth" && hasUserOAuthCredentials()) return "oauth";
+  if (forcedMode === "service_account" && hasServiceAccountCredentials()) {
+    return "service_account";
+  }
+  if (hasServiceAccountCredentials()) return "service_account";
+  if (hasUserOAuthCredentials()) return "oauth";
+  throw new Error(
+    "Google auth is not configured: set GOOGLE_SERVICE_ACCOUNT_EMAIL + GOOGLE_PRIVATE_KEY or GOOGLE_OAUTH_*"
+  );
+}
+
+function isUsingUserOAuth() {
+  return getGoogleAuthMode() === "oauth";
+}
+
+async function getServiceAccountAuthClient() {
   return new google.auth.GoogleAuth({
     credentials: {
       client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
@@ -152,6 +164,23 @@ async function getAuthClient() {
       "https://www.googleapis.com/auth/drive",
     ],
   }).getClient();
+}
+
+async function getUserOAuthClient() {
+  const oauth2Client = new google.auth.OAuth2(
+    process.env.GOOGLE_OAUTH_CLIENT_ID,
+    process.env.GOOGLE_OAUTH_CLIENT_SECRET
+  );
+  oauth2Client.setCredentials({
+    refresh_token: process.env.GOOGLE_OAUTH_REFRESH_TOKEN,
+  });
+  return oauth2Client;
+}
+
+async function getAuthClient() {
+  return getGoogleAuthMode() === "oauth"
+    ? getUserOAuthClient()
+    : getServiceAccountAuthClient();
 }
 
 export async function getSheets() {
@@ -877,6 +906,29 @@ export interface WorkspaceRow {
   default_calendly_event_uri: string;
 }
 
+export const CONTACTS_REGISTRY_SHEET_NAME = "Contacts_Registry";
+export const CONTACTS_REGISTRY_HEADER = [
+  "contact_key",
+  "email",
+  "domain",
+  "linkedin_url",
+  "last_contacted_at",
+  "campaign_id",
+  "statut",
+  "source_channel",
+] as const;
+
+export interface ContactRegistryRow {
+  contact_key: string;
+  email: string;
+  domain: string;
+  linkedin_url: string;
+  last_contacted_at: string;
+  campaign_id: string;
+  statut: string;
+  source_channel: string;
+}
+
 export const LI_HEALTH_SHEET_NAME = "LI_Health";
 export const LI_HEALTH_HEADER = [
   "account_id",
@@ -885,6 +937,9 @@ export const LI_HEALTH_HEADER = [
   "pause_started_at",
   "last_check_at",
   "acceptance_rate_7d",
+  "invites_sent_today",
+  "invites_sent_week",
+  "organic_action",
 ] as const;
 
 export const LI_HEALTH_HISTORY_SHEET_NAME = "LI_Health_History";
@@ -897,6 +952,9 @@ export const LI_HEALTH_HISTORY_HEADER = [
   "acceptance_rate_7d",
   "invites_sent_7d",
   "invites_accepted_7d",
+  "invites_sent_today",
+  "invites_sent_week",
+  "organic_action",
 ] as const;
 
 export interface LinkedInHealthRow {
@@ -906,6 +964,9 @@ export interface LinkedInHealthRow {
   pause_started_at: string;
   last_check_at: string;
   acceptance_rate_7d: string;
+  invites_sent_today?: string;
+  invites_sent_week?: string;
+  organic_action?: string;
 }
 
 export interface LinkedInHealthHistoryRow extends LinkedInHealthRow {
@@ -1001,6 +1062,9 @@ export function parseLinkedInHealthRows(rows: string[][]): LinkedInHealthRow[] {
       pause_started_at: r[3] ?? "",
       last_check_at: r[4] ?? "",
       acceptance_rate_7d: r[5] ?? "",
+      invites_sent_today: r[6] ?? "0",
+      invites_sent_week: r[7] ?? "0",
+      organic_action: r[8] ?? "",
     }));
 }
 
@@ -1018,16 +1082,73 @@ export function parseLinkedInHealthHistoryRows(rows: string[][]): LinkedInHealth
       acceptance_rate_7d: r[5] ?? "",
       invites_sent_7d: r[6] ?? "",
       invites_accepted_7d: r[7] ?? "",
+      invites_sent_today: r[8] ?? "0",
+      invites_sent_week: r[9] ?? "0",
+      organic_action: r[10] ?? "",
     }));
 }
 
-export async function getLatestLinkedInHealth(): Promise<LinkedInHealthRow | null> {
+function formatLinkedInHealthRow(row: LinkedInHealthRow): string[] {
+  return [
+    row.account_id,
+    row.status,
+    row.reason,
+    row.pause_started_at,
+    row.last_check_at,
+    row.acceptance_rate_7d,
+    row.invites_sent_today ?? "0",
+    row.invites_sent_week ?? "0",
+    row.organic_action ?? "",
+  ];
+}
+
+function formatLinkedInHealthHistoryRow(row: LinkedInHealthHistoryRow): string[] {
+  return [
+    row.account_id,
+    row.status,
+    row.reason,
+    row.pause_started_at,
+    row.last_check_at,
+    row.acceptance_rate_7d,
+    row.invites_sent_7d,
+    row.invites_accepted_7d,
+    row.invites_sent_today ?? "0",
+    row.invites_sent_week ?? "0",
+    row.organic_action ?? "",
+  ];
+}
+
+export async function getLatestLinkedInHealth(accountId?: string): Promise<LinkedInHealthRow | null> {
   await ensureLinkedInHealthSheet();
   const lastColumn = getColumnLetter(LI_HEALTH_HEADER.length);
   const rows = await getSheetData(`${LI_HEALTH_SHEET_NAME}!A:${lastColumn}`);
-  return parseLinkedInHealthRows(rows).sort(
-    (a, b) => new Date(b.last_check_at).getTime() - new Date(a.last_check_at).getTime()
-  )[0] ?? null;
+  return parseLinkedInHealthRows(rows)
+    .filter((row) => !accountId || row.account_id === accountId)
+    .sort(
+      (a, b) => new Date(b.last_check_at).getTime() - new Date(a.last_check_at).getTime()
+    )[0] ?? null;
+}
+
+export async function upsertLinkedInHealth(row: LinkedInHealthRow): Promise<void> {
+  await ensureLinkedInHealthSheet();
+  const lastColumn = getColumnLetter(LI_HEALTH_HEADER.length);
+  const rows = await getSheetData(`${LI_HEALTH_SHEET_NAME}!A:${lastColumn}`);
+  const existingIndex = rows.findIndex((existingRow, index) => index > 0 && existingRow[0] === row.account_id);
+  const values = formatLinkedInHealthRow(row);
+
+  if (existingIndex > 0) {
+    const rowNumber = existingIndex + 1;
+    await updateRow(`${LI_HEALTH_SHEET_NAME}!A${rowNumber}:${lastColumn}${rowNumber}`, values);
+    return;
+  }
+
+  await appendRow(`${LI_HEALTH_SHEET_NAME}!A:${lastColumn}`, values);
+}
+
+export async function appendLinkedInHealthHistory(row: LinkedInHealthHistoryRow): Promise<void> {
+  await ensureLinkedInHealthHistorySheet();
+  const lastColumn = getColumnLetter(LI_HEALTH_HISTORY_HEADER.length);
+  await appendRow(`${LI_HEALTH_HISTORY_SHEET_NAME}!A:${lastColumn}`, formatLinkedInHealthHistoryRow(row));
 }
 
 export async function getLinkedInHealthHistory(accountId?: string): Promise<LinkedInHealthHistoryRow[]> {
@@ -1042,6 +1163,10 @@ export async function getLinkedInHealthHistory(accountId?: string): Promise<Link
 
 export async function ensureWorkspacesSheet() {
   await ensureSheetExists(WORKSPACES_SHEET_NAME, WORKSPACES_HEADER);
+}
+
+export async function ensureContactsRegistrySheet() {
+  await ensureSheetExists(CONTACTS_REGISTRY_SHEET_NAME, CONTACTS_REGISTRY_HEADER);
 }
 
 export function parseWorkspaceRows(rows: string[][]): WorkspaceRow[] {
@@ -1088,6 +1213,53 @@ export async function upsertWorkspace(workspace: WorkspaceRow): Promise<void> {
     return;
   }
   await appendRow(`${WORKSPACES_SHEET_NAME}!A:${lastColumn}`, values);
+}
+
+function normalizeRegistryLinkedInUrl(url: string) {
+  return url.trim().toLowerCase().replace(/\/+$/, "");
+}
+
+export function parseContactRegistryRows(rows: string[][]): ContactRegistryRow[] {
+  if (!rows.length) return [];
+  const [, ...data] = rows;
+  return data
+    .filter((r) => (r[0] ?? r[3] ?? "").trim())
+    .map((r) => ({
+      contact_key: r[0] ?? "",
+      email: r[1] ?? "",
+      domain: r[2] ?? "",
+      linkedin_url: r[3] ?? "",
+      last_contacted_at: r[4] ?? "",
+      campaign_id: r[5] ?? "",
+      statut: r[6] ?? "",
+      source_channel: r[7] ?? "",
+    }));
+}
+
+export async function getContactRegistryLinkedInUrls(campaignId?: string): Promise<Set<string>> {
+  await ensureContactsRegistrySheet();
+  const lastColumn = getColumnLetter(CONTACTS_REGISTRY_HEADER.length);
+  const rows = await getSheetData(`${CONTACTS_REGISTRY_SHEET_NAME}!A:${lastColumn}`);
+  const registry = parseContactRegistryRows(rows)
+    .filter((row) => !campaignId || row.campaign_id === campaignId)
+    .map((row) => normalizeRegistryLinkedInUrl(row.linkedin_url))
+    .filter(Boolean);
+  return new Set(registry);
+}
+
+export async function appendContactRegistryEntry(entry: ContactRegistryRow): Promise<void> {
+  await ensureContactsRegistrySheet();
+  const lastColumn = getColumnLetter(CONTACTS_REGISTRY_HEADER.length);
+  await appendRow(`${CONTACTS_REGISTRY_SHEET_NAME}!A:${lastColumn}`, [
+    entry.contact_key,
+    entry.email,
+    entry.domain,
+    entry.linkedin_url,
+    entry.last_contacted_at,
+    entry.campaign_id,
+    entry.statut,
+    entry.source_channel,
+  ]);
 }
 
 export const API_KEYS_SHEET_NAME = "ApiKeys";
@@ -1353,7 +1525,7 @@ async function createDriveSpreadsheetFile(title: string, folderId?: string) {
 
 async function transferDriveOwnershipIfConfigured(spreadsheetId: string) {
   const ownerEmail = process.env.GOOGLE_DRIVE_OWNER_EMAIL;
-  if (!ownerEmail || hasUserOAuthCredentials()) return;
+  if (!ownerEmail || isUsingUserOAuth()) return;
 
   const drive = await getDrive();
   try {
@@ -1379,7 +1551,7 @@ async function transferDriveOwnershipIfConfigured(spreadsheetId: string) {
 
 async function shareDriveFileWithServiceAccount(spreadsheetId: string) {
   const serviceAccountEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
-  if (!serviceAccountEmail || !hasUserOAuthCredentials()) return;
+  if (!serviceAccountEmail || !isUsingUserOAuth()) return;
 
   const drive = await getDrive();
   try {
