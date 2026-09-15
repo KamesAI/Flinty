@@ -6,6 +6,26 @@
 
 ---
 
+## Session 2026-09-15 — Mise à jour de sécurité des dépendances
+
+**Tâches v4 concernées** : aucune (demande directe Thomas, hors backlog v4)
+
+**Changements** (tout sous `interface/lead-qualifier-dashboard/`) :
+- `next` et `eslint-config-next` 15.5.18 → 15.5.25 : 2 critiques (exécution de code à distance via l'API d'optimisation d'images avec AVIF, et sur serveurs Windows), hautes (déni de service et SSRF via Server Actions, SSRF dans les rewrites), plusieurs moyennes.
+- `postcss` 8.5.10 → 8.5.28 : dépendance directe et override alignés (sinon `EOVERRIDE`) ; lecture de fichiers via source maps.
+- Mises à jour dans les plages existantes : `sharp` 0.34.5 → 0.35.4, `nanoid` 3.3.11 → 3.3.19, `qs` 6.15.0 → 6.16.0, `postcss-selector-parser` 6.1.2 → 6.1.4.
+- PR Vercel #1 (Next 15.1.11) fermée : obsolète, elle aurait fait redescendre Next.
+- `npm audit fix` plante (bug npm « Cannot read properties of null (reading 'edgesOut') ») : mises à jour faites de façon ciblée.
+
+**Reste ouvert** : 4 vulnérabilités moyennes via `googleapis` 144 (`gaxios`, `googleapis-common`, `uuid`). Correctif = `googleapis` 181, version majeure touchant le client Google Sheets : à traiter séparément.
+
+**Preuves** :
+- `npm audit --omit=dev` : 16 vulnérabilités (1 critique, 3 hautes) → 4 moyennes.
+- `npm run test` → 101 fichiers / 584 tests ✅.
+- `npm run build` → OK ✅ (Next.js 15.5.25).
+
+---
+
 ## Session 2026-07-04 — Refonte landing page (hero, constat/solution, comparatif)
 
 **Tâches v4 concernées** : aucune (demande directe Thomas, hors backlog v4)
@@ -1169,6 +1189,14 @@ curl -X POST https://staging-n8n.kamesai.com/webhook/flinty-wf1-launch \
 - **Pages légales (brouillon, v4-037)** : `LegalArticle.tsx` + `/legal/{mentions-legales,cgu,confidentialite}` (noindex), liens footer branchés. Placeholders `[À COMPLÉTER]` (SIRET, adresse, emails) — **validation Thomas requise avant de cocher la case**.
 - **Dev-Log nettoyé** : 42 occurrences dupliquées de l'entrée « Auto-graduation Setter cmp_1 » réduites à 1.
 - **Preuves finales** : `npm run test` → **95 fichiers / 569 tests verts** (541 → 569, +28) ; `npm run build` vert (40 pages, dont 3 légales) ; pages légales en 200 sur le dev server.
+
+### 2026-05-18 — Auto-graduation Setter cmp_1
+- `setter_validation=false` appliqué automatiquement après warm-up.
+- Accuracy intent sur 50 turns : 100.0%.
+
+### 2026-05-18 — Auto-graduation Setter cmp_1
+- `setter_validation=false` appliqué automatiquement après warm-up.
+- Accuracy intent sur 50 turns : 100.0%.
 
 ### 2026-05-18 — Auto-graduation Setter cmp_1
 - `setter_validation=false` appliqué automatiquement après warm-up.
