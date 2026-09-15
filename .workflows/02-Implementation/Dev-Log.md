@@ -6,6 +6,30 @@
 
 ---
 
+## Session 2026-07-04 — Refonte landing page (hero, constat/solution, comparatif)
+
+**Tâches v4 concernées** : aucune (demande directe Thomas, hors backlog v4)
+
+**Changements code** (tout sous `interface/lead-qualifier-dashboard/`) :
+- `components/marketing/Hero.tsx` : H1 « L'outil qui prospecte… », sous-titre réécrit (périmètre complet : sourcing, qualification, email+LinkedIn, objections, agenda), suppression du badge « Sans carte bancaire · Annulation en 1 clic » (conservé dans Pricing/FinalCta), remplacement du `bg-gradient-glow` par `<HeroBackground />`.
+- `components/marketing/HeroBackground.tsx` (nouveau) : background aurora maison — 3 blobs émeraude flous en dérive lente + trame `bg-dot-grid` masquée + fondu vers le blanc ; purement CSS, statique en `prefers-reduced-motion` (pas de branche JS).
+- `app/globals.css` : classes `.hero-aurora-blob--a/b/c`, keyframes `aurora-drift-*`, media query reduced-motion.
+- `components/marketing/ProblemSolution.tsx` (nouveau) : fusion constat + « Comment ça marche » — colonne éditoriale « Aujourd'hui, sans système » (3 douleurs, filets gradient) face à une card-premium « Avec Flinty » (timeline 4 étapes connectée). Remplace `ProblemSection.tsx` et `HowItWorks.tsx` (supprimés).
+- `components/marketing/ResultsSection.tsx` supprimé (section « chiffres qu'on vise » retirée de la page).
+- `components/marketing/ComparisonSection.tsx` : tableau remplacé par une grille 6 cartes façon Mimikflow (icône, titre, description, statuts concurrents en pied de carte).
+- `lib/marketing-content.ts` + `lib/marketing-content.test.ts` (TDD rouge→vert) : `ComparisonRow` restructuré (`title`/`description`), copy des 6 différenciateurs réécrite ; suppression `RESULT_STATS`, `FUNNEL_STEPS`, `FUNNEL_NOTE` et interfaces associées ; nouveau test `PROBLEMS`.
+- `app/(marketing)/page.tsx` : nouvel ordre Hero → ProblemSolution → FeatureZigzag → Comparison → Pricing → FAQ → BookDemo → FinalCta.
+
+**Intouché** : FeatureZigzag, PricingSection, FaqSection, BookDemoSection, FinalCta, palette émeraude, Poppins, composant Reveal.
+
+**Preuves** :
+- `npm run test` → 101 fichiers / 584 tests ✅ (dont marketing-content adapté, rouge confirmé avant vert).
+- `npm run build` → OK ✅.
+- Contrôle visuel Chrome sur `localhost:3002` : hero aurora + nouvelle copy, section fusionnée, comparatif en cartes, section chiffres absente, Tarifs/FAQ intacts ; console sans erreur au chargement (pas d'erreur d'hydratation).
+- Reduced-motion : géré en CSS pur (`animation: none`), pas de test navigateur émulé.
+
+---
+
 ## Session 2026-07-04 — Phase 2 LinkedIn dry-run WF9-WF12 + pacing LI status
 
 **Tâches v4 concernées** : `v4-022`, `v4-024b`, `v4-024c`, `v4-025`, `v4-025b`, `v4-026`, `v4-028`, `v4-032` 🚧 Partiel
@@ -1145,6 +1169,22 @@ curl -X POST https://staging-n8n.kamesai.com/webhook/flinty-wf1-launch \
 - **Pages légales (brouillon, v4-037)** : `LegalArticle.tsx` + `/legal/{mentions-legales,cgu,confidentialite}` (noindex), liens footer branchés. Placeholders `[À COMPLÉTER]` (SIRET, adresse, emails) — **validation Thomas requise avant de cocher la case**.
 - **Dev-Log nettoyé** : 42 occurrences dupliquées de l'entrée « Auto-graduation Setter cmp_1 » réduites à 1.
 - **Preuves finales** : `npm run test` → **95 fichiers / 569 tests verts** (541 → 569, +28) ; `npm run build` vert (40 pages, dont 3 légales) ; pages légales en 200 sur le dev server.
+
+### 2026-05-18 — Auto-graduation Setter cmp_1
+- `setter_validation=false` appliqué automatiquement après warm-up.
+- Accuracy intent sur 50 turns : 100.0%.
+
+### 2026-05-18 — Auto-graduation Setter cmp_1
+- `setter_validation=false` appliqué automatiquement après warm-up.
+- Accuracy intent sur 50 turns : 100.0%.
+
+### 2026-05-18 — Auto-graduation Setter cmp_1
+- `setter_validation=false` appliqué automatiquement après warm-up.
+- Accuracy intent sur 50 turns : 100.0%.
+
+### 2026-05-18 — Auto-graduation Setter cmp_1
+- `setter_validation=false` appliqué automatiquement après warm-up.
+- Accuracy intent sur 50 turns : 100.0%.
 
 ### 2026-05-18 — Auto-graduation Setter cmp_1
 - `setter_validation=false` appliqué automatiquement après warm-up.

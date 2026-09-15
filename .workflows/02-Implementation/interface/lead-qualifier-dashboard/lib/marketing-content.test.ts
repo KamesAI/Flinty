@@ -6,11 +6,9 @@ import {
   COMPARISON_ROWS,
   FAQ_ITEMS,
   FEATURES,
-  FUNNEL_NOTE,
-  FUNNEL_STEPS,
   HOW_IT_WORKS_STEPS,
   PRICING_PLANS,
-  RESULT_STATS,
+  PROBLEMS,
 } from "./marketing-content";
 
 describe("marketing-content", () => {
@@ -43,31 +41,23 @@ describe("marketing-content", () => {
     expect(HOW_IT_WORKS_STEPS.map((s) => s.step)).toEqual([1, 2, 3, 4]);
   });
 
-  it("expose des stats avec sous-label et barre de progression valides", () => {
-    expect(RESULT_STATS.length).toBeGreaterThanOrEqual(3);
-    for (const stat of RESULT_STATS) {
-      expect(stat.value.length).toBeGreaterThan(0);
-      expect(stat.sublabel.length).toBeGreaterThan(0);
-      expect(stat.progress).toBeGreaterThan(0);
-      expect(stat.progress).toBeLessThanOrEqual(100);
+  it("expose 3 douleurs avec titre et description non vides", () => {
+    expect(PROBLEMS).toHaveLength(3);
+    const ids = PROBLEMS.map((p) => p.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    for (const problem of PROBLEMS) {
+      expect(problem.title.length).toBeGreaterThan(0);
+      expect(problem.description.length).toBeGreaterThan(0);
     }
   });
 
-  it("expose un funnel de campagne type strictement décroissant avec note d'honnêteté", () => {
-    expect(FUNNEL_STEPS.length).toBeGreaterThanOrEqual(4);
-    for (let i = 1; i < FUNNEL_STEPS.length; i++) {
-      expect(FUNNEL_STEPS[i].value).toBeLessThan(FUNNEL_STEPS[i - 1].value);
-    }
-    // Transparence : c'est une projection, pas des métriques clients mesurées
-    expect(FUNNEL_NOTE.toLowerCase()).toContain("projection");
-  });
-
-  it("expose un comparatif dont les cellules pointent vers des concurrents déclarés", () => {
+  it("expose un comparatif en cartes dont les cellules pointent vers des concurrents déclarés", () => {
     expect(COMPARISON_COMPETITORS.length).toBeGreaterThanOrEqual(3);
     expect(COMPARISON_ROWS.length).toBeGreaterThanOrEqual(5);
     const competitorIds = new Set(COMPARISON_COMPETITORS.map((c) => c.id));
     for (const row of COMPARISON_ROWS) {
-      expect(row.feature.length).toBeGreaterThan(0);
+      expect(row.title.length).toBeGreaterThan(0);
+      expect(row.description.length).toBeGreaterThan(0);
       expect(Object.keys(row.competitors).sort()).toEqual([...competitorIds].sort());
     }
     expect(COMPARISON_DISCLAIMER.length).toBeGreaterThan(0);

@@ -23,23 +23,6 @@ export interface HowItWorksStep {
   description: string;
 }
 
-export interface ResultStat {
-  id: string;
-  value: string;
-  label: string;
-  sublabel: string;
-  /** Largeur de la barre de progression sous la stat (0-100, purement visuel) */
-  progress: number;
-}
-
-export interface FunnelStep {
-  id: string;
-  value: number;
-  label: string;
-  /** Taux de conversion par rapport à l'étape précédente, ex. "64 %" */
-  rate?: string;
-}
-
 export type ComparisonCell = "yes" | "partial" | "no";
 
 export interface ComparisonCompetitor {
@@ -49,10 +32,10 @@ export interface ComparisonCompetitor {
 
 export interface ComparisonRow {
   id: string;
-  feature: string;
-  flintyNote: string;
+  title: string;
+  description: string;
   competitors: Record<string, ComparisonCell>;
-  /** Nuance affichée sous une cellule "partial", par id concurrent */
+  /** Nuance affichée pour une cellule "partial", par id concurrent */
   competitorNotes?: Record<string, string>;
 }
 
@@ -210,47 +193,6 @@ export const HOW_IT_WORKS_STEPS: HowItWorksStep[] = [
   },
 ];
 
-export const RESULT_STATS: ResultStat[] = [
-  {
-    id: "response",
-    value: "< 5 min",
-    label: "Délai de réponse aux prospects",
-    sublabel: "24h/24, dès qu'un prospect répond",
-    progress: 92,
-  },
-  {
-    id: "meetings",
-    value: "12+",
-    label: "RDV qualifiés par mois",
-    sublabel: "en pilote automatique",
-    progress: 75,
-  },
-  {
-    id: "time-saved",
-    value: "45 min",
-    label: "Économisées chaque jour",
-    sublabel: "sur le tri et les relances",
-    progress: 62,
-  },
-  {
-    id: "channels",
-    value: "2",
-    label: "Canaux orchestrés ensemble",
-    sublabel: "email + LinkedIn, une seule inbox",
-    progress: 100,
-  },
-];
-
-export const FUNNEL_STEPS: FunnelStep[] = [
-  { id: "sourced", value: 500, label: "Prospects sourcés et enrichis" },
-  { id: "qualified", value: 320, label: "Qualifiés par le scoring IA", rate: "64 %" },
-  { id: "replied", value: 58, label: "Réponses obtenues", rate: "18 %" },
-  { id: "booked", value: 12, label: "Rendez-vous bookés", rate: "21 %" },
-];
-
-export const FUNNEL_NOTE =
-  "Projection illustrative d'une campagne type, basée sur les objectifs produit — pas des métriques clients mesurées. Vos résultats dépendront de votre marché et de votre ciblage.";
-
 export const COMPARISON_COMPETITORS: ComparisonCompetitor[] = [
   { id: "lemlist", name: "Lemlist" },
   { id: "waalaxy", name: "Waalaxy" },
@@ -260,14 +202,16 @@ export const COMPARISON_COMPETITORS: ComparisonCompetitor[] = [
 export const COMPARISON_ROWS: ComparisonRow[] = [
   {
     id: "setter",
-    feature: "AI Setter qui mène la conversation après la première réponse",
-    flintyNote: "objections, questions, créneaux",
+    title: "Un AI Setter qui mène la conversation",
+    description:
+      "Dès qu'un prospect répond, le Setter prend le relais : questions, objections, jusqu'à la proposition de créneau. Les autres outils s'arrêtent au message envoyé.",
     competitors: { lemlist: "no", waalaxy: "no", lgm: "no" },
   },
   {
     id: "scoring",
-    feature: "Scoring & enrichissement IA avant le premier message",
-    flintyNote: "14 champs par lead",
+    title: "Scoring ICP avant le premier message",
+    description:
+      "Chaque lead est enrichi sur 14 champs puis noté contre votre client idéal. Vous ne contactez que les comptes qui en valent la peine.",
     competitors: { lemlist: "partial", waalaxy: "partial", lgm: "partial" },
     competitorNotes: {
       lemlist: "enrichissement, sans scoring ICP",
@@ -277,21 +221,24 @@ export const COMPARISON_ROWS: ComparisonRow[] = [
   },
   {
     id: "booking",
-    feature: "Créneaux Calendly proposés directement dans la conversation",
-    flintyNote: "sans intervention humaine",
+    title: "Vos créneaux Calendly dans la conversation",
+    description:
+      "Le Setter propose vos disponibilités directement dans l'échange, au moment où l'intérêt est chaud — pas un lien de booking envoyé à froid.",
     competitors: { lemlist: "partial", waalaxy: "no", lgm: "no" },
     competitorNotes: { lemlist: "page de booking, hors conversation" },
   },
   {
     id: "validation",
-    feature: "Mode validation : relire chaque brouillon IA avant envoi",
-    flintyNote: "puis passage en autonome",
+    title: "Mode validation avant l'autonomie",
+    description:
+      "Relisez chaque brouillon de l'IA avant envoi. Quand vous êtes en confiance, vous passez le Setter en autonome — et reprenez la main quand vous voulez.",
     competitors: { lemlist: "no", waalaxy: "no", lgm: "no" },
   },
   {
     id: "inbox",
-    feature: "Inbox unifiée email + LinkedIn avec statuts de qualification",
-    flintyNote: "en discussion, objection, RDV…",
+    title: "Une inbox, deux canaux, des statuts clairs",
+    description:
+      "Email et LinkedIn fusionnés par prospect, avec le statut de chaque échange : en discussion, objection, créneau proposé, rendez-vous booké.",
     competitors: { lemlist: "partial", waalaxy: "partial", lgm: "yes" },
     competitorNotes: {
       lemlist: "inbox sans statuts de qualification",
@@ -300,8 +247,9 @@ export const COMPARISON_ROWS: ComparisonRow[] = [
   },
   {
     id: "cost",
-    feature: "Coût par rendez-vous suivi dans le CRM",
-    flintyNote: "par campagne, en temps réel",
+    title: "Le coût de chaque rendez-vous, mesuré",
+    description:
+      "Le CRM suit ce que chaque rendez-vous booké vous coûte, campagne par campagne, en temps réel. Vous savez exactement ce qui rapporte.",
     competitors: { lemlist: "no", waalaxy: "no", lgm: "no" },
   },
 ];
