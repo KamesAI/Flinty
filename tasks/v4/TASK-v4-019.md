@@ -1,11 +1,11 @@
 # Task v4-019 : Souscription Unipile + API key + DSN + webhooks secret
-**Status**: ⬜ À faire
+**Status**: ⬜ À faire — souscription prévue début octobre 2026 (Thomas, 15/09/2026)
 
 ## Autonomie
 🧑 **Thomas requis** — Accès à la souscription Unipile et à la configuration des webhooks. Claude ne peut pas créer de compte ni générer les clés.
 
 **Actions Thomas** :
-1. Aller sur [unipile.com](https://unipile.com) → souscrire plan Cloud (~$59/mois/compte)
+1. Aller sur [unipile.com](https://unipile.com) → souscrire plan Cloud. Repère tiers au 15/09/2026 : 49 €/mois jusqu'à 10 comptes connectés, puis ~5 €/compte (un profil LinkedIn ou une boîte mail = un compte) — à vérifier sur unipile.com au moment de souscrire. L'estimation initiale « ~$59/mois/compte » date de mai 2026.
 2. Dashboard Unipile → récupérer `API_KEY` et `DSN` (ex: `https://api.unipile.com:13447`)
 3. Configurer webhook secret dans Unipile dashboard (pour validation HMAC)
 4. Ajouter dans `.env.local` et Vercel (staging + prod) :

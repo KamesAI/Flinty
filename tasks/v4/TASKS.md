@@ -46,7 +46,7 @@
 
 | # | Task | Owner | Priority | Status | Deps | Est. |
 |---|------|-------|----------|--------|------|------|
-| v4-019 | Souscription Unipile + API key + DSN + webhooks secret | 🧑 | P0 | ⬜ | — | 1h |
+| v4-019 | Souscription Unipile + API key + DSN + webhooks secret | 🧑 | P0 | ⬜ Prévu début octobre 2026 (Thomas, 15/09) | — | 1h |
 | v4-020 | `lib/unipile.ts` client + retries + signature verify | 🤖 | P0 | 🚧 Partiel — 2026-05-20 (client + tests mock livrés ; test live `/users/me` en attente credentials) | v4-019 | 3h |
 | v4-021 | Hosted auth flow : `/dashboard/settings/linkedin/connect` + callback `/api/unipile/callback` + tab `Accounts` Index | 🤖 | P0 | 🚧 Partiel — 2026-05-18 | v4-020 | 3h |
 | v4-022 | WF9 LI Sourcing — search/post_engagers/profile_visitors/external_post → Leads_Raw + dedup Registry étendu | 🤖 | P0 | 🚧 Partiel — 2026-07-04 (WF9 staging persist-ready : normalisation/dedup/cap 100 + route append Leads_Raw/Contacts_Registry testées ; Unipile live + smoke Sheets réel restent à faire) | v4-020 | 6h |
